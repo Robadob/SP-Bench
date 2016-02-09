@@ -1,0 +1,113 @@
+\addcontentsline{toc}{chapter}{Preface}
+%\addcontentsline{toc}{section}{Cover}
+\pagenumbering{gobble}%Surpress cover page number
+%Cover
+\author{Robert Chisholm\\
+	\\
+	Department of Computer Science,\\
+	University of Sheffield\\
+	Regent Court\\
+	211 Portobello\\
+	Sheffield\\
+	S1 4DP\\
+	United Kingdom\\
+	\texttt{R.Chisholm@sheffield.ac.uk}\\
+	\\
+	Produced under the supervision of Dr Paul Richmond \& Dr Steve Maddock.\\
+	\\
+	%This Thesis is Submitted in Partial Fulfilment\\
+	%of the Requirements for the Degree of\\
+	%Doctor of Philosophy.
+}
+\title{Working With Incremental Spatial Data During Parallel (GPU) Computation}
+\subtitle{12-Month Report}
+\date{\today}
+\maketitle
+\newpage
+\renewcommand{\titlepage}{\relax}
+\pagenumbering{Roman}
+
+%Declaration
+\setcounter{page}{1}
+\addcontentsline{toc}{section}{Declaration}
+\vspace*{\fill}
+\thispagestyle{plain}
+
+\begin{minipage}[t]{1\columnwidth}%
+I declare that this thesis was composed by myself, that the work contained
+herein is my own except where explicitly stated otherwise in the text.
+This work has not been submitted for any other degree or professional
+qualification except as specified.\\ \\%
+\end{minipage}
+
+\begin{table}[h] 
+\centering 
+\begin{tabular}{l l} 
+Name: & Robert Chisholm \\
+Signature: & \\
+Date: & \today \\
+\end{tabular} 
+\end{table}
+\vspace*{\fill}
+\clearpage
+
+%Abstract
+\phantomsection
+\addcontentsline{toc}{section}{Abstract}
+\begin{abstract}
+\noindent
+
+Complex systems contain many interacting agents and can be found everywhere in daily life, however due to their complexity it is often impractical to study them in situ. This has lead researchers, since the 1940's, to develop simulations of these complex systems. Once constructed from physical machines, modern systems  now utilise high performance computation. In particular, the parallel architecture of \glspl{gpu} is well suited for simulating the large hierarchies of agents found within complex systems. However this same architecture also introduces algorithm development challenges not present in more traditional forms of computation, this is especially apparent when representing mobile agents.
+
+Whilst there exist many static spatial data-structures, with expensive construction stages to optimise accesses, there are few dynamic data-structures for spatial data. Current techniques for representing the spatial data of mobile agents rely on uniform spatial partitioning --- as existing dynamic techniques are not capable of providing the ability for agents to survey their neighbours. This technique utilises a static data-structure which must be entirely reconstructed when any agent's locations change, regardless of whether a single agent or all agents have moved.
+
+The work herein this thesis explores techniques that are utilised for managing spatial data during complex simulations that are developed for \glspl{gpu}. This thesis culminates in a proposition of research to improve both the performance and usability of spatial data when applied to \gls{gpu} computation.
+\\
+\\
+%Categories and Subject Descriptors (according to ACM CCS): I.2.11 [Distributed Artificial Intelligence]: Multiagent systems
+\glsreset{gpu}
+\end{abstract}
+%\setcounter{page}{2}
+\clearpage
+\newpage
+
+%Acknowledgements
+\phantomsection
+\setcounter{page}{3}
+\addcontentsline{toc}{section}{Acknowledgements}
+\renewcommand{\abstractname}{Acknowledgements} 
+\begin{abstract}  
+I would like to acknowledge \& extend my gratitude to the following persons who have made the completion of this research possible:\\
+\\
+Dr Paul Richmond for sharing his GPU passion and knowledge.
+\\
+Dr Steve Maddock for his regular discretionary guidance correcting my grammar and `logic train'.
+\\
+Dr Daniela Romano for the earlier supervision she provided.
+
+\end{abstract}
+\clearpage
+\newpage
+%Contents
+\phantomsection
+\setcounter{page}{4}
+\addcontentsline{toc}{section}{Contents}
+\tableofcontents
+\null\newpage
+
+\phantomsection
+\addcontentsline{toc}{section}{List of Figures}
+\listoffigures
+\null\newpage
+\phantomsection
+\addcontentsline{toc}{section}{List of Tables}
+\listoftables
+
+\null\newpage
+\phantomsection
+\addcontentsline{toc}{section}{List of Acronyms}
+\printglossary[type=\acronymtype,title={List of Acronyms}]
+\newpage
+
+\pagenumbering{arabic}
+\setcounter{page}{1}

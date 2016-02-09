@@ -1,0 +1,461 @@
+\chapter{Proposal\label{chap:proposal}}
+
+  \section{State of the Art}
+    From reviewing existing techniques (in chapter \ref{chap:literature}), it is evident that current spatial data-structures are not optimal when working with highly dynamic data on \glspl{gpu}. In this context we refer to dynamic data as the locations of mobile agents and the use case that these agents wish to observe (and interact) with their neighbours. Whether these agents are: particles, people or vehicles, their location updates are incremental. This is something that should be considered when storing their locations.
+    
+    The most commonly used technique for handling dynamic data is that of uniform spatial partitioning, whereby spatial data is partitioned into uniformly sized (in terms of spatial area covered) bins. This technique requires expensive reconstructions of the entire data-structure after any movement, and often means that all spatial data is treated at the same scope regardless of their surrounding density due to the uniform bin sizes. This technique does not discriminate between a single agent moving between neighbouring bins, or all agents jumping a significant distance, each would require a complete reconstruction.
+    
+    In contrast, there are many data-structures available for static spatial data, optimised for a variety of use-cases. However these often require even more expensive construction algorithms as a form of pre-processing in order to maximise optimisations to access time and/or memory usage. There have been several recent pushes to advanced handling of static spatial data during \gls{gpu} computation \cite{LS*06,LB*16}, however dynamic spatial data has seen less attention, likely due to the added complexity and greater initial overhead.
+    
+    Only recently have advances towards handling the dynamic data present within \gls{sph} been attempted \cite{HY*15,JR*15}. Whilst these advances show progress, they are highly specific, showing that there are more improvements to be found and applied to the wide range of applications utilising neighbourhood searches.
+    
+  \section{Project Definition}
+    The question this research aims to answer is: What techniques can be used for improving neighbourhood searches of spatial data during \gls{gpgpu} computation? 
+    
+    The primary objective is therefore to provide a general implementation of a data-structure capable of handling dynamic spatial data requiring neighbourhood accesses. This implementation should allow others to more easily and more significantly improve the performance of any \gls{gpgpu} applications working with dynamic spatial data, by surpassing the performance of the existing uniform spatial partitioning technique.
+
+    Secondary objectives that will assist in the completion of the primary objective are:
+    \begin{itemize}
+      \item To produce \gls{gpgpu} capable data-structures that improve:
+      \begin{itemize}
+        \item Accesses to dynamic spatial data.
+        \item Accesses to irregularly distributed dynamic spatial data. 
+        \item Accesses to neighbourhoods of spatial agents. 
+      \end{itemize}
+      \item To evaluate produced data-structures using:
+      \begin{itemize}
+        \item Theoretical analysis to identify expected performance under various usage scenarios.
+        \item Benchmarks to compare performance against existing techniques under both bespoke edge-case and real-world scenarios.
+      \end{itemize}
+    \end{itemize}
+    
+  \section{Impact}
+    The field identified that this research would benefit most is that of complex simulations, whereby large numbers of mobile spatial agents interact concurrently. Improving the performance of any stage of these applications enables various benefits.
+     
+    If complex simulations are being used iteratively for validation, they may be running continuously and regularly. At which point even a single percentage point improvement in computation time has a significant impact on productivity by reducing run-times or simply reducing energy costs. With significant improvements potentially making performant complex simulations available to cheaper hardware.
+     
+    Additionally, improving performance of the major bottle-neck present within spatial complex simulations, allows the detail of contained models to be increased. This may be via allowing more complicated agent behaviours or simply larger agent populations. This is especially important to real-time visual simulations, whereby users expect simulations to execute smoothly at a high frame-rate.
+     
+    These complex simulations are utilised by a wide variety of research fields, whereby simulations offer a cheaper, safer and more viable technique for analysis and validation. \gls{sph} alone applies to a wide variety of fields such as astrophysics, oceanography and solid mechanics. This is in addition to models of living agents such as pedestrians and animals which also stand to benefit. 
+    
+    The benefits of this research are wide reaching, although the advances are behind the curtain, likely providing improved performance to users who are none the wiser. The intention to provide a general implementation of any data-structures developed, should increase their proliferation providing the means for those able to benefit to utilise the results of this research.
+     
+  \section{Approach}
+    There are many directions in which \gls{gpgpu} spatial data-structures may be approached for optimisation. However it is important that primary focus is directed towards the bottlenecks identified through the process of profiling. There are two particular research strands which could be followed in attempts to improve overall performance of dynamic spatial data. 
+    
+    The first strand is that of further optimising construction and memory accesses of a static data-structure. This technique is likely to yield several incremental improvements to existing techniques, with further possible improvements to domain specific solutions. An example of a domain specific solution would be reducing the memory accesses in pedestrian collision, a model such as the centrifugal force model for pedestrian dynamics could benefit significantly from a significant reduction to the number of accessed locations \cite{YC*05}. This would consist of exploring various features such as: memory locality, radial accuracy, access patterns and alternate sorting algorithms as a means of improving existing work on uniform spatial partitioning.
+    
+    The second strand is the option of starting from a blank page, and designing a novel heuristic means of incrementally updating the data-structure. Such a heuristic technique would need to be highly optimised and streamlined in order to compete with the uniform spatial partitioning's utilisation of generic \gls{gpgpu} sorting (which is often one of the cheaper operations). This strand is not without precedent, dynamic bounding volume hierarchies have been used within the field of collision detection as an incremental data-structure \cite{LA06,WBS07}. However without a directly relevant known technique for improving the memory accesses of the neighbourhood search, this strand is unlikely to provide significant results.
+    
+    Therefore it is necessary to approach the first strand in a logical order, such that probable proposals are investigated before more complex and unlikely proposals. This shall ensure that due attention is given to any successful optimisations, rather than them becoming rushed in at the end. It should also permit an `early win', whereby the research is able to achieve results early on. In a scenario whereby a significant improvement to neighbourhood searches inapplicable to uniform spatial partitioning is discovered during research, it would be reasonable to reconsider a heuristic approach.
+    
+    In particular, the below proposals are concerned with investigating optimisations to the technique of uniform spatial partitioning, as this was found to be the common choice for handling spatial-data among \gls{sph} and complex simulation frameworks. However it still remains the primary bottleneck in these frameworks, whereas other existing spatial data-structures, are most often unsuitable for the use-case we are considering.
+    
+    The primary focus among these proposals is that of improving memory accesses during a neighbourhood search. The obvious candidates for this are to trial memory access patterns and layout combinations such as: grid order, space-filling order, directional order and random sampling. However along the way it is important to identify the scenarios whereby mutated implementations provide an optimisation.
+    
+    The below work tasks detail proposed avenues of research, the order is that in which they have currently been deemed most suitable for investigation. 
+    
+    \subsection{WT1: Profile Existing Techniques}
+      Before any advances can be made, it is first necessary to provide a reference implementation that offers a baseline performance. It is also necessary to consider the two existing publications that have built on uniform spatial partitioning according to this baseline.
+    
+      \subsubsection*{Implementation of Uniform Spatial Partitioning}
+\begin{algorithm}
+\begin{lstlisting}
+construction()
+    for each element
+        calculate spatial hash
+    sort elements by spatial hash
+    build index of hash boundaries in sorted elements
+
+neighbourhood search()
+    calculate spatial hash of local element
+    calculate radial area spatial hashes
+    for each spatial hash within radial area
+        lookup hash in hash boundaries index
+            for each element at current spatial hash
+                if distance between local element and current element is within range
+                    //perform some operation
+\end{lstlisting}
+\protect\caption{\label{fig:usp-pseudo}Pseudo-code for the two algorithms used by uniform spatial partitioning.}
+\end{algorithm}
+        Before any profiling can be carried out, it is necessary to implement a standalone reference implementation of uniform spatial partitioning to form the baseline from which derivations can be evaluated. This reference implementation shall consist of the raw uniform spatial partitioning algorithm, without the developments which have been suggested by other researchers\cite{GS*10,HY*15}.
+
+        FLAMEGPU contains an implementation of uniform spatial partitioning, however this is constrained within the framework, reducing the ability for it to be profiled in isolation. Therefore it will be necessary to develop an original implementation. The provision of parallel primitives by libraries such as Thrust and CUB significantly reduces the necessary work in completing this task. Pseudo-code in algorithm \ref{fig:usp-pseudo} details the steps utilised during uniform spatial partitioning to both construct the data-structure and perform neighbourhood searches.
+        
+      \subsubsection*{Implementation of Initial Benchmarks}
+        In order to provide thorough profiling and evaluation of both the reference implementation and any developments, it will be necessary to develop a portable benchmark suite that provides an interface to the reference implementation to allow the execution of multiple benchmarks against multiple implementations as a batch execution. This will facilitate the evaluation across across several \glspl{gpu} from the Kepler and Maxwell architectures (and also Pascal once released). This will better enable advice on architectures most suitable for spatial memory access patterns, where architectural changes may create significant performance differences.
+        
+        To ensure that a wide range of complex simulation scenarios are accounted for, it will be necessary to implement (and likely propose) several benchmarks from the OpenAB (Open Agent Benchmark) project, covering a range of realistic use-cases. The OpenAB initiative provides a platform for multi-agent model benchmarks to be formally specified and shared, this allows researchers to follow reference procedures to produce results to inform about the suitability of simulators and computer architectures. As part of this thesis, several benchmarks will be assembled, such that modified (and alternative) spatial data-structures can easily be dropped in to produce comparisons and ideally complete multiple benchmarks as a batch execution.
+        
+        The first of the two initial benchmarks to be implemented is referred to as the distribution benchmark. This will assess performance in handling unevenly distributed agent populations. This benchmark is important as the uniform structure of uniform spatial partitioning leads to scenarios whereby uneven densities of agents within a simulation cause a minority of bins to become saturated with a majority of agents. This results in each agent within the dense area potentially evaluating thousands of other nearby agents, negating much of the benefit of utilising a spatial search. This benchmark utilises static agents, to isolate the neighbourhood search.
+        
+        The second of the two initial benchmarks is referred to as the circles benchmark. This consists of a simplified \gls{sph} model whereby particles are scattered within two or three dimensions, each iteration each particle emits forces which nearby particles to assess to update their location. This benchmark is important as it replicates the basic premise of \gls{sph} which stands at the core of a large number of complex simulation models, it also provides a simple analogue for other simulations which require a two or three dimensional radial neighbourhood of interaction between agents.
+        
+        These two benchmarks are described in greater detail in the below section \ref{sec:eval-validation}: Evaluation \& Validation.
+        
+      \subsubsection*{Validate Reference Implementation}
+        To ensure that the reference implementation is optimal according to basic standards, it will be necessary to consider the primitives available from both Thrust and CUB and also the tier of \gls{gpu} memory utilised. This stage will provide analysis and enhancement to ensure the existing reference implementation is best optimised using traditional techniques, such as instruction level parallelism and memory coalescing.
+        
+        Additionally at this stage, it would be beneficial to fork the reference implementation to include both of the existing published optimisations to uniform spatial partitioning. The first technique, by Goswami et al requires the use of a Z-order curve to encode locality into the memory layout of the data\cite{GS*10}. Implementing this optimisation would require replacing the spatial hash functions with a new function capable of providing the hash instead according to the Z-order space filling curve. The second technique, by Sun et al requires replacing the sort stage during construction to utilise the previous state \cite{HY*15}. Implementing this would also require updating so that spatial movements are stored according to their current location, as standard uniform spatial partitioning utilises memory coalescing to store updated locations according to their thread index prior to the reconstruction.
+        
+        This stage will allow both the benchmarks and the reference implementation to be properly utilised for the first time. In doing so the a baseline profile of the algorithm can be generated and analysed, providing guidance for where research focus should be directed.      
+      
+      \subsubsection*{Documentation of Work}
+        To ensure that progress is thoroughly documented, it is necessary to regularly compile and document the current steps taken, progress, results and analysis. The work undertaken within this work task will provide adequate material for three chapters. The first chapter to be produced will detail the steps taken in the development of the reference implementation, including the choices of parallel primitives and memory utilisation. The second chapter will explain the benchmarks that have been implemented, what they measure and how the reference implementation performed under them. This benchmark performance will then be profiled and analysed, detailing the identified areas of uniform spatial partitioning which can be improved. The third chapter will detail the two existing techniques that have been implemented, allowing the performance of each to be compared to that of the reference implementation and their published results.
+      
+    \subsection{WT2: Grid Resolution vs Density vs Range}
+      The effect of increasing the resolution of the uniform grid is that more fine grained access to neighbours becomes available, reducing the number of unnecessary accesses to out of range neighbours (Figure \ref{fig:grid-resolution}). However this also comes at the cost of accessing more separate lines of memory. This creates a balancing act whereby the optimal configuration is likely to be a value in the middle ground. It is also expected that different access patterns, are likely to influence where this optimal midpoint lies.
+      
+      This work task shall be divided into 3 stages:
+      \subsubsection*{Theoretical Analysis}
+        Working from an understanding of the \gls{gpu} architecture, a pre-emptive analysis of the effects expected by changing the grid resolution shall be written. This analysis will act as both a justification for this strand of research, and an unbiased benchmark allowing the identification of any differences between the understanding of the affected \gls{gpu} architecture and the reality. 
+        
+        This stage is important, as it will later enable misconceptions in the understanding of \gls{gpu} optimisation and architecture to be addressed, whether they are with personal understanding or as a result of a wider miscommunication. By carrying out this analysis prior to carrying out any benchmarking, it ensures that the analysis is not influenced  by results which could otherwise lead to a less knowledge driven analysis.
+      
+\begin{figure}[h]
+  \begin{centering}
+    \subfloat[Grid resolution of 2 bins per search radius.]{
+      \includegraphics[width=0.31\columnwidth]{\string"../resources/resolution-low-alt\string".pdf}
+    }
+    \subfloat[Grid resolution of 8 bins per search radius.]{
+      \includegraphics[width=0.31\columnwidth]{\string"../resources/resolution-high-alt\string".pdf}
+    }
+  \par\end{centering}
+  \protect\caption[A depiction of the effect of changing the grid resolution used within uniform spatial partitioning.]{\label{fig:grid-resolution}A depiction of the 12.5\% reduction in total space accessed and over 50\% reduction in space outside the search radius accessed, when the grid resolution is increased by a multiple of four. Cells depicted in grey are bins which would be accessed as part of the black search radius.}
+\end{figure}
+
+      \subsubsection*{Grid Resolution Profiling}
+        The effect of changes to grid resolution when compared against various agent densities and 'vision ranges' on the performance of uniform spatial partitioning in both two and three dimensions will be investigated. This profiling will be carried out by applying the two initial benchmarks to the reference implementation/s (if initial results have shown substantial benefit from the use of Z-order curves, it would be beneficial to compare this alongside the reference implementation). The overall runtime of each benchmark in addition to summary distributions of individual kernel run-times across the sampled density and range configurations, will provide a high level overview of the overall value of this technique and direct towards the most and least optimal use-cases.
+        
+        The identified most and least optimal use-cases can then be benchmarked a second time, this time utilising instruction-level profiling. The use of this finer profiling will allow the time spent in specific code-paths to be measured, this data can provide insight into the causes of the best and worst case scenarios.
+      
+      \subsubsection*{Documentation of Work}
+        Having produced the pre-emptive analysis and carried out benchmarks which have yielded results, it becomes necessary to provide a thorough analysis of these results alongside the pre-emptive analysis confirming the understanding. Differences between the pre and post analysis will provide a useful platform to identify gaps in understanding.
+        
+        Prior researchers performed a similar assessment to this applied to \gls{sph} \cite{Hoe14}, this was however comparatively limited in scope. Nonetheless it will be valuable to discuss whether the results produced are in agreement with theirs, and if not where such a difference has arisen from.
+        
+        The full write-up of the work and analysis carried out within this work task shall constitute a chapter.
+      
+    \subsection{WT3: Space Filling Curves}
+      Currently it is understood that the primary bottle-neck within spatial partitioning is often that of memory accesses during neighbourhood searches, as such it is pertinent to continue finding ways to reduce this overhead. One method of achieving this is via the use of efficient memory layouts, in the form of Peano, Hilbert and Z-order space filling curves (Figure \ref{fig:space-filling-curve}) capable of mapping multi-dimensional data to a single dimension. Due to their preservation of locality these are a prime candidate for optimising memory accesses. Z-order curves have already been shown to benefit \gls{sph} by Goswami et al \cite{GS*10}, however it is unclear to what extent this applies to other complex simulations and the advantages of once space-filling curve over another.
+      
+      This work task shall be divided into 3 stages:
+      \subsubsection*{Theoretical Analysis}
+        From an understanding of how \glspl{gpu} access memory efficiently it should be possible to somewhat pre-emptively analyse the effects of space filling curves. This is however complicated by this access occurring in parallel across multiple threads potentially searching different locations, reducing any potential coalesced memory accesses. This may however be counteracted by aggressive caching present in global memory accesses in newer architectures.
+        
+        Regardless with the work of Goswami et al providing existing results of the effect of a Z-order curve, it is unlikely that this pre-emptive can avoid existing influence. Therefore it is important to focus on the difference between the three space filling curves: Peano, Hilbert and Z-order when writing this analysis. Currently Z-order appears favoured due to the simplicity of the index calculation, however Hilbert provides greater locality. There may be potential that the \glspl{gpu} parallel architecture can offset this cost, or alternatively utilise a cached map for calculating to and from Hilbert identifiers.
+        
+\begin{figure}[h]
+  \begin{centering}
+    \subfloat[Level 3 Peano Curve]{
+      \includegraphics[width=0.31\columnwidth]{\string"../resources/peano-3\string".pdf}
+    }
+    \subfloat[Level 4 Hilbert Curve]{
+      \includegraphics[width=0.31\columnwidth]{\string"../resources/hilbert-4\string".pdf}
+    }
+    \subfloat[Level 4 Z-Order Curve (Morton Code)]{
+      \includegraphics[width=0.31\columnwidth]{\string"../resources/morton-4\string".pdf}
+    }
+  \par\end{centering}
+  \protect\caption{\label{fig:space-filling-curve}3 different space filling curves in 2 dimensions.}
+\end{figure}
+        
+      \subsubsection*{Space Filling Curve Profiling}
+        In order to assess the effects of each space filling curve it will be necessary to implement the Peano and Hilbert space filling curves in the same manner that was earlier carried out with the Z-order curve, whereby the spatial hash calculation is replaced. If initial tests show that the additional complexity of the Hilbert and Peano calculations have more than a negligible effect on performance, it will be necessary to re-implement the space-filling curves to utilise pre-computed lookup table before carrying out further profiling.
+        
+        Again this profiling will be carried out using the two initial benchmarks against both the reference implementation and the calculation (and look up) variations of the three space-filling curves. The additional use of uniformly distributed agents within the distribution benchmark could potentially provide a best-case scenario, whereby each neighbourhood must access the same search radius.
+        
+        Due to the implementation similarity of each of the space-filling curves there is little need to perform a great deal of instruction level profiling, high level profiling of kernel timings is likely to provide equivalent assessment of any differences to the memory access speeds provided by each space filling curve. In addition it will be of value to assess the cost difference between a pre-computed and runtime computed space filling hash.
+        
+        It is also necessary within this stage to also develop some isolated test cases, to thoroughly assess the benefits of utilising space-filling curves that each thread follows within a kernel, when these threads are concerned with different areas such that their neighbourhood searches provide little overlap. Uniformly distributed agents applied to the distribution benchmark can be utilised for such a test, whereby their order is shuffled such that warps do not contain agents within the same neighbourhood. This is representative of complex simulations, whereby agent memory is too large to persistently relocate to match the spatial order. These test cases would help provide better insight into the degree of caching provided by each of the \gls{gpu} architectures, and to what degree a space-filling curve remains of benefit.
+        
+      \subsubsection*{Documentation of Work}
+        This complete write up of this work task will constitute a further chapter detailing the influence of space-filling curves on the memory access speed of uniform spatial partitioning. 
+        
+        The analysis within this chapter shall build upon the work of Goswami et al who utilised a Z-order curve \cite{GS*10}, providing an in depth study of the three covered space-filling curves when pre and runtime computed against reference implementation. Utilisation of the pre-emptive analysis will enable the provision of a thorough understanding of the architectural reasons behind the benefits of improving memory locality. The additional insight from assessing the impact of threads neighbourhood searches not colliding provides a segue to the next work task which shall further explore the effects of parallel memory accesses and locality.
+      
+    \subsection{WT4: Thread Locality}
+      Continuing from the previous work task, it is logical to investigate the effect of spatial ordered among the threads performing a neighbourhood search in parallel. Here we are referring to how a \gls{gpgpu} algorithm interacts with the data-structure. When each agent within a simulation has a large internal memory, it becomes costly to relocate this entire memory according to the agents locality. As a result, during execution neighbouring threads may be concerned with widely different spatial areas, effectively scattering memory accesses. It is far more desirable to only relocate the bare minimum data. Therefore, it is likely infeasible in most scenarios to sort agent lists to improve memory accesses, instead it should be considered whether the data-structure is capable of re-ordering neighbourhood searches internally. 
+      
+      Due to the previous work task's consideration of the effects of memory locality, it is unlikely there will be much distinct theory to pre-emptively analyse as part of this work task.
+
+      This work task shall be divided into 3 stages and a publication:
+      \subsubsection*{Theoretical Design}
+        The first stage of this work task will be to consider potential methods for redirecting these memory accesses such that threads access memory in a spatial order. This may work by having each thread act on behalf of it's index within the spatial data-structure, only writing back the result to the original element on completion. This technique attempts to replace many scattered neighbourhood reads, with a single scattered write of the result.
+        
+        Additionally whilst considering memory access patterns it may be possible to improve the grouping in which neighbourhood searches occur to further reduce scattered reads. Such a technique may work by dividing the environment into cells of a dimension equal to the search radius, these cells are then given one of four identifiers which are uniformly allocated uniformly allocated. During a neighbourhood search, memory accesses would then always target cells in the same order, in an attempt to forcibly synchronise more memory accesses.
+        
+        This stage will culminate in the specification of a technique for providing greater order between threads for memory accesses.
+        
+      \subsubsection*{Sorted Thread Benchmarking}
+        Having designed a technique to take better advantage of thread locality in the previous stage, this stage is concerned with the development and evaluation of that technique.
+        
+        In order to assess the benefits of thread locality on memory accesses it will be necessary to compare the designed technique applied to and against both the reference implementation and the most successful space filling curve from the previous work task. The evaluation of these techniques is purely concerned with the order of agents, therefore it will be necessary to compare the execution each of the reference implementations to the circles benchmark in two states, the first whereby agents are continuously sorted according to locality, and the second whereby agent order becomes unordered naturally as the benchmark progresses. The performance of these can then be directly compared to that of the thread locality design. 
+        
+        Whilst it will be necessary to ensure the thread locality technique has been appropriately optimised with instruction level profiling, due to there being no significant changes between implementations aside from this additional step, such profiling will not be required for analysis.
+        
+      \subsubsection*{Documentation of Work}
+        Having developed a novel technique it is necessary to document it's design, theory and performance. This shall constitute a further chapter, whereby the impact of thread locality is contrasted against the previous chapter concerned with memory locality.
+        
+        The work within this chapter at current has no prior publication with which results can be assessed. Therefore analysis and discussion of results will only concern the earlier analysis of memory locality, and how this is affected by thread locality as has been shown by the developed technique.
+        
+      \subsubsection*{Publication of Work}
+        Gaining positive results during this work task, would enable the publication of the developed technique for maintaining thread locality during memory accesses. Such a publication would be relevant to any number of journals concerned with agent modelling and complex simulations or even \gls{gpu} computation.
+        
+        If the results are however unsuccessful, it may still be possible to publish a less significant paper detailing the progress of the detailed study of techniques for spatial access to \gls{gpu} memory to date and it's utilisation of the benchmarks from the OpenAB project. This paper would instead provide a platform from which to invite others to partake in the OpenAB benchmarks and may be better formatted as a collaborative effort.
+      
+      %As our \gls{gpgpu} architecture works such that each instruction is executed for 16 threads concurrently. It is encouraged to reduce the number of reads necessary to access the memory requested by each thread during a single instruction. Therefore this work task hopes to investigate whether there are distinct access orders that have a visible effect on performance.
+        
+    \subsection{WT5: Pre-sorted Sorting}
+      Having approached the obvious weaknesses present in accessing spatial data, next it becomes time to consider the construction of the data-structure. The reference implementation utilises a standard \gls{gpgpu} radix sort as provided by either the Thrust or CUB primitives libraries. These sorts are not optimised for sorting pre-sorted data. Due to the incremental nature of agent motion, it is unlikely that during any given iteration many agents will cross a threshold between spatial bins.
+           
+      This work task shall be divided into 3 stages:
+      \subsubsection*{Theoretical Analysis \& Design}
+        The theory behind this work task follows that the serial sorting algorithm insertion sort, outperforms other serial sorting algorithms by a significant margin when sorting data that is already largely pre-sorted. The popular \gls{gpu} sorting algorithm radix sort does not benefit from pre-sorted data. Under the assumption that each iteration only a small percentage of agents require relocation, even a relatively inefficient sort should require significantly less memory accesses than a complete sort when provided with access to the boundary index.
+        
+        This stage of analysis will present figures of agent speed and grid resolution to calculate the expected percentage of agents moving between spatial bins per iteration. Ideally it would be possible to actually monitor such a value from an available model within the research group, however it is necessary to have a theoretical figure available should such a model not be available. This figure will be used as justification of the work task.
+        
+        Analysis will then be carried out, exploring the use of \gls{gpu} radix sort and the challenges present in producing a \gls{gpu} sort biased in favour in pre-sorted data. As part of this analysis it will also be necessary to study the existing work of Sun et al in detail \cite{HY*15}, to provide greater awareness of how their technique could be improved on.
+
+        Having considered existing work it, next a technique that will overcome the existing limitations must be designed. Such a technique will likely take influence from Thrust's \gls{gpu} merge sort and the CUB block and warp scale sorting primitives. If analysis has shown confidence in Sun et al's results, it may instead be necessary to consider an alternate technique. This technique would include a partial memory overhead by providing spatial bins with overflow space. This would allow agents requiring relocation to simply be identified and moved. This would significantly reduce the memory transfers otherwise necessary to shift every item should a single item move from the end to the start.
+        
+      \subsubsection*{Pre-sorted Sort Implementation \& Evaluation}
+        This stage shall consist of the implementation and evaluation of techniques for improving the reconstruction time of the data-structure. At this point in time it is unclear why the results of Sun et al were not more successful, therefore it would be worthwhile to additionally reproduce much of their developed and reference techniques for evaluation alongside our own technique.
+         
+        Once the relevant techniques have been implemented it is necessary to evaluate them. Sun et al's results showed that their technique was around 2.3 times faster in a small simulation of 8192 particles in a 16x16x16 grid \cite{HY*15}. However this improvement was reduced to parity with Thrust's merge sort at larger simulation scales. Therefore it is logical to follow their lead and benchmark each of the techniques using the circles benchmark across a range of agent populations and grid sizes to verify whether our own results are in agreement with their conclusion. 
+        
+        By modulating the length of each timestep within the circles benchmark, it should also be possible to better identify the actual point at which the pre-sorted technique loses its advantage. This would work by repeating the benchmark for both the developed and reference implementations, each run of the benchmark would also measure the proportion of agents crossing spatial bin boundaries. Increasing the duration of time step, would cause agents to move further, thus causing more agents to change bins simultaneously. Tracking this alongside performance should allow a clearer overview of the cut off point, which is not apparent from the results of Sun et al.
+      
+      \subsubsection*{Documentation of Work}
+        Having analysed existing sorting techniques, the work of Sun et al and carried out our own evaluation of these and a proposed technique. These items will be compiled into a further chapter, discussing these results alongside the analysis to provide clear guidance regarding the implications of thread locality in addition to the previous chapters implications of memory locality.
+      %\note{Also you may find `bulk synchronous parallel/GPU(?) programming' of interest with regards to the pre-sorted technique, as this lead to the development of CUB.}
+     
+      %An alternate solution would be to explore how parallel sorts perform against pre-sorted data. This investigation is influenced by the knowledge that among serial sorting algorithms, insertion sort performs significantly faster on pre-sorted data. Whilst it may not yield such a clear victor, it overlaps significantly with the above desire to identify agents requiring relocation, and only reorganise them. Due to spatial data occurring in multiple dimensions (most often two or three), it may be necessary to amend a sorting algorithm to perform 3 passes depending on the structure in which data is laid out.
+      
+    
+    \subsection{WT6: Handling Non-Uniform Distributions}
+      Having exhausted obvious general candidates, it next becomes necessary to explore optimisations tied to common usage scenarios of dynamic spatial data.
+      
+      Many forms of complex simulation aim to represent systems whereby spatial agents are not uniformly distributed. This creates situations whereby uniform partitioning causes some bins to be congested, and others to be empty. Subsequently causing those agents in dense areas to potentially survey hundreds or thousands of other agents, whilst sparsely located agents lay idle. There are two potential solutions for improving handling of such situations.
+      
+      This work task shall be divided into 3 stages and a publication:
+      \subsubsection*{Theoretical Analysis \& Design}
+        There are directions from which solutions to density related bottlenecks can be approached. It is clear independent of hardware architecture, that agents surveying a neighbourhood of a constant area, will have to carry out more work when in a densely populated neighbourhood than when their neighbourhood is sparsely populated. 
+        
+        This can either be solved by having agents survey a constant number of neighbours irrespective of range as was carried out by Joselli et al with their implementation of neighbourhood grid \cite{JR*15}. This technique will balance the number of neighbours accessed between threads, however doing so is guaranteed to reduce the range of neighbours surveyed in dense neighbourhood, which will have an impact on any simulation preventing bit-for-bit benchmark confirmations. Whether this impact is measurable and to what degree, remains to be seen. An alternate approach to neighbourhood grid would be the use of a quad-tree structure, such that grid resolution changes with density. This would however require additional memory accesses in traversal of the tree, so is unlikely to offer performance improvements.
+        
+        \Gls{dynamic_parallelism} was introduced with CUDA 5.0 in 2012, allowing nested kernel launches \cite{NV_DP}. An alternative style of approach for handling non-uniform distributions would utilise \gls{dynamic_parallelism}, such that agents in dense areas utilise additional threads to perform a parallel reduction across the spatial data that is to be surveyed. Thereby reducing the workload of individual threads which may otherwise hold up warps. This technique would be equally suitable to uniform distributions as any excess overhead is applied dynamically, however it approaches non-uniform density handling from a different direction to the above lossy technique, providing bit-for-bit benchmark outputs.
+      
+      \subsubsection*{Non-uniform Balancing Implementation \& Evaluation}
+        Following the above review of techniques both the neighbourhood grid and \gls{dynamic_parallelism} approaches shall be implemented.
+        
+        These implementations alongside the reference implementation will then be applied to the distribution benchmark against a range of agent distributions ranging from uniform to uneven densities. This benchmark utilises static agents, isolating the effect of neighbourhood density from construction times and similar, whilst allowing the distribution of agents to be controlled. 
+        
+        Whereas previous techniques have not affected the exactness of the final state of the benchmarks, the neighbourhood grid utilises neighbourhoods of different sizes, this presents a challenge for validating the correctness of the neighbourhood grid technique. At this time it is unclear how beneficial a statistical approach to verifying the variance between the reference final state and the neighbourhood grid final state would be. The obvious solution would be to utilise a visual comparison, however this is likely to be inexact. Therefore it will be necessary to further assess methods of evaluation for approximate functions.
+        
+        An additional implementation of the neighbourhood grid technique is that it utilises a different construction, as such it will also be necessary to compare it against the reference implementation when applied to the circles benchmark, paying attention to the time spent during construction. This will allow greater insight into the cost of performing a triple pass sort.
+        
+      \subsubsection*{Documentation of Work}
+        When compiling the work from this work task the two evaluated methods will require both their theoretical analysis and performance in handling varying densities to be documented. Additionally special attention shall be applied to the effect of the alternate radius of neighbourhood grid, and the variance that this has on the received output and any compounding effect this variance has over multiple iterations. 
+        
+        As with previous work tasks, this analysis, design and evaluation will constitute a chapter.
+        
+      \subsubsection*{Publication of Work}
+        There is a possibility that the results yielded within this chapter will be of significance to justify publication, displaying the alternate approach to the neighbourhood grid. At current due to the availability of \gls{dynamic_parallelism} being limited to devices of the 2nd generation Kepler architecture and later, there has not been any visible research into it's application to complex simulations (the work by Joselli et al utilised a GTX 580, which uses the earlier Fermi architecture in their evaluation). This is despite this technique of decomposing according to densities being similar to the suggested use offered by NVIDIA when \gls{dynamic_parallelism} was introduced \cite{NV_DP}.
+        %Note the Joselli neighbourhood grid 2015 appears based on a 2009 paper by the same author applied to peds rather than sph, did it not gain traction?
+        %The first is to utilise a quad-tree structure, allowing the grid resolution to increase in densely populated areas. This will permit all agents to survey similar numbers of other agents, whilst this is unlikely to be suitable for models such as \gls{sph} whereby particles are influenced by everything within range. It is unlikely to cause a loss of realism to models such as pedestrians, whereby a humans perception of nearby obstacles only has limited fidelity. Introducing a quad-tree would likely require additional memory accesses to locate bins, however in many non-uniform situations it should drastically reduce the number of unnecessary memory reads that occur.
+            
+    \subsection{WT7: Vision Cone Partitioning}
+      Many complex simulations seek to model the interaction of humans or animals. This interaction is often conducted when agents enter another agent's field of vision. For example collision avoidance pedestrian models are only concerned with dynamic obstacles within a cone of vision. A human only has around $114^{\circ}$ of depth perception capable field of view. However existing spatial partitioning techniques first consider the entire $360^{\circ}$, before most models individually calculate which of these records are not within the field of vision and must be culled.
+      
+      \subsubsection*{Theoretical Analysis \& Design}
+        This stage will analyse techniques for performing triangular neighbourhood searches such that memory accesses better represent the desired neighbours. There are two potential directions of approach. The first approach follows from the earlier work of grid resolutions, by increasing the resolution of the grid, a more specific area can be surveyed. There is unlikely to be any benefit from adjusting the memory layout under this method, as the fields of view can be rotated in many directions. The alternate technique would be to replace the uniform grid with a hexagonal grid. This alternate grid system would allow a pedestrians surrounding neighbourhood to be decomposed into up to 6 neighbouring bins. 
+        
+        The analysis of these potential techniques and their expected effect on necessary agent accesses will hopefully yield a plausible plan which can be taken forwards for implementation and evaluation.
+        
+      \subsubsection*{Vision Cone Neighbourhood Implementation \& Evaluation}
+        If the pre-emptive analysis has yielded a feasible approach, this stage will be concerned with the implementation and evaluation of the technique.
+        
+        To evaluate the benefits of such a technique, there are two measurements that can be used to evaluate performance. The first is that of the numerical reduction in memory accesses to agents, this can be tracked with some additional logging included within the novel and reference implementations. Once this tracking has been assessed, implementations without the additional logging can again be benchmarked to assess how linearly the reduction in accesses translates to reduction in kernel time.
+        
+        In order to evaluate these techniques it is necessary to introduce a new purpose specific benchmark that utilises a field of view. To direct this work towards publication, it recommended that this work is benchmarked using an implementation of the centrifugal force model for pedestrian dynamics \cite{YC*05}. This benchmark is described in greater detail in the below section \ref{sec:eval-validation}: Evaluation \& Validation.
+        
+      \subsubsection*{Documentation of Work}
+        Having analysed the implications of accessing memory according to spatial areas representative of a field of vision and developed and evaluated the performance, it becomes necessary to compile the knowledge gained to conclude the work task. As there is currently no published research assessing similar patterns of memory access on \glspl{gpu}, these results cannot be discussed alongside existing work. However it will be necessary to reconsider recent literature during the work-task to confirm that this is still the case.
+      
+      \subsubsection*{Publication of Work}
+        At the time of writing, there have been no published works regarding field-of-view accesses to memory for the implementation of pedestrian models. Therefore it is felt that progress in this domain would likely justify publication if applied to the centrifugal force model for pedestrian dynamics \cite{YC*05}. The work published here would likely be a condensed edition of the work provided within the relevant chapter of this thesis.
+        
+    \subsection{WT8: The Final Chapter}
+      The final work task constitutes the necessary work to finalise the thesis. Having completed all the original knowledge work tasks, this work will primarily consist of finalising existing chapters. This is likely to involve updates to literature, production of additional figures, repeating benchmarks to assess the effects applied to new hardware architectures (e.g. Pascal) and any other miscellaneous tasks which may remain. Additionally a final chapter will be produced concluding the research and providing a more concise, higher level overview of the contributions to knowledge which this research has generated. As part of this final chapter, it will be necessary to repackage the most applicable optimisations into a format that can be more easily utilised by 3rd parties. Additionally it may be possible to integrate these advances into the FlameGPU frame, making them available to other researchers.
+      
+      \subsubsection*{Publication of Work}
+        The work within the final chapter will likely be suitable for a publication as a more concise overview of the optimal techniques when working with dynamic spatial data on \glspl{gpu} including any architectural differences that require additional consideration. 
+        Due to the potential length of this potential publication, it is likely that it would fare best as a journal paper that would link the research from each of the prior work tasks into a single published article.
+      
+  \section{Evaluation \& Validation\label{sec:eval-validation}}
+    Due to the nature of this research being a thorough analysis of the processes necessary to optimise techniques for handling dynamic spatial data, there will be continuous quantitative evaluation over the course of the research. Each of the original work tasks (2-7) utilises an evaluation stage to compare the current optimisation against both a reference implementation and any existing research. This evaluation shall constitute appropriate benchmark models (described in the below subsections), repeated with a range of input parameters, to isolate the limitations of the optimisation being evaluated. Due to the availability of graphics hardware within the research group and university it should be possible to perform most evaluations across a range of NVIDIA \gls{gpu} architecture generations. This will be made easier by configuring benchmarks such that they can be executed in a batch format, removing the need for user interaction.
+    
+    To validate that optimisations have been carried out correctly, all benchmarks will be executed such that final states are compared with those produced by the reference implementation. This process will ensure that changes have not affected been applied incorrectly. However this will not be possible when evaluating the neighbourhood grid technique, as this utilises an alternative neighbourhood scheme. Instead neighbourhood grid will require a quantitative evaluation in the form of statistical variance from the reference implementation alongside code review and/or unit tests to ensure that it has been implemented correctly. It may also be suitable to perform a visual qualitative evaluation of the difference between the output of the neighbourhood grid and reference implementations, as this would likely better present any differences.
+    
+    By utilising benchmarks from ,and proposing our own benchmarks to the OpenAB project we will hopefully be able to compare any bench mark results against those
+    
+    The three benchmark models mentioned during the above proposals are explained in the below subsections:    
+    \subsubsection*{Distribution Benchmark}
+        This versatile benchmark is designed to assess the performance of neighbourhood searches across a variety of agent distributions ranging from: uniformly distributed, such that each agent has vision to an equal number of neighbours; to unevenly distributed, such that 20\% of agents are all visible to one-another with remaining agents only visible to themselves.
+        
+        In particular it seeks to highlight how a data-structure's performance is bounded by it's most dense neighbourhoods. 
+        
+        This benchmark would be implemented as static agents located within continuous space, changing state based on the state of their neighbours (similar to a cellular automata). Without agent birth, death or motion, this benchmark is able to isolate the neighbourhood searches. Each agent holds two values, it's spatial location and it's initial state.
+        
+        There are several model variables that can be modulated within this benchmark:
+        \begin{itemize}
+          \item Agent population, the number of agents within the simulation.
+          \item Environment scale and dimensionality, the size of the space the agents are within and whether it is two or three.
+          \item Crowd size, the proportion of the agent population to be found within the dense zone.
+          \item Vision radius, the distance within which agents consider other agents to be their neighbours.
+          \item Random seed, so that multiple benchmarks can be carried out over the same parameters.
+        \end{itemize}
+        
+        The initial state of each agent will be generated according to a seeded random generator. The locations will follow a slightly more complicated algorithm, whereby the agents not within the crowd ($A_{pop} * (1-C_{size})$)are uniformly distributed according to the continuation of the seeded random generator. Remaining agents are to be uniformly distributed within a circle (or sphere) of radius equal to double the vision radius, central to the environment (such that the dense area is as far as possible from edges).
+        
+        After this initialisation process, implementations may reorder agents if necessary for the particular evaluation. However it is necessary to maintain a mapping to their original order for validation of the final state.
+        
+        Each timestep, every agent updates it's state to a basic hash of the sum of all neighbours within their vision radius (this does not include the agents own state), it is assumed that the spatial area wraps such that edge facing agents do not have lower densities. The use of a hash is intended to prevent a stalemate scenario and the algorithm used should continue as planned in the case of integer overflow.
+        
+      \subsubsection*{Circles Benchmark}
+        This benchmark is required to assess the performance of neighbourhood searches under a scenario whereby agents are moving. The existing OpenAB circles benchmark (based on the benchmark of same name provided with the FLAMEGPU examples) provides a suitable model to utilise for the requirements of this benchmark \cite{OPENAB-CIRCLES}. However it is likely for the purposes of our evaluation that the dampening parameters would remain static.
+        
+        The model consists of points within 2 or 3 dimensional space which exert attractive and repulsive forces over a limited range to their neighbours. The force applied to each agent is applied according to the below formula:
+        
+        \[F_{i} = \sum\limits_{i \neq j} F_{ij}^{rep}[d_{ij} - 2 < 0] + F_{ij}^{att}[ - 2r > 0]\]
+        
+        In the above formula $F_{i}$ represents the force applied to the agent $i$. $F_{ij}^{rep}$ and $F_{ij}^{att}$ represent the repulsion and attraction force between the agent $i$ and a neighbouring agent $j$ respectively. The use of square Iversion bracket notation ($[\,]$) is representative of a boolean condition, whereby the symbol $r$ is the search radius and $d_{ij}$ is the euclidean distance between between the agent $i$ and a neighbouring agent $j$. If the boolean condition evaluates to true it returns 1, otherwise 0 is returned which cancels out the respective force.
+        
+        The forces $F_{ij}^{rep}$ and $F_{ij}^{att}$ are defined using the below formula:
+        
+        \[F_{ij}^{rep} = \frac{k_{rep}(d_{ij} - 2r)(x_{j} - x_{i})} {d_{ij}}\]
+        
+        In the case of $F_{ij}^{att}$ the repulsion dampening parameter $k_{rep}$ is replaced with the respective attraction dampening parameter$k_{att}$.        
+        
+        A full specification of this benchmark model is available on the OpenAB website \cite{OPENAB-CIRCLES}.
+        
+      \subsubsection*{Field of View Benchmark}
+        This benchmark is required to assess the performance of the development made during work task 7. This work task is concerned with scenarios whereby a neighbourhood search is only concerned with neighbours within a specific field of view within the radial neighbourhood.
+        
+        This benchmark could be suitably implemented as an extension to the circles model, adding a parameter for the angle of the field of view to be used when approving neighbours. However it would likely be a better analogy to directly utilise a pedestrian dynamics collision model such as the centrifugal force model under tight constraints, in order to best replicate a real-world application and better meet standards favourable for publication.
+        
+        The centrifugal force model for pedestrian dynamics defined by Yu et al \cite{YC*05}, follows that an agent adjusts it's velocity based on neighbouring pedestrians within a $180^{\circ}$ field of view centered about the agent's direction of motion. It is assumed that faster preceding agents have no repulsive effect on following agents. Due to agents having a fast reaction time, if a preceding agent is to decelerate abruptly, following agents will realise instantly and decrease their velocities accordingly.
+        
+        The force $\vec{F_{ij}}$ between two agents $i$ and $j$ is expressed as:
+        \begin{equation}\label{eq:1}
+          \vec{F_{ij}} = -m_{i}K_{ij}\frac{V^{2}_{ij}}{\lVert \vec{R_{ij}}\rVert}\vec{e_{ij}}
+        \end{equation}
+        \begin{equation}\label{eq:2}
+          \vec{R_{ij}} = \vec{R_{j}} - \vec{R_{i}}
+        \end{equation}
+        \begin{equation}\label{eq:3}
+          \vec{e_{ij}} = \frac{\vec{R_{ij}}}{\lVert \vec{R_{ij}}\rVert}
+        \end{equation}
+        \begin{equation}\label{eq:4}
+          \vec{V_{ij}} = \frac{1}{2}[(\vec{V_{i}}-\vec{V_{j}}) \cdot \vec{e_{ij}} + \lVert (\vec{V_{i}}-\vec{V_{j}}) \cdot \vec{e_{ij}} \rVert]
+        \end{equation}
+        \begin{equation}\label{eq:5}
+          \vec{K_{ij}} = \frac{1}{2}\left[\frac{\vec{V_{i}} \cdot \vec{e_{ij}} + \lVert \vec{V_{i}} \cdot \vec{e_{ij}} \rVert}{\lVert \vec{V_{i}} \rVert} \right]
+        \end{equation}
+        
+        Whereby: $\vec{V_{i}}$ and $\vec{V_{j}}$ are the velocities of agents $i$ and $j$ respectively, whilst $\vec{R_{i}}$ and $\vec{R_{j}}$ are the positions of agent $i$ and $j$ respectively.
+    
+        To utilise this pedestrian model as a benchmark it would be necessary to also define a method of generating the initial state of agent locations and velocities, similar to that of the previous benchmark models.
+    
+        A more comprehensive specification of the centrifugal force model for pedestrian dynamics is available within it's original publication \cite{YC*05}.
+      
+  \section{Publications}
+    There are four points during this research whereby there is a potential for publication. It is however more difficult to plan for these as they are dependant on multiple factors including progress, timing and submissions periods to applicable conferences/journals.
+    
+    Below is a summary of the potential publications:
+    \begin{itemize}
+      \item The completion of work task 4 concludes the focus on the spatial locality and order in both memory and threads. Progress made here would likely be suitable for publication to a conference concerned with complex simulations and agent modelling.
+      \item Having assessed an alternate approach to neighbourhood grid for handling non-uniform distributions of agents in work task 6. This research would also likely be relevant to a complex simulation and agent modelling conference.
+      \item Work task 7 builds on the existing work and develops a further refinement specific to pedestrian modelling. As such work within this stage may be suitable for publication at a pedestrian or evacuation dynamics conference.
+      \item The final concluding summary of techniques from the breadth of this research is likely to form a longer piece. Therefore it's publication would likely need to target a \gls{gpu} concerned journal. Alternatively this content could be formatted into a tutorial session for presentation at a conference such as the \gls{gpu} technology conference.
+    \end{itemize} 
+  
+  \section{Limitations}
+    The clear risk present in any research into data-structures, is moving off-course that something highly-specific (but effective) is produced. So specific that there are few or no clear applications.
+    
+    This is a limitation that this research will seek to avoid. By utilising a technique of initially covering general optimisations and gradually moving towards any domain specific techniques, it is hoped that this will not be an issue. Whilst at this time we are only concerned with complex simulations that utilise dynamic spatial data, it is possible that the scope of benefiting fields will actually grow during the research. At this time it is largely unclear which optimisations might limit the scope of application, as profiling would be used to identify such limitations. One of the below proposed stages would cover vision cones which is not something of interest to the wide field of \gls{sph}, as such if this optimisation was found to require a distinct data-structure with more than minimal changes it may be worth placing on the lowest priority among the other proposals.
+    
+    Additionally one must consider limitations in the form of hardware requirements. Due to the choice to utilise \gls{cuda} over \gls{opencl} due to it's library support, any developed implementation would be limited to NVIDIA graphics hardware. However the final thesis would contain thorough implementation detail, such that with the existing implementation porting the data-structure to work with other \gls{simt} architectures it would be feasible. It should already be clear that targeting non-\gls{simt} architectures is not within the scope of this research.
+    
+    Given that this research is working to improve over existing techniques, any limitations with regards to hardware expense for beneficiaries of this research are only relevant where newer architecture features have been utilised, which may not be available to those that have older hardware.
+  \section{Ethical Considerations}
+    This research does not require human subjects or information, as such it will not require ethical approval. Ethical consideration will however be required to ensure that due care is given if implementing others techniques, to ensure that they have been optimised to a competitive standard, such that any performance comparisons are not biased in favour of any local research that will have received greater attention. Care will also need to be taken, should any comparisons between \gls{gpgpu} and \gls{cpu} algorithms are carried out, so that architectural differences are not misrepresented in order to artificially advertise the performance of one over the other.
+    
+    Other ethical considerations to this research are those general to all academic research, such as data security, intellectual property, avoiding plagiarism and fraudulent research.
+%\begin{landscape}
+%\newpage
+  \section{Time Allocation}
+    It is expected that each of the proposed work tasks will take around 2 months to thoroughly complete and write up. In addition to this 3 months has been included for miscellaneous additions and optimisations which are discovered during the research process which are deemed worthy of attention. This is then followed by a 3 months period allocated to catching up any overspill of time that may be caused by additional work due to publications and conference submissions, if the schedule is kept tightly however this time would be suitable for handling concluding benchmarks, bringing the submission of the final thesis closer to the 3 year target.
+    
+    The gantt chart in figure \ref{fig:gantt} provides a visualisation of this time plan.
+        
+\begin{figure}[h]
+\begin{centering}
+\begin{ganttchart}[
+hgrid,
+vgrid,
+y unit title=0.4cm,
+y unit chart=0.5cm,
+time slot format=isodate-yearmonth,
+compress calendar,
+group height=.2,
+bar height=.3
+]{2016-02}{2018-02} 
+\gantttitlecalendar{year, month} \\ 
+\ganttgroup{WT1: Profile Existing}{2016-02}{2016-03} \\
+\ganttbar{Reference Implementation}{2016-02}{2016-03} \\
+\ganttbar{Benchmark Implementation}{2016-02}{2016-03} \\
+\ganttbar{Validation \& Documentation}{2016-03}{2016-03} \\
+\ganttgroup{WT2: Grid Resolution}{2016-03}{2016-05} \\
+\ganttbar{Analysis}{2016-03}{2016-03} \\
+\ganttbar{Profiling}{2016-04}{2016-04} \\
+\ganttbar{Documentation}{2016-04}{2016-05} \\
+\ganttgroup{WT3: Space Filling}{2016-05}{2016-07} \\
+\ganttbar{Analysis}{2016-05}{2016-05} \\
+\ganttbar{Profiling}{2016-06}{2016-06} \\
+\ganttbar{Documentation}{2016-06}{2016-07} \\
+\ganttgroup{WT4: Thread Locality}{2016-07}{2016-09} \\
+\ganttbar{Design}{2016-07}{2016-07} \\
+\ganttbar{Benchmarking}{2016-08}{2016-08} \\
+\ganttbar{Documentation}{2016-08}{2016-09} \\
+\ganttgroup{WT5: Pre-sorted Sorting}{2016-09}{2016-11} \\
+\ganttbar{Analysis}{2016-09}{2016-09} \\
+\ganttbar{Evaluation}{2016-10}{2016-10} \\
+\ganttbar{Documentation}{2016-10}{2016-11} \\
+\ganttgroup{WT6: Handling Non-Uniform}{2016-11}{2017-01} \\
+\ganttbar{Analysis}{2016-11}{2016-11} \\
+\ganttbar{Evaluation}{2016-12}{2016-12} \\
+\ganttbar{Documentation}{2016-12}{2017-01} \\
+\ganttgroup{WT7: Vision Cone}{2017-01}{2017-03} \\
+\ganttbar{Analysis}{2017-01}{2017-01} \\
+\ganttbar{Evaluation}{2017-02}{2017-02} \\
+\ganttbar{Documentation}{2017-02}{2017-03} \\
+\ganttgroup{Concluding Tasks}{2017-01}{2018-02} \\
+\ganttbar{Misc. Additions}{2017-01}{2017-04} \\
+\ganttbar{Catch Up Time}{2017-05}{2017-07} \\
+\ganttbar{WT8: Write up Thesis}{2017-07}{2017-12} \\
+\ganttbar{Prepare for Viva}{2017-12}{2018-02} \\
+\ganttgroup{Publications}{2010-09}{2010-09} \\
+\ganttmilestone{WT4}{2016-09} \\
+\ganttmilestone{WT6}{2017-01} \\
+\ganttmilestone{WT7}{2017-03} \\
+\ganttmilestone{Summary}{2017-12} \\
+\end{ganttchart} 
+\par\end{centering}
+
+\protect\caption{\label{fig:gantt}Gantt chart of the plan for the remainder of this research project.}
+
+
+\end{figure}
+%\end{landscape}

@@ -1,0 +1,116 @@
+\section{\glsentrylong{gpgpu}\label{sec:gpgpu}}
+      \todo{Maybe also mention thrust/cudpp/cub style template libs in this sub section. No, later.}
+  \note{Could benefit from more citations.}
+    \gls{gpgpu} has been greatly popularised in the past decade, moving from programmers misusing the rendering pipeline to dedicated frameworks and specialised hardware options. This has lead to the power of \gls{gpu} computation being leveraged to speed up processing within many industries. \gls{gpgpu} offers a more affordable alternative to the more traditional \gls{hpc} offerings, where instant access to computation power is required. This isn't to say super computers don't use \gls{gpu} computation, simply that one \gls{gpu} can often provide significant speed-up to otherwise \gls{cpu} limited code for a relatively conservative price. The performance increase from multi-core \gls{cpu} to \gls{gpu} varies widely between algorithms, some research suggests 100-fold increases can be achieved, whereas Intel's own research insists if code is correctly optimised for a multi-core \glspl{cpu}, this falls to a maximum of 5-fold benefit. There is certainly potential for a greater awareness of \gls{cpu} optimisation techniques, having an effect on the divide \cite{LK*10}.
+
+    It is possible to leverage multiple \glspl{gpu} simultaneously to further increase performance. NVIDIA \glspl{gpu} have \gls{sli} functionality which allows 2-4 \glspl{gpu} to work in parallel, in this state each device's memory is mirrored (similar to RAID 1) but their processors work individually. Essentially multiplying the processing power. AMD \glspl{gpu} have a similar Crossfire functionality. \glspl{gpu} can be used together without the use of \gls{sli} or Crossfire, however this requires the programmer to pass data between devices. 
+    
+    \note{The below note about MPI seems a little brief/out of place.}
+    \gls{mpi} is a standardised protocol for message passing during parallel computation. There are many implementations of \gls{mpi} available, and they can be used from passing messages between individual \glspl{gpu} in the same machine, to passing messages between many machines over the internet.
+    \todo{Include intro to subsections here.}
+    \subsection{Frameworks}
+      There exist two distinct frameworks for \gls{gpgpu} application development, \gls{opencl} and \gls{cuda}. In terms of performance, both frameworks are capable of achieving similar benchmarks once tuned to the targeted device, as the code produced by each framework is very similar at a device level before compiler optimisations.\cite{KDH11, FVS11} Additionally OpenGL and DirectX both provide functionality within their graphics \glspl{api} for compute shaders. However there isn't much evidence of widespread use of compute shaders past 2010, likely due to the rise of the dedicated frameworks \gls{opencl} and \gls{cuda}. An optimised \gls{opengl} (compute shader) scan operation was found to execute 7 times slower than an optimised \gls{cuda} implementation, this difference was attributed to \gls{cuda} compiler optimisations not availble to compute shaders \cite{HSO07}. Compute shaders may receive a resurgence with the release of Vulkan, as this aims to introduce lower-level controls into the graphics \glspl{api}, benefiting \gls{gpgpu} by allowing better integration with graphical outputs.
+
+      \subsubsection*{OpenCL}
+        \gls{opencl} is an open standard maintained by the Khronos Group, the same consortium that manages the \gls{opengl} standard, capable of targeting any parallel architecture that has appropriate vendor provided drivers. At this point in time \gls{opencl} supports: both AMD and NVIDIA \glspl{gpu}; Intel \glspl{cpu} and integrated \glspl{gpu}; several IBM products. 
+
+      \subsubsection*{CUDA}
+        \gls{cuda} by comparison is a proprietary offering, restricted to NVIDIA devices. \glspl{cuda} primary advantage has been in the greater level of libraries to assist computation. It is also easier to optimise between devices, due to the architecture uniformity among NVIDIA devices, whereas \gls{opencl} supports a diverse array of hardware architectures, each requiring different optimisation priorities.
+
+    \subsection{GPU Architecture\label{sub:NVIDIA-GPU-Architecture}}
+      \emph{In a broad sense each \gls{gpu} consists of several \glspl{sm} and multiple GBs of global memory. Each \gls{sm} contains multiple schedulers and caches, these schedulers actually issue the instructions to perform the execution. However the \gls{simt} execution model is used, so each instruction is executed for a warp of multiple threads. If one thread within a warp needs to branch, then every thread must branch, any that aren't required to follow this code path remain idle until the branch returns (see Figure \ref{fig:SIMT}). This general architecture is the same for all \glspl{gpu}. The remainder of this section  provides NVIDIA \glspl{gpu} specific architecture details for completeness.}\\
+
+\begin{wrapfigure}{O}{0.5\columnwidth}%
+  \begin{centering}
+    \includegraphics[scale=0.5]{\string"../resources/WARP EXECUTION\string".png}
+  \par\end{centering}
+  \protect\caption{\label{fig:SIMT}Illustration of the potential execution order by two different warps of the same code block. \cite{PM13}}
+\end{wrapfigure}%
+
+      Each NVIDIA \gls{gpu} consists of 1-25 \glspl{sm} and several GBs of global memory (DRAM). There are also several (significantly smaller; KB scale) caches within each \gls{sm}. These caches are used for: accessing read-only texture memory; reading global memory; storing constant, local and shared memory. 
+
+      When using \gls{cuda}, a function to be executed on the device is called a kernel. When a kernel is launched, the programmer must specify how many threads to launch, this controls how many instances of the code within the kernel are executed. The number of threads is defined by providing grid and block dimensions. Grids and blocks are both 1-3 dimensional structures, whereby each index within a grid is a block and each index within a block is a thread. At runtime blocks are incrementally assigned to \glspl{sm}, they are then further partitioned into warps of 32 threads, that simultaneously execute. If less than 32 threads are required the resources for 32 threads are still used but the excess threads remain null. Blocks must be capable of executing independently, as they may execute in any order across multiple \glspl{sm}.
+
+      Since the Kepler architecture (2012)\cite{NV_KEPLER} each \gls{sm} has consisted of four schedulers capable of issuing dual instructions. This feature allows a scheduler to issue two consecutive instructions to a warp simultaneously if the instructions don't interact. Dual instructions cannot be dispatched for two different warps simultaneously. Each scheduler is capable of managing several warps (from different kernels) concurrently, instructions can be dispatched for a queued warp while the previous warp waits. This allows latencies to be hidden if enough warps are managed concurrently. The number of consecutive warps that can be managed by each scheduler is limited by the available resources required by each warp (e.g. shared memory), there is also a device specific hardware limitation of the maximum threads per \gls{sm}, current devices have this limit at 2048, which divides (32 threads and 4 schedulers) to 16 warps per scheduler. \cite{PM13}
+
+      Each \gls{sm} also contains \gls{fp32} units (often referred to as \gls{cuda} cores or stream processors) and \gls{fp64} units. These units are capable of performing basic 32bit and 64bit arithmetic respectively. \glspl{sfu} are able to perform `fast math' operations on \gls{fp32} values.\footnote{CUDA provides several low precision intrinsic functions such as \lstinline!__sinf()! and \lstinline!__logf()!, that execute in significantly less instructions than their more precise and versatile counter parts.} The quantities of these three units varies between architecture, chip and product line. For example the workstation line of products (Quadro) generally contain \gls{ecc} memory and have a higher ratio of \gls{fp64} units to \gls{fp32} units than the domestic counterpart (GeForce). These quantities affect the operations that each device excels at.
+%Could include speculative comment about fp32 pairs able to perform fp64 calculations, citing fermi whitepaper/uBench. 
+
+      Additionally as the price for a \gls{gpu} increases, the memory bus width usually follows. The memory bus width refers to the number of bits of global memory that are read per transaction. Therefore, if data requested by a thread is a contiguous block of 128 bits, it will be read in one transaction by a memory bus of 128 bits width, rather than the multiple transactions required if the data were scattered or the memory bus smaller. Use of read-only caches can reduce the influence of this on scattered reads, unnecessary data is cached when read, later instructions that request cached addresses then don't incur the latency of a global memory read transaction.
+
+    \subsection{Optimisation}
+      When taking the \gls{gpu} architecture into consideration, there are many techniques for optimisation. With the primary application of \gls{gpgpu} being \gls{hpc}, optimisation guidance is far more prevalent than for \gls{cpu} optimisation, although in many cases \gls{gpu} optimisation techniques are relevant to \gls{cpu} optimisation (e.g. especially cache efficiency via memory access patterns).
+      
+      %\note{The below paragraph was shoe-horned in here to avoid it being a lone paragraph below a title. Could also benefit from explaining fast-math operations.}
+      %The use of a \gls{simt} execution model means partitioning work to reduce divergent code within kernels, may provide benefit where such an implementation is feasible. If this involves sorting data between kernels to reduce divergence, it is clearly impractical, however if data can be pre-partitioned, such that common divergences are in separate blocks it would be advisable. Other optimisation techniques and considerations explained below are applicable to a wider range of applications.
+      
+      \subsubsection*{Thread-Level Parallelism (Increasing Occupancy)}
+        Traditionally in \gls{cuda}, occupancy refers to the number of active warps divided by the maximum number of warps. Ensuring maximal device occupation, so that the hardware within the architecture is utilised as much as theoretically possible, is a primary target of optimisation. This is usually bounded between limitations on register/cache storage within the \glspl{sm} and the upper limit on the maximum concurrent threads, as such this varies per device. Providing \glspl{sm} with multiple warps or instructions to execute simultaneously helps hide memory latencies, as other instructions can be executed whilst waiting for memory.
+
+        Optimal grid and block dimensions can increase occupancy via thread-level parallelism and reduce execution times in some scenarios by 23\%\ \cite{TGD13}. Whilst it is theoretically possible to calculate the best grid and block dimensions for a kernel when applied to a specific device, in most cases that can be avoided. It is often far simpler to simply benchmark the kernel against a large variety of dimensions to find the the best performing combination, which better accounts for missed variables that may affect occupancy. CUDA 6.5 introduced functionality for automatically optimising block dimensions for occupancy \cite{NV_OCCUPANCY}, however these are not a complete solution to optimisation as they do not account for kernels instead bounded by memory accesses.
+
+      \subsubsection*{Instruction-Level Optimisation}
+\begin{algorithm}
+\begin{lstlisting}
+addition_kernel(a,b,c)
+    i = thread.id
+    c[i] = a[i] + b[i]
+\end{lstlisting}
+\protect\caption{\label{fig:instruction-level-parallelism-psuedo-1}Pseudo-code for a vector addition kernel without instruction level parallelism.}
+\end{algorithm}
+
+\begin{algorithm}
+\begin{lstlisting}
+addition_kernel_ilp_x2(a,b,c)
+    //Read
+    i = thread.id
+    ai = a[i]
+    bi = b[i]
+    j = i + (grid.width * block.width)
+    aj = a[j]
+    bj = b[j]
+    //Compute
+    ci = ai + bi
+    cj = aj + bj
+    //Write
+    c[i] = ci
+    c[j] = cj
+\end{lstlisting}
+\protect\caption{\label{fig:instruction-level-parallelism-psuedo}Pseudo-code for a vector addition kernel that has been optimised with x2 instruction level parallelism. }
+\end{algorithm}
+
+        Similarly instruction-level parallelism offers an alternate approach for some memory access bounded algorithms, increasing performance whilst reducing shared memory traffic and the number of active warps. Making use of only registers, which are faster than the shared-memory often used in high occupancy scenarios which is made slower by bank conflicts.\footnote{Register spilling will also incur the latency of the L1 cache, details of this are found in the next subsection: Memory Consideration.} In essence instructions are separated and ordered within a kernel, so that operations are not performed until required data is in local memory, this allows the device to avoid waiting for memory returns or the minor overhead of rotating between warps. The pseudo-code in Algorithms \ref{fig:instruction-level-parallelism-psuedo-1} and \ref{fig:instruction-level-parallelism-psuedo} provides an example of how x2 instruction-level parallelism may be performed, although in practise using x4 or x8 (or even as high as register capacity permits) is likely to provide even greater results, due to the number of clock cycles required to perform accesses. It can be seen that the single line of addition code has been broken down into its constituent instructions, these have then been duplicated. As with all optimisation techniques, the benefits of instruction-level parallelism vary per algorithm and hardware, however in ideal scenarios it was found able to achieve 87\% memory peak, when copying 56 floats per thread, this was higher than the 71\% achieved by the core \gls{cuda} function \lstinline!cudaMemcpy!. \cite{VV10} 
+        %\note{Further writeup of ILP -> http://continuum.io/blog/cudapy\_ilp\_opt}
+        
+        Unrolling of loops is a classic instruction-level optimisation technique  whereby multiple iterations of a loop are merged into a single iteration. This improves performance by reducing branch penalties. Volkov identified that a mutated form of loop unrolling can be used to provide the benefits of instruction level parallelism \cite{VV11}.
+
+      \subsubsection*{Memory Considerations}
+        On each \gls{gpu}, the L1 cache and shared memory utilise the same set of registers --- the actual size is usually 64KB-96KB per \gls{sm}. However this memory is shared between local memory and shared memory for every thread, per \gls{sm}. The actual ratio of L1 to shared memory can be configured to 16:48 and 48:16 or 32:32 in newer architectures. This allocation is configured per kernel, however a \gls{sm} cannot manage warps with different configurations simultaneously, whereas the L2 cache size may vary between 256KB-2048KB relative to the host devices age and purpose and is shared by all \glspl{sm}. If shared memory cannot be allocated for a warp on an \gls{sm}, the warp will wait to be allocated. When more local/shared memory is allocated than is available, their memory writes are deferred to L2 cache and potentially even global memory. Global memory has a latency 100x that of the L1 cache, therefore large quantities of register spilling can become a significant overhead. 
+
+        When purely trying to increase occupancy, register spilling is quite a realistic risk --- typically occupancy above 50\% does not translate to increased speed-up. Using the \gls{cuda} compiler (\gls{nvcc}) option \lstinline!-Xptxas -v, -abi=no! will print the number of bytes of local memory used by each kernel, providing better information for partitioning kernels. The \gls{cuda} profiler contains several counters that can aide in identifying register spilling \cite{PM11}.
+        
+        \note{correctly explain bank conflicts.}
+        Similarly, when using shared-memory it is important to reduce bank conflicts, by preventing multiple threads from accessing the same shared memory locations concurrently, as this will cause their requests to be serialised.
+
+        %\note{cite the CUDA dev blog here?}
+        As referred to in section \ref{sub:NVIDIA-GPU-Architecture} the memory bus width is the number of contiguous bits accessed per read/write operation to DRAM. For this reason it becomes necessary to layout large collections of data as a \gls{soa} rather than a \gls{aos}. This layout ensures that neighbouring threads, accessing the same member of a struct specific to the thread, are accessing contiguously stored data. Reading/writing data in this format, is considered a coalesced read/write operation and the resulting global memory bandwidth occupancy is maximal. \gls{cuda} compute 3.0 and higher devices are slightly less affected by this optimisation, due to more advanced striding, however it is still a worthwhile technique due to it being similarly relevant to \gls{cpu} optimisation.
+
+        When accessing large amounts of read-only data, utilisation of the read-only (texture) cache can provide faster memory reads. Devices prior to \gls{cuda} compute 3.5 are required to manually copy data to texture memory to make use of this cache, 3.5 and later devices will automatically make use of this feature where the compiler detects its suitability. Use of \lstinline[language={C++}]!const! and \lstinline[language={C++}]!__restrict__! qualifiers will assist in compiler detection, and \lstinline[language={C++}]!__ldg()! can be used to force data load via the read-only cache.
+
+        When using (read-only) texture objects, several free operations (implemented with dedicated texture hardware) become available. These functions provide bounds index handing (clamp to bounds or wrap around), interpolation and format conversion. Therefore if reading from data that requires bounds handling or interpolation, use of texture objects can provide efficiency for operations that would otherwise need to be handled manually.
+ \note{missing discussion of cost of data transfer and heterogenous computing}
+    \subsection{Case Study}
+      Gray, Killian et a \cite{GK*13} used \gls{gpu} processing to accelerate four computational finance applications (Black Scholes, Monte-Carlo, Bonds \& Repo) from the library QuantLib. They compared applications speed when: executed serially; executed in parallel on an 8-core \gls{cpu}; executed on a K20 \gls{gpu} when rewritten with \gls{cuda} and \gls{opencl}; executed from generated \gls{gpu} code from the directive based accelerators HMPP and OpenACC. Their results showed that the \gls{gpu} programs executed at over 100 times that of the sequential \gls{cpu} and 10 times the parallel \gls{cpu} code for the Black Scholes algorithm, the speeds of the \gls{gpu} code varied between sources, although there is nothing to suggest each could not be rewritten to achieve similar speed. For the Monte-Carlo program they found, for programs actioning over 5000 samples there was again a speed-up of at least 75 times sequential \gls{cpu} code and 10 times parallel \gls{cpu} code. This increased to 1000 times speed-up against sequential \gls{cpu} code when compared actioning 50,000 samples. Once 500,000 samples was reached however, the speed suddenly dropped off, profiling identifies the cause of this was due to cache misses from the random number generation. Restructuring code to make better use of the cache would likely be capable of alleviating this fall off. The bonds application only managed an 80 times speed-up compared with sequential \gls{cpu} code, this is likely due to the amount of divergent branching within the algorithm.
+
+    \subsection{Alternate HPC Methods}
+      \subsubsection*{Cluster, Grid \& Distributed}
+        A computer cluster is a local collection of connected computers that work together as a single system. Clusters are often deployed as they can provide improved performance, availability and cost over a singular machine of similar specification. A beowulf cluster specifically refers to a cluster assembled from consumer grade computers.
+
+        Grid and distributed computing are the techniques where large groups of computers at different locations (potentially including clusters) work in parallel on the same computational projects. In the case of grid computing, the groups of computers are often owned by various research groups, who each share access with others. In the case of distributed computing, public engagement is often leveraged, encouraging people to install the necessary software on their computers (and even phones), so that idle processing power can benefit research in fields such as medical simulations (Folding \& Home) and \gls{seti} \cite{And04}. Distributed computing marketing often neglects to inform users that use of their `spare' processing power will increase power usage.
+
+        When using computer clusters, it is often the case that due to the cost of the architecture, such a cluster is shared between several research departments or universities. Similar to grid computing this is likely to lead to a schedule system, whereby jobs must be queued, removing potential for real-time applications.
+
+      \subsubsection*{Many Integrated Cores}
+        Similar to \gls{gpu} compute, Intel now offers \gls{mic} architecture supercomputing cards (Xeon Phi), these are a direct competitor to \gls{gpgpu}, consisting of up to 72 cores capable of executing the x86 instruction set. The performance difference between \gls{mic} and \gls{gpu} is negligible, with each performing best in the algorithms their architectures best suit, with \gls{gpu} providing double the bandwidth of \gls{mic} for random data access \cite{TK*13}.
+    \subsection{Summary}
+      This section (\ref{sec:gpgpu}) has shown that among the \gls{hpc} offerings, \glspl{gpu} provide an accessible and alternative to traditional systems, capable of providing upto 10x speed-up vs parallel \gls{cpu} algorithms. Optimisation is important when developing \gls{hpc} applications, of which there are various optimisation techniques specific for \gls{cuda} programming. These techniques range from interlacing instructions, to ensuring memory is accessed appropriately, helping maximise utilisation of the hardwares offering.

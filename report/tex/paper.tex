@@ -1,0 +1,23 @@
+\documentclass[11pt,british,table]{report}
+\input{../tex/preamble}
+\input{../tex/glossary}
+\begin{document}
+\input{../tex/0-preface}
+\input{../tex/1-introduction}
+\input{../tex/2-0-literature}
+\input{../tex/3-workToDate}
+\input{../tex/4-proposal}
+%\input{../tex/5-plan&conclusion}
+%Print glossary before bib
+\printglossary
+\addcontentsline{toc}{chapter}{Glossary}
+%\bibliographystyle{alpha}%This style does not like my NV_KEPLER citation for an unknown reason.
+\bibliographystyle{plain}
+\bibliography{../tex/literature}
+\newpage
+\phantomsection
+\appendix
+\addcontentsline{toc}{chapter}{APPENDICES}
+\input{../tex/A-AAMAS2015}
+\input{../tex/B-DDP}
+\end{document}
