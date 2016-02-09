@@ -16,7 +16,7 @@
   \begin{centering}
     \includegraphics[width=0.6\columnwidth,keepaspectratio]{\string"../resources/hash-perfect\string".pdf}
   \par\end{centering}
-  \protect\caption[A visual representation of a perfect hash table that utilises a secondary offset table.]{\label{fig:hash-chaining}A visual representation of a perfect hash table that utilises linear probing and a secondary offset table.}
+  \protect\caption[A visual representation of a perfect hash table that utilises a secondary offset table.]{\label{fig:hash-perfect}A visual representation of a perfect hash table that utilises linear probing and a secondary offset table.}
 \end{wrapfigure}
       \glsadd{perfect_hash}
       In 2006 Lefebvre \& Hoppe presented a scheme for generating perfect spatial hashes of point-data, capable of maintaining spatial \gls{coherence} \cite{LH06}. Their technique combines two imperfect hash functions and an offset table to provide queries in exactly two memory accesses. The offset table is compacted by the need to only store a single byte for 15-25\% of the number of elements to be stored.
