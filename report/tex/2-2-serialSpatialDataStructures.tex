@@ -71,7 +71,7 @@
       
       BSP trees are the data-structure used in binary spatial partitioning, an algorithm for the recursive subdivision of space by \glspl{hyperplane} into convex subspaces. First published in 1980 by Fuchs et al \cite{FKN80}, BSP trees provide rapid access to the front-to-back ordering of objects within a scene from the perspective of an arbitrary direction. This makes them ideal for rendering, whereby the visibility of faces within a scene must be computed regularly. The binary spatial partitioning algorithm splits entities that cross the partitioning \glspl{hyperplane}, which can cause a BSP tree to have far more nodes than entities present in the original input.
     
-      K-D trees are a binary tree that form a special case of BSP tree. Published by Bentley in 1975 \cite{Ben75}, they are used for organising points in a k-dimensional space. Every non-leaf node acts as an axis-aligned \glspl{hyperplane}, splitting all points below the node on the chosen axis from those above the node. The layers of a k-d tree must cycle through the axis in a continuous order (e.g. x-axis, y-axis, z-axis, x-axis..), such that all nodes at a specific height partition the same axis. Depending on the implementation, points may be stored in all nodes or only leaf nodes.
+      K-D trees are a binary tree that form a special case of BSP tree. Published by Bentley in 1975 \cite{Ben75}, they are used for organising points in a k-dimensional space. Every non-leaf node acts as an axis-aligned \gls{hyperplane}, splitting all points below the node on the chosen axis from those above the node. The layers of a k-d tree must cycle through the axis in a continuous order (e.g. x-axis, y-axis, z-axis, x-axis..), such that all nodes at a specific height partition the same axis. Depending on the implementation, points may be stored in all nodes or only leaf nodes.
       
       The structure of k-d trees makes them efficient for performing nearest-neighbour searches in low dimensional spaces, such as collision calculations. In high dimensional spaces ($n < 2^{k}$ where $n$ is the number of points \& $k$ the number of dimensions) most points will be evaluated during a search.
 \begin{wrapfigure}{O}{0.3\columnwidth}
@@ -80,6 +80,7 @@
   \par\end{centering}
   \protect\caption[A visual representation of region quadtree.]{\label{fig:quadtree}A visual representation of region quadtree. The black outline shows the root node, whose child nodes have a red outline, this continues through orange, green and blue.}
 \end{wrapfigure}
+
       Quadtrees are a tree data-structure in which every parent node has 4 children, most often used for partitioning 2 dimensional space. They were first defined in 1974 by Finkel \& Bentley, as a means for storing information to be retrieved using a composite key \cite{FB74}. Each leaf node holds a bucket, when a bucket reaches capacity it splits, creating 4 children. Quadtrees are capable of storing line, curve and polygonal data, however similarly to BSP trees, this can cause the data to require subdivision.
       
       The most recognisable form of quadtree is that of a region quadtree (Figure \ref{fig:quadtree}), whereby partitioning creates 4 nodes of equal volume. Region quadtrees are often used for representing variable resolution data. The point quadtree is used to represent 2 dimensional point data and requires that a point lie at the center of each subdivision.
@@ -108,7 +109,7 @@
         \begin{itemize}
           \item{Case 1: If the current node is the root node, it is repainted black.}
           \item{Case 2: If the current node's parent is black, no further action is required.}
-          \item{Case 3: If the current node's parent and uncle\footnote{In this context \textit{uncle} refers to the sibling of the parent.} are black, the parent and uncle are repainted black and the grandparent is repainted red. The grandparent node must now be tested against the same insertion cases.}
+          \item{Case 3: If the current node's parent and uncle\footnote{In this context \textit{uncle} refers to the sibling of the parent.} are red, the parent and uncle are repainted black and the grandparent is repainted red. The grandparent node must now be tested against the same insertion cases.}
           \item{Case 4: If the current node's parent is red, but the uncle is black and the current node is not the same side child as the parent (e.g. parent is left child, node is right child), the parent is rotated to correct this, making the parent the new child of node. Then case 5 is tested.}
           \item{Case 5: If the parent is red, but the uncle is black, the grandparent is repainted red, the parent repainted black and the grandparent is rotated in the direction of the uncle (if the uncle is the right child, rotate right). }
         \end{itemize}

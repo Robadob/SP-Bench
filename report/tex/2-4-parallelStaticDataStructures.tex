@@ -3,9 +3,9 @@
   
   The most obvious of these nuances is that of arbitration when concurrent threads wish to access the same resource. In multi-threaded \gls{cpu} systems this is usually synchronised via locking protocols such as MUTEX, whereby a thread must wait to acquire a lock to a resource before accessing it. Other solutions make use of \gls{atomic} operations, whereby a limited set of thread-safe operations are  serialised to avoid potential \glspl{race_condition}.
   
-  Rendering and animation make use of parallel data-structures on \gls{gpu} hardware for handling collision and decomposing scenes. Further afield \gls{gis} software makes uses of large databases of spatial data.
+  Rendering and animation make use of parallel data-structures on \gls{gpu} hardware for handling collision and decomposing scenes. Further afield \gls{gis} software makes use of large databases of spatial data.
   
-  The following subsections discuss some of these existing spatial data-structure which have been implemented for parallel architectures. Whilst these data-structures are not all suitable for providing neighbourhood searches that this thesis is concerned with, it is important to provide an awareness of the techniques that have been used.
+  The following subsections discuss some of these existing spatial data-structures which have been implemented for parallel architectures. Whilst these data-structures are not all suitable for providing neighbourhood searches that this thesis is concerned with, it is important to provide an awareness of the techniques that have been used.
   
   \subsection{Hashing\label{subsec:parallel-hash}}
     Hashing structures are a powerful data-structure for memory-bounded algorithms, their almost direct access to elements can provide an advantage over many ordered structures. There hasn't been a huge amount of work around the use of parallel hashing systems outside of small-scale thread-safe \gls{cpu} targeted code (e.g. Java's synchronised \lstinline[language={Java}]!Hashtable! type), however below are details of techniques that have been used and how they handle arbitration.
