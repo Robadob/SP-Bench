@@ -27,11 +27,13 @@
   %GPGPU has removed some of these constraints by providing highly parallel
   The introduction of general purpose programming of \glspl{gpu} in 2001 provided a new boost to the modelling of complex systems. This enhanced the intuitive serial operations of traditional processors (\glspl{cpu}) by allowing parallel operations to be off-loaded to highly scalable \glspl{gpu}. The hierarchical structure of actors within complex systems is ideal for parallel computation, and, as such, the performance of most complex system models can be improved when rewritten to target GPUs.
   
+  \note{(above sentence) What makes a system suitable for a parallel architecture, and how does this also apply to GPUs. (e.g. data-parallel etc).}
   %GPGPU does however introduce further challenges
   Developing parallel algorithms for use with GPUs is however more challenging than simply dividing the algorithm between the available threads. Similarly, when working with multi-dimensional data, this can be further complicated. Furthermore the hardware architecture of GPUs must be accounted for when designing algorithms, as many performance critical features differ from those present in \glspl{cpu}.
   
   %Luckily there have also been tools created, these can help development of simple models
   There are now many frameworks that reduce the skills required to implement models of complex systems, although these primarily target \glspl{cpu} with a minority capable of utilising GPUs (e.g. FLAMEGPU \cite{RR11}). The simpler a model and the targeted architecture, the easier it is to decompose into a format suitable for these frameworks. However with this simplification there comes a loss of efficiency, as generalisation is prioritised over precise solutions. This is particularly apparent when we consider the spatial data-structures required by many complex simulations, which is the focus of this PhD.
+  \note{Provide more detail in the above paragraph, re:generalisation often loses efficiency.}
   
   %Many complex systems however contains mobile spatial agents, these are complex so have remained overlooked (by the above tools)
   Many complex systems contain mobile spatial actors that are influenced by their neighbours whether they are particles, people, vehicles or planets. The performance of the data-structures used to manage this dynamic spatial data often remains overlooked.
@@ -50,9 +52,9 @@
  
 %\clearpage%Save having half a sentence on the bottom of 1 page
   \section{Research Objectives}
-    The question this research aims to answer is: What techniques can be used for improving neighbourhood searches of spatial data during \gls{gpgpu} computation? 
+    The question this research aims to answer is: What techniques can be used for improving the performance of neighbourhood searches of spatial data in a data-parallel paradigm and during \gls{gpgpu} computation? 
 
-    The primary objective of this research is to provide a general implementation of a data structure capable of handling dynamic spatial data requiring neighbourhood accesses. This implementation should allow others to more easily and more significantly improve the performance of any \gls{gpgpu} applications working with dynamic spatial data. Following a general implementation, domain specific implementations of should be produced, to further increase performance in select use-cases.
+    The primary objective of this research is to provide a general implementation of a data structure capable of handling dynamic spatial data requiring neighbourhood accesses. This implementation should allow others to more easily and more significantly improve the performance of any \gls{gpgpu} applications working with dynamic spatial data. Following a general implementation, domain specific implementations should be produced, to further increase performance in select use-cases.
 
     Secondary objectives that will assist in the completion of the primary objective are:
     \begin{itemize}

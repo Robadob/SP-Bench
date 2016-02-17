@@ -41,7 +41,7 @@ void main(){
 	color = (cos_angle>0.86)?vec3(1,0,0):vec3(0,1,0);
 }
 \end{lstlisting}
-\protect\caption{\label{fig:slice-shader}Fragment shader for detecting walkable fragments.}
+\protect\caption[Fragment shader for detecting walkable fragments.]{\label{fig:slice-shader}Fragment shader for detecting walkable fragments. The derivatives of the interpolated fragment location (u_normal) are used to calculate the face normal (faceNorm) of the fragment. The angle between this face normal and the up vector (upNorm) is then used to decide whether a fragment is walkable. The result of this is then output by setting the fragments colour.}
 \end{algorithm}
 
       Subsequently the processing of rendered textures must be updated so that voxels are marked as walkable or not walkable instead of active. After the map of walkable voxels has been completed, it is processed to mark occluded walkable voxels as not walkable. A walkable voxel is found to be unwalkable if another active voxel is within the 10 voxels directly above. Within a real-world model, this value would be adjusted to the scale of a human height [Fig. \ref{fig:step-3}].
