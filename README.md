@@ -2,7 +2,11 @@
 Spatial Partitioning Benchmark Suite
 
 ##Code
-The `code` directory contains the Visual Studio 2013 solution required building and executing the suite of benchmarks developed against the various spatial partitioning implementations. The CUDA Toolkit 7.5 has been used during development.
+The `code` directory contains the Visual Studio 2013 solution required building and executing the suite of benchmarks developed against the various spatial partitioning implementations. 
+
+###Dependencies
+* [CUDA Toolkit 7.5](https://developer.nvidia.com/cuda-toolkit)
+* [GLM](http://glm.g-truc.net/)(Included in repo)
 
 ##Report
 The `report` directory contains the necessary LaTeX and graphical resources (and windows batch files) to build the report as a pdf file. This will be output to the report directory as `paper.pdf`.
