@@ -4,7 +4,6 @@
 //Include me in every.cu file
 #ifndef __header_cuh_
 #define __header_cuh_
-
 #include <stdio.h>
 
 #include <cuda.h>

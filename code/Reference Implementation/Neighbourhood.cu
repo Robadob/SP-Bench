@@ -1,5 +1,6 @@
 #include "Neighbourhood.cuh"
-#include "NeighbourhoodKernels.cu"
+#include "NeighbourhoodKernels.cuh"
+#include "NeighbourhoodConstants.cuh"
 #ifndef THRUST
 #include <cub\cub.cuh>
 #else
@@ -55,10 +56,6 @@ SpatialPartition::~SpatialPartition()
 #ifndef THRUST
     deviceDeallocatePrimitives(d_keys_swap, d_vals_swap);
 #endif
-
-
-    //Unset device constants (?)
-
 }
 void SpatialPartition::deviceAllocateLocationMessages(LocationMessages **d_locMessage)
 {
@@ -85,7 +82,54 @@ void SpatialPartition::deviceAllocatePrimitives(unsigned int **d_keys, unsigned 
     CUDA_CALL(cudaMalloc(d_keys, sizeof(unsigned int)*binCount));
     CUDA_CALL(cudaMalloc(d_vals, sizeof(unsigned int)*binCount));
 }
+void SpatialPartition::deviceAllocateTextures()
+{
+    float *d_bufferPtr;
+    //Potentially refactor so we store/swap these pointers on host in syncrhonisation
+    CUDA_CALL(cudaMemcpy(&d_bufferPtr, d_locationMessages->locationX, sizeof(float*), cudaMemcpyDeviceToHost));
+    deviceAllocateTexture_float(&tex_locationX, d_bufferPtr, locationMessageCount);
+    CUDA_CALL(cudaMemcpy(&d_bufferPtr, d_locationMessages->locationY, sizeof(float*), cudaMemcpyDeviceToHost));
+    deviceAllocateTexture_float(&tex_locationY, d_bufferPtr, locationMessageCount);
+#ifdef _3D
+    CUDA_CALL(cudaMemcpy(&d_bufferPtr, d_locationMessages->locationZ, sizeof(float*), cudaMemcpyDeviceToHost));
+    deviceAllocateTexture_float(&tex_locationZ, d_bufferPtr, locationMessageCount);
+#endif
+    //PBM
+    deviceAllocateTexture_int(&tex_PBM, d_PBM, getBinCount());
+}
 
+void SpatialPartition::deviceAllocateTexture_float(cudaTextureObject_t *tex, float* d_data, const int size)
+{
+    cudaResourceDesc resDesc;
+    memset(&resDesc, 0, sizeof(cudaResourceDesc));
+    resDesc.resType = cudaResourceTypeLinear;
+    resDesc.res.linear.devPtr = d_data;
+    resDesc.res.linear.desc.f = cudaChannelFormatKindFloat;
+    resDesc.res.linear.desc.x = 32; // bits per channel
+    resDesc.res.linear.sizeInBytes = size*sizeof(float);
+
+    cudaTextureDesc texDesc;
+    memset(&texDesc, 0, sizeof(cudaTextureDesc));
+    texDesc.readMode = cudaReadModeElementType;
+
+    cudaCreateTextureObject(tex, &resDesc, &texDesc, NULL);
+}
+void SpatialPartition::deviceAllocateTexture_int(cudaTextureObject_t *tex, unsigned int* d_data, const int size)
+{
+    cudaResourceDesc resDesc;
+    memset(&resDesc, 0, sizeof(cudaResourceDesc));
+    resDesc.resType = cudaResourceTypeLinear;
+    resDesc.res.linear.devPtr = d_data;
+    resDesc.res.linear.desc.f = cudaChannelFormatKindUnsigned;
+    resDesc.res.linear.desc.x = 32; // bits per channel
+    resDesc.res.linear.sizeInBytes = size*sizeof(unsigned int);
+
+    cudaTextureDesc texDesc;
+    memset(&texDesc, 0, sizeof(cudaTextureDesc));
+    texDesc.readMode = cudaReadModeElementType;
+
+    cudaCreateTextureObject(tex, &resDesc, &texDesc, NULL);
+}
 void SpatialPartition::deviceDeallocateLocationMessages(LocationMessages *d_locMessage)
 {
     float *d_loc_temp;
@@ -108,6 +152,16 @@ void SpatialPartition::deviceDeallocatePrimitives(unsigned int *d_keys, unsigned
     CUDA_CALL(cudaFree(d_keys));
     CUDA_CALL(cudaFree(d_vals));
 }
+void SpatialPartition::deviceDeallocateTextures()
+{
+    cudaDestroyTextureObject(tex_locationX);
+    cudaDestroyTextureObject(tex_locationY);
+#ifdef _3D
+    cudaDestroyTextureObject(tex_locationZ);
+#endif
+    cudaDestroyTextureObject(tex_PBM);
+}
+
 unsigned int SpatialPartition::getBinCount()
 {
     return (unsigned int)glm::compMul((environmentMax - environmentMin) / neighbourRad);
@@ -152,6 +206,9 @@ void SpatialPartition::launchReorderLocationMessages()
 }
 void SpatialPartition::buildPBM()
 {
+    //Clear previous textures
+    deviceDeallocateTextures();
+
     //If no messages, or instances, don't bother
     if (locationMessageCount<1) return;
     //Fill primitive key/val arrays for sort
@@ -177,6 +234,9 @@ void SpatialPartition::buildPBM()
     d_vals_swap = temp;
     //Free temporary memory
     cudaFree(d_temp_storage);
+
+    //Clone data to textures ready for neighbourhood search
+    deviceAllocateTextures();
 #else
     //Thrust version
     //cudaStream_t s1;
@@ -194,7 +254,6 @@ void SpatialPartition::buildPBM()
     unsigned int binCount = getBinCount(); 
     CUDA_CALL(cudaMemset(d_PBM, 0x00000000, binCount * sizeof(unsigned int)));
     launchReorderLocationMessages();
-
 }
 
 
@@ -240,111 +299,7 @@ void SpatialPartition::buildPBM()
 //#endif
 //    ////Pbm ones
 //    texture<int, 1, cudaReadModeElementType> tex_pbm_start;
-//    __device__ int messageCount()
-//    {
-//        return MESSAGE_COUNT__;
-//    }
-//    void updateDMessageCount()
-//    {
-//        CUDA_CALL(cudaMemcpyToSymbol(MESSAGE_COUNT__, &h_messageCount, sizeof(int)));
-//    }
-//    __global__ void hashLocationMessages(uint* keys, uint* vals, LocationMessageList* message_buffer)
-//    {
-//        int index = __mul24(blockIdx.x, blockDim.x) + threadIdx.x;
-//        //Kill excess threads
-//        if (index >= MESSAGE_COUNT__) return;
-//        float3 worldPos = make_float3(
-//            message_buffer->position_x[index],
-//            message_buffer->position_y[index],
-//            message_buffer->position_z[index]
-//            );
-//        int3 gridPos = CollisionCore::getGridPosition(worldPos);
-//        uint hash = CollisionCore::getHash(gridPos);
-//        keys[index] = hash;
-//        vals[index] = index;
-//    }
-//    __global__ void reorder_messages(uint* keys, uint* vals, PartitionBoundaryMatrix* pbm, LocationMessageList *unordered_messages, LocationMessageList *ordered_messages)
-//    {
-//        extern __shared__ int sm_data[];
 //
-//        int index = __mul24(blockIdx.x, blockDim.x) + threadIdx.x;
-//
-//        uint key;
-//        uint old_pos;
-//        if (index < MESSAGE_COUNT__)
-//        {//Don't go out of bounds when buffer is at max capacity
-//            key = keys[index];
-//            old_pos = vals[index];
-//            //Every valid thread put hash into shared memory
-//            sm_data[threadIdx.x] = key;
-//        }
-//        __syncthreads();
-//        //Kill excess threads
-//        if (index >= MESSAGE_COUNT__) return;
-//
-//        uint prev_key;
-//        //If thread 0, no prev in warp, goto global
-//        if (threadIdx.x == 0)
-//        {
-//            //Skip if first thread of all
-//            if (index != 0)
-//                prev_key = keys[index - 1];
-//        }
-//        else
-//        {
-//            prev_key = sm_data[threadIdx.x - 1];
-//        }
-//        //Set partition boundaries
-//        if (index < MESSAGE_COUNT__)
-//        {
-//            if (index == 0)
-//            {//First message, set first bin start
-//                pbm->start[key] = index;
-//            }
-//            else if (prev_key != key)
-//            {//Boundary message, update start and ends of boundary
-//                pbm->start[key] = index;
-//                pbm->end[prev_key] = index;
-//            }
-//            if (index == (MESSAGE_COUNT__ - 1))
-//            {//Last message, set last bin end
-//                pbm->end[key] = index + 1;
-//            }
-//        }
-//        //Order messages into swap space
-//        ordered_messages->position_x[index] = unordered_messages->position_x[old_pos];
-//        ordered_messages->position_y[index] = unordered_messages->position_y[old_pos];
-//        ordered_messages->position_z[index] = unordered_messages->position_z[old_pos];
-//        ordered_messages->bounding_radius[index] = unordered_messages->bounding_radius[old_pos];
-//        ordered_messages->ent_id[index] = unordered_messages->ent_id[old_pos];
-//        ordered_messages->team[index] = unordered_messages->team[old_pos];
-//    }
-//    //Private Device Kernels
-//    __device__ int3 getGridPosition(float3 worldPos)
-//    {
-//        int3 gridPos; gridPos.x = floor(GRID_DIMENSIONS__.x * (worldPos.x - WORLD_X_MIN) / (WORLD_X_MAX - WORLD_X_MIN));
-//        gridPos.y = floor(GRID_DIMENSIONS__.y * (worldPos.y - WORLD_Y_MIN) / (WORLD_Y_MAX - WORLD_Y_MIN));
-//        gridPos.z = floor(GRID_DIMENSIONS__.z * (worldPos.z - WORLD_Z_MIN) / (WORLD_Z_MAX - WORLD_Z_MIN));
-//
-//        return gridPos;
-//
-//    }
-//    __device__ int getHash(int3 gridPos)
-//    {
-//        //Bound gridPos to gridDimensions
-//        //Cheaper to bound without mod
-//        gridPos.x = (gridPos.x<0) ? GRID_DIMENSIONS__.x - 1 : gridPos.x;
-//        gridPos.x = (gridPos.x >= GRID_DIMENSIONS__.x) ? 0 : gridPos.x;
-//        gridPos.y = (gridPos.y<0) ? GRID_DIMENSIONS__.y - 1 : gridPos.y;
-//        gridPos.y = (gridPos.y >= GRID_DIMENSIONS__.y) ? 0 : gridPos.y;
-//        gridPos.z = (gridPos.z<0) ? GRID_DIMENSIONS__.z - 1 : gridPos.z;
-//        gridPos.z = (gridPos.z >= GRID_DIMENSIONS__.z) ? 0 : gridPos.z;
-//
-//        //Compute hash (effectivley an index for to a bin within the partitioning grid in this case)
-//        return __umul24(__umul24(gridPos.z, GRID_DIMENSIONS__.y), GRID_DIMENSIONS__.x)	//z
-//            + __umul24(gridPos.y, GRID_DIMENSIONS__.x)								//y
-//            + gridPos.x;															//x
-//    }
 //    __device__ bool loadNextLocationMessage(int3 relative_bin, uint bin_index_max, int3 central_bin, int bin_index)
 //    {
 //        extern __shared__ int sm_data[];

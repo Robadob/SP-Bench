@@ -5,19 +5,19 @@ __device__ glm::ivec3 getGridPosition(glm::vec3 worldPos)
 __device__ glm::ivec2 getGridPosition(glm::vec2 worldPos)
 #endif
 {
-    return floor((worldPos-d_environmentMin)/(d_environmentMax-d_environmentMin));
-//#ifdef _3D
-//    glm::ivec3 gridPos;
-//#else
-//    glm::ivec2 gridPos;
-//#endif
-//    gridPos.x = floor(d_gridDim.x * (worldPos.x - d_environmentMin.x) / (d_environmentMax.x - d_environmentMin.x));
-//    gridPos.y = floor(d_gridDim.y * (worldPos.y - d_environmentMin.y) / (d_environmentMax.y - d_environmentMin.y));
-//#ifdef _3D
-//    gridPos.z = floor(d_gridDim.z * (worldPos.z - d_environmentMin.z) / (d_environmentMax.z - d_environmentMin.z));
-//#endif
-//
-//    return gridPos;
+    return floor((worldPos - d_environmentMin) / (d_environmentMax - d_environmentMin));
+    //#ifdef _3D
+    //    glm::ivec3 gridPos;
+    //#else
+    //    glm::ivec2 gridPos;
+    //#endif
+    //    gridPos.x = floor(d_gridDim.x * (worldPos.x - d_environmentMin.x) / (d_environmentMax.x - d_environmentMin.x));
+    //    gridPos.y = floor(d_gridDim.y * (worldPos.y - d_environmentMin.y) / (d_environmentMax.y - d_environmentMin.y));
+    //#ifdef _3D
+    //    gridPos.z = floor(d_gridDim.z * (worldPos.z - d_environmentMin.z) / (d_environmentMax.z - d_environmentMin.z));
+    //#endif
+    //
+    //    return gridPos;
 }
 #ifdef _3D
 __device__ int getHash(glm::ivec3 gridPos)
@@ -56,25 +56,25 @@ __global__ void hashLocationMessages(unsigned int* keys, unsigned int* vals, Loc
     glm::ivec2 gridPos;
     glm::vec2 worldPos(
 #endif
-         messageBuffer->locationX[index]
-        ,messageBuffer->locationY[index]
+        messageBuffer->locationX[index]
+        , messageBuffer->locationY[index]
 #ifdef _3D
-        ,messageBuffer->locationZ[index]
+        , messageBuffer->locationZ[index]
 #endif
         );
-        gridPos = getGridPosition(worldPos);
-        unsigned int hash = getHash(gridPos);
-        keys[index] = hash;
-        vals[index] = index;
+    gridPos = getGridPosition(worldPos);
+    unsigned int hash = getHash(gridPos);
+    keys[index] = hash;
+    vals[index] = index;
 }
 
 //For-each location message in memory
 //Check whether preceding key is the same
 __global__ void reorderLocationMessages(
-    unsigned int *keys, 
-    unsigned int *vals, 
-    unsigned int *pbm, 
-    LocationMessages *unordered_messages, 
+    unsigned int *keys,
+    unsigned int *vals,
+    unsigned int *pbm,
+    LocationMessages *unordered_messages,
     LocationMessages *ordered_messages
     )
 {
@@ -97,7 +97,7 @@ __global__ void reorderLocationMessages(
     if (index >= d_locationMessageCount) return;
 
     //Load previous key
-    unsigned int prev_key=0;
+    unsigned int prev_key = 0;
     //If thread 0, no prev in warp, goto global
     if (threadIdx.x == 0)
     {
@@ -118,7 +118,7 @@ __global__ void reorderLocationMessages(
     //else 
     if (prev_key != key)
     {//Boundary message, update (//start and) ends of boundary
-    //    pbm->start[key] = index;
+        //    pbm->start[key] = index;
         pbm[prev_key] = index;
     }
     if (index == (d_locationMessageCount - 1))
@@ -128,8 +128,9 @@ __global__ void reorderLocationMessages(
 
     //Order messages into swap space
     ordered_messages->locationX[index] = unordered_messages->locationX[old_pos];
-    ordered_messages->locationY[index] = unordered_messages->locationY[old_pos]; 
+    ordered_messages->locationY[index] = unordered_messages->locationY[old_pos];
 #ifdef _3D
     ordered_messages->locationZ[index] = unordered_messages->locationZ[old_pos];
 #endif
 }
+

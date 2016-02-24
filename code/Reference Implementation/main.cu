@@ -2,6 +2,22 @@
 //#include <cuda_runtime.h>
 //#include <device_launch_parameters.h>
 
+__global__ void initLocations(
+    LocationMessages *messages
+    )
+{
+
+    int index = __mul24(blockIdx.x, blockDim.x) + threadIdx.x;
+
+    if (index >= d_locationMessageCount) return;
+
+    //messages->locationX[index] = ;
+   // messages->locationY[index] = ;
+#ifdef _3D
+   // messages->locationZ[index] = ;
+#endif
+}
+
 
 int main()
 {

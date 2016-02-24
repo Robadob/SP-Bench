@@ -6,14 +6,49 @@
 #define GLM_FORCE_NO_CTOR_INIT
 #include "glm/glm.hpp"
 #include "glm/gtx/component_wise.hpp"
+/**
+ * Structure used to maintain search state in each thread during neigbourhood search
+**/
+struct SearchState
+{
 
+};
+/**
+ * Structure data is returned in when performing neighbour search
+**/
+struct LocationMessage
+{
+#ifdef _3D
+    glm::vec3 location;
+#else
+    glm::vec2 location;
+#endif
+};
 struct LocationMessages
 {
     float *locationX;
     float *locationY;
 #ifdef _3D
     float *locationZ;
+    __device__ LocationMessage *neighbours(glm::vec3 location, SearchState* state = 0)
+    {
+        return neighbours(location.x, location.y, location.z, state);
+    }
+#else
+    __device__ LocationMessage *neighbours(glm::vec3 location, SearchState* state = 0)
+    {
+        return neighbours(location.x, location.y, location.z, state);
+    }
+    __device__ LocationMessage *neighbours(float locX, float locY, SearchState* state = 0)
 #endif
+#ifdef _3D
+    __device__ LocationMessage *neighbours(float locX, float locY, float locZ, SearchState* state = 0)
+#endif
+    {
+        //Do some kind of neighbour search
+        //float x = tex1Dfetch(tex, i);
+        return 0;
+    }
 };
 
 class SpatialPartition
@@ -40,10 +75,15 @@ private:
     void deviceAllocateLocationMessages(LocationMessages **d_locMessage);
     void deviceAllocatePBM(unsigned int **d_PBM_t);
     void deviceAllocatePrimitives(unsigned int **d_keys, unsigned int **d_vals);
+    void deviceAllocateTextures();
+    void deviceAllocateTexture_float(cudaTextureObject_t *tex, float* d_data, const int size);
+    void deviceAllocateTexture_int(cudaTextureObject_t *tex, unsigned int* d_data, const int size);
     //Deallocators
     void deviceDeallocateLocationMessages(LocationMessages *d_locMessage);
     void deviceDeallocatePBM(unsigned int *d_PBM_t);
     void deviceDeallocatePrimitives(unsigned int *d_keys, unsigned int *d_vals);
+    void deviceDeallocateTextures();
+
     unsigned int getBinCount();//(ceil((X_MAX-X_MIN)/SEARCH_RADIUS)*ceil((Y_MAX-Y_MIN)/SEARCH_RADIUS)*ceil((Z_MAX-Z_MIN)/SEARCH_RADIUS))
     unsigned int maxAgents;
     float neighbourRad;
@@ -72,18 +112,25 @@ private:
     const glm::vec2  environmentMin;
     const glm::vec2  environmentMax;
 #endif
+    //Textures
+    cudaTextureObject_t tex_locationX;
+    cudaTextureObject_t tex_locationY;
+#ifdef _3D
+    cudaTextureObject_t tex_locationZ;
+#endif
+    cudaTextureObject_t tex_PBM;
 };
 
 //Device constants
-__device__ __constant__ unsigned int d_locationMessageCount;
+extern __device__ __constant__ unsigned int d_locationMessageCount;
 #ifdef _3D
-__device__ __constant__ glm::ivec3 d_gridDim;
-__device__ __constant__ glm::vec3  d_environmentMin;
-__device__ __constant__ glm::vec3  d_environmentMax;
+extern __device__ __constant__ glm::ivec3 d_gridDim;
+extern __device__ __constant__ glm::vec3  d_environmentMin;
+extern __device__ __constant__ glm::vec3  d_environmentMax;
 #else
-__device__ __constant__ glm::ivec2 d_gridDim;
-__device__ __constant__ glm::vec2  d_environmentMin;
-__device__ __constant__ glm::vec2  d_environmentMax;
+extern __device__ __constant__ glm::ivec2 d_gridDim;
+extern __device__ __constant__ glm::vec2  d_environmentMin;
+extern __device__ __constant__ glm::vec2  d_environmentMax;
 #endif
 //
 ///**
