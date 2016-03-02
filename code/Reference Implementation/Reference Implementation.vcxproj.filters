@@ -3,23 +3,24 @@
   <ItemGroup>
     <CudaCompile Include="main.cu" />
     <CudaCompile Include="Neighbourhood.cu" />
+    <CudaCompile Include="NeighbourhoodKernels.cu" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Neighbourhood.cuh">
-      <Filter>NewFilter1</Filter>
+      <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="header.cuh">
-      <Filter>NewFilter1</Filter>
+      <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="NeighbourhoodConstants.cuh">
-      <Filter>NewFilter1</Filter>
+      <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="NeighbourhoodKernels.cuh">
-      <Filter>NewFilter1</Filter>
+      <Filter>Headers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Filter Include="NewFilter1">
+    <Filter Include="Headers">
       <UniqueIdentifier>{9452aa1b-93c3-4ffb-935c-5551020b0151}</UniqueIdentifier>
     </Filter>
   </ItemGroup>

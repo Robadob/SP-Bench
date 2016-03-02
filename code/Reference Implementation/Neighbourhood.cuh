@@ -6,51 +6,59 @@
 #define GLM_FORCE_NO_CTOR_INIT
 #include "glm/glm.hpp"
 #include "glm/gtx/component_wise.hpp"
-/**
- * Structure used to maintain search state in each thread during neigbourhood search
-**/
-struct SearchState
-{
 
+//#include "NeighbourhoodKernels.cuh"
+
+/**
+* Structure used to maintain search state in each thread during neigbourhood search
+**/
+struct BinState
+{
+#ifdef _3D
+    glm::ivec2 relative;
+    glm::ivec3 location;
+#else
+    int relative;
+    glm::vec2 location;
+#endif
+    unsigned int binIndexMax;//Last pbm index
+    unsigned int binIndex;//Current loaded message pbm index
 };
+
 /**
  * Structure data is returned in when performing neighbour search
 **/
 struct LocationMessage
 {
+    BinState state;
 #ifdef _3D
     glm::vec3 location;
 #else
     glm::vec2 location;
 #endif
 };
+
+
 struct LocationMessages
 {
+public:
     float *locationX;
     float *locationY;
 #ifdef _3D
     float *locationZ;
-    __device__ LocationMessage *neighbours(glm::vec3 location, SearchState* state = 0)
-    {
-        return neighbours(location.x, location.y, location.z, state);
-    }
+    __device__ LocationMessage *getFirstNeighbour(glm::vec3 location);
 #else
-    __device__ LocationMessage *neighbours(glm::vec3 location, SearchState* state = 0)
-    {
-        return neighbours(location.x, location.y, location.z, state);
-    }
-    __device__ LocationMessage *neighbours(float locX, float locY, SearchState* state = 0)
+    __device__ LocationMessage *getFirstNeighbour(glm::vec2 location);
 #endif
-#ifdef _3D
-    __device__ LocationMessage *neighbours(float locX, float locY, float locZ, SearchState* state = 0)
-#endif
-    {
-        //Do some kind of neighbour search
-        //float x = tex1Dfetch(tex, i);
-        return 0;
-    }
-};
 
+    __device__ LocationMessage *getNextNeighbourbour(LocationMessage *message);
+
+private:
+    __device__ bool nextBin();
+    //Load the next desired message into shared memory
+    __device__ LocationMessage *loadNextMessage();
+
+};
 class SpatialPartition
 {
 public:
@@ -76,8 +84,8 @@ private:
     void deviceAllocatePBM(unsigned int **d_PBM_t);
     void deviceAllocatePrimitives(unsigned int **d_keys, unsigned int **d_vals);
     void deviceAllocateTextures();
-    void deviceAllocateTexture_float(cudaTextureObject_t *tex, float* d_data, const int size);
-    void deviceAllocateTexture_int(cudaTextureObject_t *tex, unsigned int* d_data, const int size);
+    void deviceAllocateTexture_float(cudaTextureObject_t *tex, float* d_data, const int size, cudaTextureObject_t *d_const);
+    void deviceAllocateTexture_int(cudaTextureObject_t *tex, unsigned int* d_data, const int size, cudaTextureObject_t *d_const);
     //Deallocators
     void deviceDeallocateLocationMessages(LocationMessages *d_locMessage);
     void deviceDeallocatePBM(unsigned int *d_PBM_t);
@@ -132,6 +140,12 @@ extern __device__ __constant__ glm::ivec2 d_gridDim;
 extern __device__ __constant__ glm::vec2  d_environmentMin;
 extern __device__ __constant__ glm::vec2  d_environmentMax;
 #endif
+extern __device__ __constant__ cudaTextureObject_t d_tex_locationX;
+extern __device__ __constant__ cudaTextureObject_t d_tex_locationY;
+#ifdef _3D
+extern __device__ __constant__ cudaTextureObject_t d_tex_locationZ;
+#endif
+extern __device__ __constant__ cudaTextureObject_t d_tex_PBM;
 //
 ///**
 //* PARTITION_GRID_BIN_COUNT *MUST* be manually calculated if the above #defines are changed
