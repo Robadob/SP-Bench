@@ -4,6 +4,7 @@
     <CudaCompile Include="main.cu" />
     <CudaCompile Include="Neighbourhood.cu" />
     <CudaCompile Include="NeighbourhoodKernels.cu" />
+    <CudaCompile Include="Circles.cu" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Neighbourhood.cuh">
@@ -16,6 +17,9 @@
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="NeighbourhoodKernels.cuh">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Circles.cuh">
       <Filter>Headers</Filter>
     </ClInclude>
   </ItemGroup>

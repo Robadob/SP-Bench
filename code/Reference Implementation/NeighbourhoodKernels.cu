@@ -1,10 +1,6 @@
 #include "NeighbourhoodKernels.cuh"
 #include "Neighbourhood.cuh"
-__device__ bool getNextBin(glm::ivec3 *relative)
-{
 
-    return false;
-}
 #ifdef _3D
 __device__ glm::ivec3 getGridPosition(glm::vec3 worldPos)
 #else
@@ -45,14 +41,14 @@ __device__ int getHash(glm::ivec2 gridPos)
     //Compute hash (effectivley an index for to a bin within the partitioning grid in this case)
     return
 #ifdef _3D
-        __umul24(__umul24(gridPos.z, d_gridDim.y), d_gridDim.x) +   //z
+        (gridPos.z * d_gridDim.y * d_gridDim.x) +   //z
 #endif
-        __umul24(gridPos.y, d_gridDim.x) +						    //y
+        (gridPos.y * d_gridDim.x) +						    //y
         gridPos.x; 	                                                //x
 }
 __global__ void hashLocationMessages(unsigned int* keys, unsigned int* vals, LocationMessages* messageBuffer)
 {
-    int index = __mul24(blockIdx.x, blockDim.x) + threadIdx.x;
+    int index = (blockIdx.x * blockDim.x) + threadIdx.x;
     //Kill excess threads
     if (index >= d_locationMessageCount) return;
 #ifdef _3D
@@ -86,7 +82,7 @@ __global__ void reorderLocationMessages(
 {
     extern __shared__ int sm_data[];
 
-    int index = __mul24(blockIdx.x, blockDim.x) + threadIdx.x;
+    int index = (blockIdx.x * blockDim.x) + threadIdx.x;
 
     //Load current key and copy it into shared
     unsigned int key;
@@ -216,7 +212,7 @@ __device__ LocationMessage *LocationMessages::loadNextMessage()
             int next_bin_last_hash = next_bin_first_hash + 2;//Strips are length 3
             //use the hash to calculate the start index
             sm_message->state.binIndex = tex1Dfetch<unsigned int>(d_tex_PBM, next_bin_first_hash - 1);
-            sm_message->state.binIndexMax = 0;// tex1Dfetch(tex_PBM, next_bin_last_hash);
+            sm_message->state.binIndexMax = tex1Dfetch<unsigned int>(d_tex_PBM, next_bin_last_hash);
 
             if (sm_message->state.binIndex < sm_message->state.binIndexMax)//(bin_index_min != 0xffffffff)
             {
@@ -231,10 +227,10 @@ __device__ LocationMessage *LocationMessages::loadNextMessage()
     }
 
     //From texture
-    sm_message->location.x = 12.0;// tex1Dfetch(tex_locationX, state->binIndex);
-    sm_message->location.y = 12.0;// tex1Dfetch(tex_locationY, state->binIndex);
+    sm_message->location.x = tex1Dfetch<float>(d_tex_locationX, sm_message->state.binIndex);
+    sm_message->location.y = tex1Dfetch<float>(d_tex_locationY, sm_message->state.binIndex);
 #ifdef _3D
-    sm_message->location.z = 12.0;// tex1Dfetch(tex_locationZ, state->binIndex);
+    sm_message->location.z = tex1Dfetch<float>(d_tex_locationZ, sm_message->state.binIndex);
 #endif
 
     return sm_message;

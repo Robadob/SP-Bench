@@ -27,12 +27,12 @@ int main()
     unsigned int agentMax = 100000;
     //Allocate USP
     SpatialPartition sp(envMin, envMax, agentMax, 10.0);
-    //Fill Neighbourhood
+    //Fill Neighbourhood - Init benchmark model
     LocationMessages *d_LM = sp.d_getLocationMessages();
        ///Some kernel
     //Sort/Construct USP
     sp.buildPBM();
-    //Neighbourhood Search
+    //Neighbourhood Search - benchmark model here
 
     //Deallocate USP
 

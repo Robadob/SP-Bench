@@ -2,9 +2,9 @@
 #include "NeighbourhoodConstants.cuh"
 #include "NeighbourhoodKernels.cuh"
 #ifndef THRUST
-#include <cub\cub.cuh>
+#include <cub/cub.cuh>
 #else
-#include <thrust\sort.h>
+#include <thrust/sort.h>
 #include <thrust/system/cuda/execution_policy.h>
 #endif
 
