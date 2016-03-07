@@ -2,9 +2,6 @@
 #define __Neighbourhood_cuh__
 
 #include "header.cuh"
-#define GLM_FORCE_CUDA
-#define GLM_FORCE_NO_CTOR_INIT
-#include "glm/glm.hpp"
 #include "glm/gtx/component_wise.hpp"
 
 //#include "NeighbourhoodKernels.cuh"
@@ -30,6 +27,7 @@ struct BinState
 **/
 struct LocationMessage
 {
+    unsigned int id;
     BinState state;
 #ifdef _3D
     glm::vec3 location;
@@ -51,7 +49,7 @@ public:
     __device__ LocationMessage *getFirstNeighbour(glm::vec2 location);
 #endif
 
-    __device__ LocationMessage *getNextNeighbourbour(LocationMessage *message);
+    __device__ LocationMessage *getNextNeighbour(LocationMessage *message);
 
 private:
     __device__ bool nextBin();
@@ -63,9 +61,9 @@ class SpatialPartition
 {
 public:
 #ifdef _3D
-    SpatialPartition(glm::vec3  environmentMin, glm::vec3 environmentMax, unsigned int maxAgents, float neighbourRad);
+    SpatialPartition(glm::vec3  environmentMin, glm::vec3 environmentMax, unsigned int maxAgents, float interactionRad);
 #else
-    SpatialPartition(glm::vec2  environmentMin, glm::vec2 environmentMax, unsigned int maxAgents, float neighbourRad);
+    SpatialPartition(glm::vec2  environmentMin, glm::vec2 environmentMax, unsigned int maxAgents, float interactionRad);
 #endif
     ~SpatialPartition();
     //Getters
@@ -77,6 +75,7 @@ public:
     void SpatialPartition::setLocationCount(unsigned int);
     //Util
     void buildPBM();
+    void swap();
 private:
     SpatialPartition(unsigned int maxAgents, float neighbourRad);
     //Allocators
@@ -94,7 +93,7 @@ private:
 
     unsigned int getBinCount();//(ceil((X_MAX-X_MIN)/SEARCH_RADIUS)*ceil((Y_MAX-Y_MIN)/SEARCH_RADIUS)*ceil((Z_MAX-Z_MIN)/SEARCH_RADIUS))
     unsigned int maxAgents;
-    float neighbourRad;
+    float interactionRad;//Radius of agent interaction
     //Kernel launchers
     void launchHashLocationMessages();
     void launchReorderLocationMessages();
@@ -120,6 +119,9 @@ private:
     const glm::vec2  environmentMin;
     const glm::vec2  environmentMax;
 #endif
+#ifdef _DEBUG
+    unsigned int PBM_isBuilt;
+#endif
     //Textures
     cudaTextureObject_t tex_locationX;
     cudaTextureObject_t tex_locationY;
@@ -131,6 +133,7 @@ private:
 
 //Device constants
 extern __device__ __constant__ unsigned int d_locationMessageCount;
+extern __device__ __constant__ float d_interactionRad;
 #ifdef _3D
 extern __device__ __constant__ glm::ivec3 d_gridDim;
 extern __device__ __constant__ glm::vec3  d_environmentMin;
@@ -140,6 +143,10 @@ extern __device__ __constant__ glm::ivec2 d_gridDim;
 extern __device__ __constant__ glm::vec2  d_environmentMin;
 extern __device__ __constant__ glm::vec2  d_environmentMax;
 #endif
+#ifdef _DEBUG
+extern __device__ __constant__ unsigned int d_PBM_isBuilt;
+#endif
+
 extern __device__ __constant__ cudaTextureObject_t d_tex_locationX;
 extern __device__ __constant__ cudaTextureObject_t d_tex_locationY;
 #ifdef _3D

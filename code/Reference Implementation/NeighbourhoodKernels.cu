@@ -1,5 +1,4 @@
 #include "NeighbourhoodKernels.cuh"
-#include "Neighbourhood.cuh"
 
 #ifdef _3D
 __device__ glm::ivec3 getGridPosition(glm::vec3 worldPos)
@@ -138,10 +137,10 @@ __global__ void reorderLocationMessages(
 
 
 
-__device__ LocationMessage *LocationMessages::getNextNeighbourbour(LocationMessage *message)
+__device__ LocationMessage *LocationMessages::getNextNeighbour(LocationMessage *message)
 {
     extern __shared__ LocationMessage sm_messages[];
-    LocationMessage *sm_message = &(sm_messages[threadIdx.x]);
+    //LocationMessage *sm_message = &(sm_messages[threadIdx.x]);
 
     return loadNextMessage();
 }
@@ -225,7 +224,7 @@ __device__ LocationMessage *LocationMessages::loadNextMessage()
             return 0;//All bins exhausted
         }
     }
-
+    sm_message->id = sm_message->state.binIndex;//Duplication of data TODO remove stateBinIndex
     //From texture
     sm_message->location.x = tex1Dfetch<float>(d_tex_locationX, sm_message->state.binIndex);
     sm_message->location.y = tex1Dfetch<float>(d_tex_locationY, sm_message->state.binIndex);
@@ -245,6 +244,11 @@ __device__ LocationMessage *LocationMessages::getFirstNeighbour(glm::vec2 locati
     extern __shared__ LocationMessage sm_messages[];
     LocationMessage *sm_message = &(sm_messages[threadIdx.x]);
 
+#ifdef _DEBUG
+    //If first thread and PBM isn't built, print warning
+    if (!d_PBM_isBuilt && (((blockIdx.x * blockDim.x) + threadIdx.x)) == 0)
+        printf("PBM has not been rebuilt after calling swap()!\n");
+#endif
     sm_message->state.location = getGridPosition(location);
     sm_message->state.binIndex = 0;//Init binIndex greater than equal to binIndexMax to force bin change
     sm_message->state.binIndexMax = 0;

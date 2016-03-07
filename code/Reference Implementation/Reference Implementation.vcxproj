@@ -165,14 +165,16 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <CudaCompile Include="Circles.cu" />
+    <CudaCompile Include="CirclesKernels.cu" />
     <CudaCompile Include="main.cu" />
     <CudaCompile Include="Neighbourhood.cu" />
     <CudaCompile Include="NeighbourhoodKernels.cu" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Circles.cuh" />
+    <ClInclude Include="CirclesKernels.cuh" />
     <ClInclude Include="header.cuh" />
+    <ClInclude Include="CirclesModel.cuh" />
     <ClInclude Include="Neighbourhood.cuh" />
     <ClInclude Include="NeighbourhoodConstants.cuh" />
     <ClInclude Include="NeighbourhoodKernels.cuh" />

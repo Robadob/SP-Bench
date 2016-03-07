@@ -1,4 +1,5 @@
 #include "Neighbourhood.cuh"
+#include "Circles.cuh"
 //#include <cuda_runtime.h>
 //#include <device_launch_parameters.h>
 
@@ -21,21 +22,53 @@ __global__ void initLocations(
 
 int main()
 {
-    //Define Neighbourhood Limits
-    glm::vec3 envMin(-500.0, -500.0, -500.0);
-    glm::vec3 envMax(500.0, 500.0, 500.0);
-    unsigned int agentMax = 100000;
-    //Allocate USP
-    SpatialPartition sp(envMin, envMax, agentMax, 10.0);
-    //Fill Neighbourhood - Init benchmark model
-    LocationMessages *d_LM = sp.d_getLocationMessages();
-       ///Some kernel
-    //Sort/Construct USP
-    sp.buildPBM();
-    //Neighbourhood Search - benchmark model here
+    cudaEvent_t start, stop;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
+    cudaEventRecord(start);
 
-    //Deallocate USP
+    const unsigned int width = 250;
+    const float density = 1.0;
+    const float interactionRad = 10.0;
+    const float attractionForce = 5.0;
+    const float repulsionForce = 5.0;
+    const unsigned long long iterations = 10000;
+    Circles<SpatialPartition> model(width, density, interactionRad, attractionForce, repulsionForce);
 
+    const Time_Init initTimes = model.initPopulation();
+    printf("Init Complete - Times\n");
+    printf("CuRand init - %.3fs\n", initTimes.initCurand * 1000);
+    printf("Main kernel - %.3fs\n", initTimes.kernel * 1000);
+    printf("Build PBM   - %.3fs\n", initTimes.pbm * 1000);
+    printf("CuRand free - %.3fs\n", initTimes.freeCurand * 1000);
+    printf("Combined    - %.3fs\n", initTimes.overall * 1000);
+    printf("\n");
+
+    Time_Step_dbl average = {};//init
+    for (unsigned long long i = 0; i < iterations; i++)
+    {
+        const Time_Step iterTime = model.step();
+        //Calculate averages
+        average.overall += iterTime.overall / iterations;
+        average.kernel += iterTime.kernel / iterations;
+        average.texture += iterTime.texture / iterations;
+    }
+    printf("Model complete - Average Times\n");
+    printf("Main kernel - %.3fs\n", average.kernel * 1000);
+    printf("Build PBM   - %.3fs\n", average.texture * 1000);
+    printf("Combined    - %.3fs\n", average.overall * 1000);
+    printf("\n");
+
+    //Calculate final timing
+    cudaEventRecord(stop);
+    cudaEventSynchronize(stop);
+    float totalTime;
+    cudaEventElapsedTime(&totalTime, start, stop);
+
+    printf("Total Runtime: %.3fs\n", totalTime * 1000);
+
+    //Wait for input before exit
+    getchar();
     return 0;
 }
 

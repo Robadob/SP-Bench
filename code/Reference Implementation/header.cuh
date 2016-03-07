@@ -9,12 +9,9 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
-//#include <helper_math.h>//Replace with GLM?
-#pragma warning(disable:4244)
-#pragma warning(disable:4305)
-#include <curand_kernel.h>
-#pragma warning (default : 4244)
-#pragma warning (default : 4305)
+#define GLM_FORCE_CUDA
+#define GLM_FORCE_NO_CTOR_INIT
+#include "glm/glm.hpp"
 
 //Cuda call
 static void HandleError(const char *file,

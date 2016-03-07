@@ -9,16 +9,19 @@
 #endif
 
 #ifdef _3D
-SpatialPartition::SpatialPartition(glm::vec3  environmentMin, glm::vec3 environmentMax, unsigned int maxAgents, float neighbourRad)
+SpatialPartition::SpatialPartition(glm::vec3  environmentMin, glm::vec3 environmentMax, unsigned int maxAgents, float interactionRad)
 #else
-SpatialPartition::SpatialPartition(glm::vec2  environmentMin, glm::vec2 environmentMax, unsigned int maxAgents, float neighbourRad)
+SpatialPartition::SpatialPartition(glm::vec2  environmentMin, glm::vec2 environmentMax, unsigned int maxAgents, float interactionRad)
 #endif
     : environmentMin(environmentMin)
     , environmentMax(environmentMax)
     , maxAgents(maxAgents)
-    , neighbourRad(neighbourRad)
+    , interactionRad(interactionRad)
     , locationMessageCount(0)
-    , gridDim((environmentMax - environmentMin) / neighbourRad)
+    , gridDim((environmentMax - environmentMin) / interactionRad)
+#ifdef _DEBUG
+    , PBM_isBuilt(0)
+#endif
 {
     //Allocate bins in GPU memory
     deviceAllocateLocationMessages(&d_locationMessages);
@@ -32,6 +35,7 @@ SpatialPartition::SpatialPartition(glm::vec2  environmentMin, glm::vec2 environm
     deviceAllocatePrimitives(&d_keys_swap, &d_vals_swap);
 #endif
     //Set device constants
+    cudaMemcpyToSymbol(&d_interactionRad, &interactionRad, sizeof(float));
 #ifdef _3D
     cudaMemcpyToSymbol(&d_gridDim, &gridDim, sizeof(glm::ivec3));
     cudaMemcpyToSymbol(&d_environmentMin, &environmentMin, sizeof(glm::vec3));
@@ -40,6 +44,9 @@ SpatialPartition::SpatialPartition(glm::vec2  environmentMin, glm::vec2 environm
     cudaMemcpyToSymbol(&d_gridDim, &gridDim, sizeof(glm::ivec2));
     cudaMemcpyToSymbol(&d_environmentMin, &environmentMin, sizeof(glm::vec2));
     cudaMemcpyToSymbol(&d_environmentMax, &environmentMax, sizeof(glm::vec2));
+#endif
+#ifdef _DEBUG
+    cudaMemcpyToSymbol(&d_PBM_isBuilt, &PBM_isBuilt, sizeof(unsigned int));
 #endif
     setLocationCount(locationMessageCount);
 }
@@ -166,7 +173,7 @@ void SpatialPartition::deviceDeallocateTextures()
 
 unsigned int SpatialPartition::getBinCount()
 {
-    return (unsigned int)glm::compMul((environmentMax - environmentMin) / neighbourRad);
+    return (unsigned int)glm::compMul((environmentMax - environmentMin) / interactionRad);
 }
 void SpatialPartition::setLocationCount(unsigned int t_locationMessageCount)
 {
@@ -183,8 +190,7 @@ void SpatialPartition::launchHashLocationMessages()
     // Round up according to array size
     int gridSize = (locationMessageCount + blockSize - 1) / blockSize;
     hashLocationMessages <<<gridSize, blockSize>>>(d_keys, d_vals, d_locationMessages);
-    cudaDeviceSynchronize();
-    CUDA_CALL(cudaGetLastError());
+    CUDA_CALL(cudaDeviceSynchronize());
 }
 int requiredSM_reorderLocationMessages(int blockSize)
 {
@@ -198,13 +204,21 @@ void SpatialPartition::launchReorderLocationMessages()
     int gridSize = (locationMessageCount + blockSize - 1) / blockSize;
     //Copy messages from d_messages to d_messages_swap, in hash order
     reorderLocationMessages <<<gridSize, blockSize, requiredSM_reorderLocationMessages(blockSize) >>>(d_keys, d_vals, d_PBM, d_locationMessages, d_locationMessages_swap);
+    swap();
+    //Wait for return
+    CUDA_CALL(cudaDeviceSynchronize());
+}
+void SpatialPartition::swap()
+{
     //Switch d_locationMessages and d_locationMessages_swap
     LocationMessages* d_locationmessages_temp = d_locationMessages;
     d_locationMessages = d_locationMessages_swap;
     d_locationMessages_swap = d_locationmessages_temp;
-    //Wait for return
-    cudaDeviceSynchronize();
-    CUDA_CALL(cudaGetLastError());
+
+#ifdef _DEBUG
+    PBM_isBuilt = 0;
+    cudaMemcpyToSymbol(&d_PBM_isBuilt, &PBM_isBuilt, sizeof(unsigned int));
+#endif
 }
 void SpatialPartition::buildPBM()
 {
@@ -236,9 +250,6 @@ void SpatialPartition::buildPBM()
     d_vals_swap = temp;
     //Free temporary memory
     cudaFree(d_temp_storage);
-
-    //Clone data to textures ready for neighbourhood search
-    deviceAllocateTextures();
 #else
     //Thrust version
     //cudaStream_t s1;
@@ -256,4 +267,11 @@ void SpatialPartition::buildPBM()
     unsigned int binCount = getBinCount(); 
     CUDA_CALL(cudaMemset(d_PBM, 0x00000000, binCount * sizeof(unsigned int)));
     launchReorderLocationMessages();
+
+    //Clone data to textures ready for neighbourhood search
+    deviceAllocateTextures();
+#ifdef _DEBUG
+    PBM_isBuilt = 1;
+    cudaMemcpyToSymbol(&d_PBM_isBuilt, &PBM_isBuilt, sizeof(unsigned int));
+#endif
 }

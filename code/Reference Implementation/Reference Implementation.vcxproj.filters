@@ -4,7 +4,9 @@
     <CudaCompile Include="main.cu" />
     <CudaCompile Include="Neighbourhood.cu" />
     <CudaCompile Include="NeighbourhoodKernels.cu" />
-    <CudaCompile Include="Circles.cu" />
+    <CudaCompile Include="CirclesKernels.cu">
+      <Filter>Circles</Filter>
+    </CudaCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Neighbourhood.cuh">
@@ -20,12 +22,21 @@
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="Circles.cuh">
-      <Filter>Headers</Filter>
+      <Filter>Circles</Filter>
+    </ClInclude>
+    <ClInclude Include="CirclesKernels.cuh">
+      <Filter>Circles</Filter>
+    </ClInclude>
+    <ClInclude Include="CirclesModel.cuh">
+      <Filter>Circles</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Headers">
       <UniqueIdentifier>{9452aa1b-93c3-4ffb-935c-5551020b0151}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Circles">
+      <UniqueIdentifier>{51a516f2-9ada-4c06-baa2-879f353861eb}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
