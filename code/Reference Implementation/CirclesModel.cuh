@@ -71,8 +71,8 @@ Circles<T>::Circles(
     , agentMax((int)(pow(width, 3) * density))
     , spatialPartition(new SpatialPartition(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(width, width, width), (int)(pow(width, 3) * density), interactionRad))
 #else
-    , agentMax((int)(Math.pow(width, 2) * density))
-    , spatialPartition(new SpatialPartition(glm::vec3(0.0f, 0.0f), glm::vec3(width, width), (int)(Math.pow(width, 2) * density), interactionRad))
+    , agentMax((int)(pow(width, 2) * density))
+    , spatialPartition(new SpatialPartition(glm::vec3(0.0f, 0.0f), glm::vec3(width, width), (int)(pow(width, 2) * density), interactionRad))
 #endif
 {
     //Copy relevant parameters to constants
@@ -100,18 +100,21 @@ const Time_Init Circles<T>::initPopulation(const unsigned long long rngSeed)
     cudaEventRecord(start_overall);
 
     //Generate curand
-    curandState *d_rng;    CUDA_CALL(cudaMalloc(&d_rng, agentMax*sizeof(curandState)));
+    curandState *d_rng;
+    CUDA_CALL(cudaMalloc(&d_rng, agentMax*sizeof(curandState)));
     //Arbitrary thread block sizes (speed not too important during one off initialisation)
     unsigned int initThreads = 1024;
     unsigned int initBlocks = (agentMax / 1024) + 1;
-    init_curand << <initBlocks, initThreads >> >(d_rng, rngSeed);    CUDA_CALL(cudaDeviceSynchronize());
+    init_curand << <initBlocks, initThreads >> >(d_rng, rngSeed);
+    CUDA_CALL(cudaDeviceSynchronize());
 
     //End curand timer/start kernel timer
     cudaEventRecord(start_kernel);
 
     //Generate initial states, and store in location messages
     LocationMessages *d_lm = spatialPartition->d_getLocationMessages();
-    init_particles << <initBlocks, initThreads >> >(d_rng, d_lm);    CUDA_CALL(cudaDeviceSynchronize());
+    init_particles << <initBlocks, initThreads >> >(d_rng, d_lm);
+    CUDA_CALL(cudaDeviceSynchronize());
 
     //End kernel timer/start pbm timer
     cudaEventRecord(start_pbm);
@@ -123,7 +126,8 @@ const Time_Init Circles<T>::initPopulation(const unsigned long long rngSeed)
     cudaEventRecord(start_free);
 
     //Free curand
-    CUDA_CALL(cudaFree(d_rng));
+    CUDA_CALL(cudaFree(d_rng));
+
     //End overall timer
     cudaEventRecord(stop_overall);
 
