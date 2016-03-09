@@ -1,5 +1,6 @@
 #include "Neighbourhood.cuh"
 #include "Circles.cuh"
+#include "Visualisation/Visualisation.h"
 //#include <cuda_runtime.h>
 //#include <device_launch_parameters.h>
 
@@ -67,6 +68,13 @@ int main()
 
     printf("Total Runtime: %.3fs\n", totalTime * 1000);
 
+    
+
+    //Do something with graphics
+    Visualisation v = Visualisation("Visulisation Example", 1280, 720);
+    v.setRenderAxis(true);
+    v.run();
+   
     //Wait for input before exit
     getchar();
     return 0;
