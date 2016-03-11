@@ -68,23 +68,23 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>$(SolutionDir)$(Configuration)\$(Platform)</OutDir>
+    <OutDir>$(SolutionDir)$(Configuration)\$(Platform)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>$(SolutionDir)$(Configuration)\$(Platform)</OutDir>
+    <OutDir>$(SolutionDir)$(Configuration)\$(Platform)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>$(SolutionDir)$(Configuration)\$(Platform)</OutDir>
+    <OutDir>$(SolutionDir)$(Configuration)\$(Platform)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>$(SolutionDir)$(Configuration)\$(Platform)</OutDir>
+    <OutDir>$(SolutionDir)$(Configuration)\$(Platform)\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_3D;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_3D;_CONSOLE;_GL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -107,7 +107,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;WIN64;_DEBUG;_CONSOLE;_3D;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;WIN64;_DEBUG;_CONSOLE;_3D;_GL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -191,11 +191,13 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
   <ItemGroup>
     <ClInclude Include="Circles.cuh" />
     <ClInclude Include="CirclesKernels.cuh" />
+    <ClInclude Include="GLcheck.h" />
     <ClInclude Include="header.cuh" />
     <ClInclude Include="CirclesModel.cuh" />
     <ClInclude Include="Neighbourhood.cuh" />
     <ClInclude Include="NeighbourhoodConstants.cuh" />
     <ClInclude Include="NeighbourhoodKernels.cuh" />
+    <ClInclude Include="ParticleScene.h" />
     <ClInclude Include="visualisation\Axis.h" />
     <ClInclude Include="visualisation\Camera.h" />
     <ClInclude Include="visualisation\Entity.h" />
@@ -206,9 +208,11 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     <ClInclude Include="visualisation\Skybox.h" />
     <ClInclude Include="visualisation\Texture.h" />
     <ClInclude Include="visualisation\Visualisation.h" />
+    <ClInclude Include="visualisation\Visualisation.hpp" />
     <ClInclude Include="visualisation\VisualisationScene.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="ParticleScene.cpp" />
     <ClCompile Include="visualisation\Axis.cpp" />
     <ClCompile Include="visualisation\Camera.cpp" />
     <ClCompile Include="visualisation\Entity.cpp" />
@@ -216,7 +220,6 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     <ClCompile Include="visualisation\Shaders.cpp" />
     <ClCompile Include="visualisation\Skybox.cpp" />
     <ClCompile Include="visualisation\Texture.cpp" />
-    <ClCompile Include="visualisation\Visualisation.cpp" />
     <ClCompile Include="visualisation\VisualisationScene.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

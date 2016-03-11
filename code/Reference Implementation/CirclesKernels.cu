@@ -21,13 +21,14 @@ __global__ void init_particles(curandState *state, LocationMessages *locationMes
 #endif
 }
 
-
+extern __device__ int getHash(DIMENSIONS_IVEC gridPos);
+extern __device__ DIMENSIONS_IVEC getGridPosition(DIMENSIONS_VEC worldPos);
 __global__ void step_model(LocationMessages *locationMessagesIn, LocationMessages *locationMessagesOut)
 {
+
     int id = blockIdx.x * blockDim.x + threadIdx.x;
     if (id >= d_locationMessageCount)
         return;
-
 
     //Get my local location
 #ifdef _3D
@@ -58,7 +59,8 @@ __global__ void step_model(LocationMessages *locationMessagesIn, LocationMessage
         }
     }
     while (lm = locationMessagesIn->getNextNeighbour(lm));
-
+    DIMENSIONS_IVEC a = getGridPosition(myLoc);
+    unsigned int b = getHash(a);
     //Export myloc?
     locationMessagesOut->locationX[id] = myLoc.x;
     locationMessagesOut->locationY[id] = myLoc.y;

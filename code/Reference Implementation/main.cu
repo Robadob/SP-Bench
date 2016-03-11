@@ -1,6 +1,7 @@
 #include "Neighbourhood.cuh"
 #include "Circles.cuh"
 #include "Visualisation/Visualisation.h"
+#include "ParticleScene.h"
 //#include <cuda_runtime.h>
 //#include <device_launch_parameters.h>
 
@@ -28,14 +29,20 @@ int main()
     cudaEventCreate(&stop);
     cudaEventRecord(start);
 
-    const unsigned int width = 250;
-    const float density = 1.0;
+    const unsigned int width = 50;
+    const float density = 0.005;
     const float interactionRad = 10.0;
-    const float attractionForce = 5.0;
-    const float repulsionForce = 5.0;
+    const float attractionForce = 0.0001;
+    const float repulsionForce = 0.0001;
     const unsigned long long iterations = 10000;
+    Visualisation<ParticleScene> v = Visualisation<ParticleScene>("Visulisation Example", 1280, 720);
+    v.setRenderAxis(true);
     Circles<SpatialPartition> model(width, density, interactionRad, attractionForce, repulsionForce);
 
+    //getLocationTexNames() pASS TEX NAMES TO VISUALISATION
+    GLuint *loc_texs = model.getPartition()->getLocationTexNames();
+    v.getScene()->setTex(loc_texs);
+    //Init model
     const Time_Init initTimes = model.initPopulation();
     printf("Init Complete - Times\n");
     printf("CuRand init - %.3fs\n", initTimes.initCurand * 1000);
@@ -44,15 +51,24 @@ int main()
     printf("CuRand free - %.3fs\n", initTimes.freeCurand * 1000);
     printf("Combined    - %.3fs\n", initTimes.overall * 1000);
     printf("\n");
-
+    //Start visualisation
+    //v.runAsync();
+    //v.run();
+    //Do iterations
     Time_Step_dbl average = {};//init
+
+    printf("\n");
     for (unsigned long long i = 0; i < iterations; i++)
     {
         const Time_Step iterTime = model.step();
+        //Pass count to visualisation
+        v.getScene()->setCount(model.getPartition()->getLocationCount());
         //Calculate averages
         average.overall += iterTime.overall / iterations;
         average.kernel += iterTime.kernel / iterations;
         average.texture += iterTime.texture / iterations;
+        v.renderStep();
+        printf("\r%6llu/%llu", i, iterations);
     }
     printf("Model complete - Average Times\n");
     printf("Main kernel - %.3fs\n", average.kernel * 1000);
@@ -68,82 +84,7 @@ int main()
 
     printf("Total Runtime: %.3fs\n", totalTime * 1000);
 
-    
-
-    //Do something with graphics
-    Visualisation v = Visualisation("Visulisation Example", 1280, 720);
-    v.setRenderAxis(true);
-    v.run();
-   
     //Wait for input before exit
     getchar();
     return 0;
 }
-
-//struct SpatialSOA
-//{
-//    float *locationX;
-//    float *locationY;
-//    float *locationZ;
-//    //optional 
-//    float *directionX;
-//    float *directionY;
-//    float *directionZ;
-//    float *velocity;
-//};
-///*
-// Device spatial stack of array
-//*/
-//struct D_SpatialSOA : SpatialSOA
-//{
-//    __host__ D_SpatialSOA(int len)
-//    {
-//        cudaMalloc(&locationX, len*sizeof(float));
-//        cudaMalloc(&locationY, len*sizeof(float));
-//        cudaMalloc(&locationZ, len*sizeof(float));
-//        //optional
-//        cudaMalloc(&directionX, len*sizeof(float));
-//        cudaMalloc(&directionY, len*sizeof(float));
-//        cudaMalloc(&directionZ, len*sizeof(float));
-//        cudaMalloc(&velocity, len*sizeof(float));
-//    }
-//    __host__ ~D_SpatialSOA()
-//    {
-//        cudaFree(locationX);
-//        cudaFree(locationY);
-//        cudaFree(locationZ);
-//        //optional
-//        cudaFree(directionX);
-//        cudaFree(directionY);
-//        cudaFree(directionZ);
-//        cudaFree(velocity);
-//    }
-//};
-///*
-//Device spatial stack of array
-//*/
-//struct H_SpatialSOA : SpatialSOA
-//{
-//    __host__ H_SpatialSOA(int len)
-//    {
-//        locationX = (float*)malloc(len*sizeof(float));
-//        locationY = (float*)malloc(len*sizeof(float));
-//        locationZ = (float*)malloc(len*sizeof(float));
-//        //optional
-//        directionX = (float*)malloc(len*sizeof(float));
-//        directionY = (float*)malloc(len*sizeof(float));
-//        directionZ = (float*)malloc(len*sizeof(float));
-//        velocity = (float*)malloc(len*sizeof(float));
-//    }
-//    __host__ ~H_SpatialSOA()
-//    {
-//        free(locationX);
-//        free(locationY);
-//        free(locationZ);
-//        //optional
-//        free(directionX);
-//        free(directionY);
-//        free(directionZ);
-//        free(velocity);
-//    }
-//};

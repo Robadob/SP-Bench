@@ -18,6 +18,7 @@ public:
     void reloadShaders();
     void useProgram();
     void clearProgram();
+    int getProgram() const;
     void setUniformi(int location, int value);
     void setUniformMatrix4fv(int location, GLfloat* value);
 
@@ -35,7 +36,7 @@ private:
     char* loadShaderSource(char* file);
     void destroyShaders();
     void destroyProgram();
-    void checkGLError();
+    void checkGLError(const char *file, int line);
     void checkShaderCompileError(int shaderId, char* shaderPath);
     void checkProgramCompileError(int programId);
 

@@ -4,14 +4,9 @@
 #include "Neighbourhood.cuh"
 
 
-__device__ bool getNextBin(glm::ivec3 *relative);
-#ifdef _3D
-__device__ glm::ivec3 getGridPosition(glm::vec3 worldPos);
-__device__ int getHash(glm::ivec3 gridPos);
-#else
-__device__ glm::ivec2 getGridPosition(glm::vec2 worldPos);
-__device__ int getHash(glm::ivec2 gridPos);
-#endif
+__device__ DIMENSIONS_IVEC getGridPosition(DIMENSIONS_VEC worldPos);
+__device__ int getHash(DIMENSIONS_IVEC gridPos);
+
 
 __global__ void hashLocationMessages(unsigned int* keys, unsigned int* vals, LocationMessages* messageBuffer);
 

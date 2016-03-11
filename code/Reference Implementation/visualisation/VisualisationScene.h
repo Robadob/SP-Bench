@@ -13,15 +13,28 @@
 class VisualisationScene
 {
 public:
+
     VisualisationScene(Camera* camera = nullptr);
-    ~VisualisationScene();
+    virtual ~VisualisationScene(){};
 
-    void update();
-    void reload();
-    void render(glm::mat4 projection);
-    void generate();
+    /*
+    Update any scene animations here
+    */
+    virtual void update() = 0;
+    /*
+    Reload any shaders/models here
+    */
+    virtual void reload() = 0;
+    /*
+    Perform any render calls here
+    */
+    virtual void render(glm::mat4 projection) = 0;
+    /*
+    Generate any scene content
+    */
+    virtual void generate() {};
 
-private:
+protected:
     Camera* camera;
 
 };

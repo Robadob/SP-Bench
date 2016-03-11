@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdio.h>
+#include <thread>
 #include <gl/glew.h>
 
 #include <SDL/SDL.h>
@@ -19,7 +20,7 @@
 
 #define DEFAULT_WINDOW_WIDTH 1280
 #define DEFAULT_WINDOW_HEIGHT 720
-
+template<class T>
 class Visualisation
 {
 public:
@@ -30,6 +31,8 @@ public:
     void handleKeypress(SDL_Keycode keycode, int x, int y);
     void close();
     void run(); // @todo - improve
+    void runAsync();
+    void renderStep();
 
     char* getWindowTitle();
     void setWindowTitle(char* windowTitle);
@@ -48,11 +51,16 @@ public:
     void renderAxis();
     void setRenderAxis(bool state);
 
+    Camera *getCamera();
+    T *getScene() const;
+
 private:
+    std::thread *renderThread;
+
     SDL_Window* window;
     SDL_GLContext context;
     Camera camera;
-    VisualisationScene* scene;
+    T* scene;
     glm::mat4 frustum;
 
     bool isInitialised;
@@ -74,3 +82,4 @@ private:
 
 };
 
+#include "Visualisation.hpp"

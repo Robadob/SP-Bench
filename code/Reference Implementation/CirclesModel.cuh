@@ -43,6 +43,7 @@ private:
     T *spatialPartition;
     //If values are constant, might aswell make them public, save writing accessor methods
 public:
+    T *getPartition(){ return spatialPartition; }
     const unsigned int width;
     const float density;
     const float interactionRad;
@@ -76,8 +77,8 @@ Circles<T>::Circles(
 #endif
 {
     //Copy relevant parameters to constants
-    cudaMemcpyToSymbol(&d_attract, &attract, sizeof(float));
-    cudaMemcpyToSymbol(&d_repulse, &repulse, sizeof(float));
+    CUDA_CALL(cudaMemcpyToSymbol(d_attract, &attract, sizeof(float)));
+    CUDA_CALL(cudaMemcpyToSymbol(d_repulse, &repulse, sizeof(float)));
     ///CUDA constants managed by Neighbourhood.cuh
     //float d_interactionRad == interactionRad
     //unsigned int d_locationMessageCount == agentMax (in this case where all agents submit a single location message)
@@ -105,6 +106,7 @@ const Time_Init Circles<T>::initPopulation(const unsigned long long rngSeed)
     //Arbitrary thread block sizes (speed not too important during one off initialisation)
     unsigned int initThreads = 1024;
     unsigned int initBlocks = (agentMax / 1024) + 1;
+    spatialPartition->setLocationCount(agentMax);
     init_curand << <initBlocks, initThreads >> >(d_rng, rngSeed);
     CUDA_CALL(cudaDeviceSynchronize());
 
@@ -190,13 +192,14 @@ template <class T>
 void Circles<T>::launchStep()
 {
     int minGridSize, blockSize;   // The launch configurator returned block size 
-    cudaOccupancyMaxPotentialBlockSizeVariableSMem(&minGridSize, &blockSize, step_model, requiredSM_stepModel, 0);
+    cudaOccupancyMaxPotentialBlockSizeVariableSMem(&minGridSize, &blockSize, step_model, requiredSM_stepModel, 128);//random 128
     // Round up according to array size
     int gridSize = (agentMax + blockSize - 1) / blockSize;
     LocationMessages *d_lm = spatialPartition->d_getLocationMessages();
     LocationMessages *d_lm2 = spatialPartition->d_getLocationMessagesSwap();
     //Launch kernel
-    step_model <<<gridSize, blockSize, requiredSM_stepModel(blockSize) >>>(d_lm, d_lm2);
+    step_model << <gridSize, blockSize, requiredSM_stepModel(blockSize) >> >(d_lm, d_lm2);
+    CUDA_CALL(cudaDeviceSynchronize());//unncecssary sync
     //Swap
     spatialPartition->swap();
     //Wait for return

@@ -18,7 +18,7 @@ public:
      * Calls the necessary code to render the entities model
     **/
     void render();
-    void renderInstances(int instanceCount);
+    void renderInstances(unsigned int instanceCount);
     void setColor(glm::vec3 color);
     void setLocation(glm::vec3 location);
     void clearMaterial();

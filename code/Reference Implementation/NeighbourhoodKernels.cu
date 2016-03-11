@@ -1,12 +1,15 @@
 #include "NeighbourhoodKernels.cuh"
+//getHash already clamps.
+#define SP_NO_CLAMP_GRID //Clamp grid coords to within grid (if it's possible for model to go out of bounds)
 
-#ifdef _3D
-__device__ glm::ivec3 getGridPosition(glm::vec3 worldPos)
-#else
-__device__ glm::ivec2 getGridPosition(glm::vec2 worldPos)
-#endif
+__device__ DIMENSIONS_IVEC getGridPosition(DIMENSIONS_VEC worldPos)
 {
-    return floor((worldPos - d_environmentMin) / (d_environmentMax - d_environmentMin));
+#ifndef SP_NO_CLAMP_GRID
+    //Clamp each grid coord to 0<=x<dim
+    return clamp(floor(((worldPos - d_environmentMin) / (d_environmentMax - d_environmentMin))*d_gridDim_float), glm::vec3(0), d_gridDim_float-glm::vec3(1));
+#else
+    return floor(((worldPos - d_environmentMin) / (d_environmentMax - d_environmentMin))*d_gridDim_float);
+#endif
     //#ifdef _3D
     //    glm::ivec3 gridPos;
     //#else
@@ -20,43 +23,37 @@ __device__ glm::ivec2 getGridPosition(glm::vec2 worldPos)
     //
     //    return gridPos;
 }
-#ifdef _3D
-__device__ int getHash(glm::ivec3 gridPos)
-#else
-__device__ int getHash(glm::ivec2 gridPos)
-#endif
+
+__device__ int getHash(DIMENSIONS_IVEC gridPos)
 {
     //Bound gridPos to gridDimensions
     //Cheaper to bound without mod
-    gridPos.x = (gridPos.x<0) ? d_gridDim.x - 1 : gridPos.x;
-    gridPos.x = (gridPos.x >= d_gridDim.x) ? 0 : gridPos.x;
-    gridPos.y = (gridPos.y<0) ? d_gridDim.y - 1 : gridPos.y;
-    gridPos.y = (gridPos.y >= d_gridDim.y) ? 0 : gridPos.y;
-#ifdef _3D
-    gridPos.z = (gridPos.z<0) ? d_gridDim.z - 1 : gridPos.z;
-    gridPos.z = (gridPos.z >= d_gridDim.z) ? 0 : gridPos.z;
-#endif
+    gridPos = clamp(gridPos, DIMENSIONS_IVEC(0), d_gridDim - DIMENSIONS_IVEC(1));
+//    gridPos.x = (gridPos.x<0) ? d_gridDim.x - 1 : gridPos.x;
+//    gridPos.x = (gridPos.x >= d_gridDim.x) ? 0 : gridPos.x;
+//    gridPos.y = (gridPos.y<0) ? d_gridDim.y - 1 : gridPos.y;
+//    gridPos.y = (gridPos.y >= d_gridDim.y) ? 0 : gridPos.y;
+//#ifdef _3D
+//    gridPos.z = (gridPos.z<0) ? d_gridDim.z - 1 : gridPos.z;
+//    gridPos.z = (gridPos.z >= d_gridDim.z) ? 0 : gridPos.z;
+//#endif
 
     //Compute hash (effectivley an index for to a bin within the partitioning grid in this case)
     return
 #ifdef _3D
         (gridPos.z * d_gridDim.y * d_gridDim.x) +   //z
 #endif
-        (gridPos.y * d_gridDim.x) +						    //y
-        gridPos.x; 	                                                //x
+        (gridPos.y * d_gridDim.x) +					//y
+        gridPos.x; 	                                //x
 }
 __global__ void hashLocationMessages(unsigned int* keys, unsigned int* vals, LocationMessages* messageBuffer)
 {
     int index = (blockIdx.x * blockDim.x) + threadIdx.x;
     //Kill excess threads
     if (index >= d_locationMessageCount) return;
-#ifdef _3D
-    glm::ivec3 gridPos;
-    glm::vec3 worldPos(
-#else
-    glm::ivec2 gridPos;
-    glm::vec2 worldPos(
-#endif
+
+    DIMENSIONS_IVEC gridPos;
+    DIMENSIONS_VEC worldPos(
         messageBuffer->locationX[index]
         , messageBuffer->locationY[index]
 #ifdef _3D
@@ -98,7 +95,7 @@ __global__ void reorderLocationMessages(
     if (index >= d_locationMessageCount) return;
 
     //Load previous key
-    unsigned int prev_key = 0;
+    unsigned int prev_key = key;//0
     //If thread 0, no prev in warp, goto global
     if (threadIdx.x == 0)
     {
@@ -120,7 +117,8 @@ __global__ void reorderLocationMessages(
     if (prev_key != key)
     {//Boundary message, update (//start and) ends of boundary
         //    pbm->start[key] = index;
-        pbm[prev_key] = index;
+        for (int k = prev_key; k < key;k++)//Loop here stops empty bins being left at 0
+            pbm[k] = index;
     }
     if (index == (d_locationMessageCount - 1))
     {//Last message, set last bin end
@@ -144,12 +142,12 @@ __device__ LocationMessage *LocationMessages::getNextNeighbour(LocationMessage *
 
     return loadNextMessage();
 }
-#ifdef _3D
 __device__ bool LocationMessages::nextBin()
 {
     extern __shared__ LocationMessage sm_messages[];
     LocationMessage *sm_message = &(sm_messages[threadIdx.x]);
 
+#ifdef _3D
     if (sm_message->state.relative.x >= 1)
     {
         sm_message->state.relative.x = -1;
@@ -168,13 +166,7 @@ __device__ bool LocationMessages::nextBin()
         sm_message->state.relative.x++;
     }
     return true;
-}
 #else
-_device__ bool LocationMessages::nextBin()
-{
-    extern __shared__ LocationMessage sm_messages[];
-    LocationMessage *sm_message = &(sm_messages[threadIdx.x]);
-
     if (sm_message->state.relative >= 1)
     {
         return false;
@@ -184,8 +176,8 @@ _device__ bool LocationMessages::nextBin()
         sm_message->state.relative++;
     }
     return true;
-}
 #endif
+}
 //Load the next desired message into shared memory
 __device__ LocationMessage *LocationMessages::loadNextMessage()
 {
@@ -209,10 +201,12 @@ __device__ LocationMessage *LocationMessages::loadNextMessage()
 #endif
             int next_bin_first_hash = getHash(next_bin_first);
             int next_bin_last_hash = next_bin_first_hash + 2;//Strips are length 3
-            //use the hash to calculate the start index
+            //use the hash to calculate the start index (pbm stores location of
+            if (next_bin_last_hash >= d_binCount)
+                next_bin_last_hash = d_binCount - 1;
             sm_message->state.binIndex = tex1Dfetch<unsigned int>(d_tex_PBM, next_bin_first_hash - 1);
             sm_message->state.binIndexMax = tex1Dfetch<unsigned int>(d_tex_PBM, next_bin_last_hash);
-
+            
             if (sm_message->state.binIndex < sm_message->state.binIndexMax)//(bin_index_min != 0xffffffff)
             {
                 break;
@@ -226,20 +220,17 @@ __device__ LocationMessage *LocationMessages::loadNextMessage()
     }
     sm_message->id = sm_message->state.binIndex;//Duplication of data TODO remove stateBinIndex
     //From texture
-    sm_message->location.x = tex1Dfetch<float>(d_tex_locationX, sm_message->state.binIndex);
-    sm_message->location.y = tex1Dfetch<float>(d_tex_locationY, sm_message->state.binIndex);
+    sm_message->location.x = tex1Dfetch<float>(d_tex_location[0], sm_message->state.binIndex);
+    sm_message->location.y = tex1Dfetch<float>(d_tex_location[1], sm_message->state.binIndex);
 #ifdef _3D
-    sm_message->location.z = tex1Dfetch<float>(d_tex_locationZ, sm_message->state.binIndex);
+    sm_message->location.z = tex1Dfetch<float>(d_tex_location[2], sm_message->state.binIndex);
 #endif
 
     return sm_message;
 }
 
-#ifdef _3D
-__device__ LocationMessage *LocationMessages::getFirstNeighbour(glm::vec3 location)
-#else
-__device__ LocationMessage *LocationMessages::getFirstNeighbour(glm::vec2 location)
-#endif
+
+__device__ LocationMessage *LocationMessages::getFirstNeighbour(DIMENSIONS_VEC location)
 {
     extern __shared__ LocationMessage sm_messages[];
     LocationMessage *sm_message = &(sm_messages[threadIdx.x]);

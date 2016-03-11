@@ -63,6 +63,15 @@
     <ClInclude Include="visualisation\VisualisationScene.h">
       <Filter>Visualisation\Headers</Filter>
     </ClInclude>
+    <ClInclude Include="ParticleScene.h">
+      <Filter>Visualisation\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="visualisation\Visualisation.hpp">
+      <Filter>Visualisation</Filter>
+    </ClInclude>
+    <ClInclude Include="GLcheck.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Headers">
@@ -100,10 +109,10 @@
     <ClCompile Include="visualisation\Texture.cpp">
       <Filter>Visualisation</Filter>
     </ClCompile>
-    <ClCompile Include="visualisation\Visualisation.cpp">
+    <ClCompile Include="visualisation\VisualisationScene.cpp">
       <Filter>Visualisation</Filter>
     </ClCompile>
-    <ClCompile Include="visualisation\VisualisationScene.cpp">
+    <ClCompile Include="ParticleScene.cpp">
       <Filter>Visualisation</Filter>
     </ClCompile>
   </ItemGroup>

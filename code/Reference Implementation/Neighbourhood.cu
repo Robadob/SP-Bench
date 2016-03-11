@@ -7,12 +7,10 @@
 #include <thrust/sort.h>
 #include <thrust/system/cuda/execution_policy.h>
 #endif
-
-#ifdef _3D
-SpatialPartition::SpatialPartition(glm::vec3  environmentMin, glm::vec3 environmentMax, unsigned int maxAgents, float interactionRad)
-#else
-SpatialPartition::SpatialPartition(glm::vec2  environmentMin, glm::vec2 environmentMax, unsigned int maxAgents, float interactionRad)
+#ifdef _GL
+#include <cuda_gl_interop.h>
 #endif
+SpatialPartition::SpatialPartition(DIMENSIONS_VEC  environmentMin, DIMENSIONS_VEC environmentMax, unsigned int maxAgents, float interactionRad)
     : environmentMin(environmentMin)
     , environmentMax(environmentMax)
     , maxAgents(maxAgents)
@@ -34,21 +32,23 @@ SpatialPartition::SpatialPartition(glm::vec2  environmentMin, glm::vec2 environm
 #ifndef THRUST
     deviceAllocatePrimitives(&d_keys_swap, &d_vals_swap);
 #endif
+    //Allocate tex
+    deviceAllocateTextures();
     //Set device constants
-    cudaMemcpyToSymbol(&d_interactionRad, &interactionRad, sizeof(float));
-#ifdef _3D
-    cudaMemcpyToSymbol(&d_gridDim, &gridDim, sizeof(glm::ivec3));
-    cudaMemcpyToSymbol(&d_environmentMin, &environmentMin, sizeof(glm::vec3));
-    cudaMemcpyToSymbol(&d_environmentMax, &environmentMax, sizeof(glm::vec3));
-#else
-    cudaMemcpyToSymbol(&d_gridDim, &gridDim, sizeof(glm::ivec2));
-    cudaMemcpyToSymbol(&d_environmentMin, &environmentMin, sizeof(glm::vec2));
-    cudaMemcpyToSymbol(&d_environmentMax, &environmentMax, sizeof(glm::vec2));
-#endif
+    CUDA_CALL(cudaMemcpyToSymbol(d_interactionRad, &interactionRad, sizeof(float)));
+    CUDA_CALL(cudaMemcpyToSymbol(d_gridDim, &gridDim, sizeof(DIMENSIONS_IVEC)));
+    DIMENSIONS_VEC t_gridDim = (DIMENSIONS_VEC)gridDim;
+    CUDA_CALL(cudaMemcpyToSymbol(d_gridDim_float, &t_gridDim, sizeof(DIMENSIONS_VEC)));
+
+    CUDA_CALL(cudaMemcpyToSymbol(d_environmentMin, &environmentMin, sizeof(DIMENSIONS_VEC)));
+    CUDA_CALL(cudaMemcpyToSymbol(d_environmentMax, &environmentMax, sizeof(DIMENSIONS_VEC)));
+
 #ifdef _DEBUG
-    cudaMemcpyToSymbol(&d_PBM_isBuilt, &PBM_isBuilt, sizeof(unsigned int));
+    CUDA_CALL(cudaMemcpyToSymbol(d_PBM_isBuilt, &PBM_isBuilt, sizeof(unsigned int)));
 #endif
     setLocationCount(locationMessageCount);
+    unsigned int t_binCount = getBinCount();
+    CUDA_CALL(cudaMemcpyToSymbol(d_binCount, &t_binCount, sizeof(unsigned int)));
 }
 SpatialPartition::~SpatialPartition()
 {
@@ -63,19 +63,21 @@ SpatialPartition::~SpatialPartition()
 #ifndef THRUST
     deviceDeallocatePrimitives(d_keys_swap, d_vals_swap);
 #endif
+    //Deallocate tex
+    deviceDeallocateTextures();
 }
 void SpatialPartition::deviceAllocateLocationMessages(LocationMessages **d_locMessage)
 {
     unsigned int binCount = getBinCount();
     CUDA_CALL(cudaMalloc(d_locMessage, sizeof(LocationMessages)));
     float *d_loc_temp;
-    CUDA_CALL(cudaMalloc(&d_loc_temp, sizeof(float)*binCount));
-    CUDA_CALL(cudaMemcpy((*d_locMessage)->locationX, d_loc_temp, sizeof(float*), cudaMemcpyHostToDevice));
-    CUDA_CALL(cudaMalloc(&d_loc_temp, sizeof(float)*binCount));
-    CUDA_CALL(cudaMemcpy((*d_locMessage)->locationY, d_loc_temp, sizeof(float*), cudaMemcpyHostToDevice));
+    CUDA_CALL(cudaMalloc(&d_loc_temp, sizeof(float)*maxAgents));
+    CUDA_CALL(cudaMemcpy(&((*d_locMessage)->locationX), &d_loc_temp, sizeof(float*), cudaMemcpyHostToDevice));
+    CUDA_CALL(cudaMalloc(&d_loc_temp, sizeof(float)*maxAgents));
+    CUDA_CALL(cudaMemcpy(&((*d_locMessage)->locationY), &d_loc_temp, sizeof(float*), cudaMemcpyHostToDevice));
 #ifdef _3D
-    CUDA_CALL(cudaMalloc(&d_loc_temp, sizeof(float)*binCount));
-    CUDA_CALL(cudaMemcpy((*d_locMessage)->locationZ, d_loc_temp, sizeof(float*), cudaMemcpyHostToDevice));
+    CUDA_CALL(cudaMalloc(&d_loc_temp, sizeof(float)*maxAgents));
+    CUDA_CALL(cudaMemcpy(&((*d_locMessage)->locationZ), &d_loc_temp, sizeof(float*), cudaMemcpyHostToDevice));
 #endif
 }
 void SpatialPartition::deviceAllocatePBM(unsigned int **d_PBM_t)
@@ -86,58 +88,126 @@ void SpatialPartition::deviceAllocatePBM(unsigned int **d_PBM_t)
 void SpatialPartition::deviceAllocatePrimitives(unsigned int **d_keys, unsigned int **d_vals)
 {
     unsigned int binCount = getBinCount();
-    CUDA_CALL(cudaMalloc(d_keys, sizeof(unsigned int)*binCount));
-    CUDA_CALL(cudaMalloc(d_vals, sizeof(unsigned int)*binCount));
+    CUDA_CALL(cudaMalloc(d_keys, sizeof(unsigned int)*maxAgents));
+    CUDA_CALL(cudaMalloc(d_vals, sizeof(unsigned int)*maxAgents));
 }
 void SpatialPartition::deviceAllocateTextures()
 {
-    float *d_bufferPtr;
-    //Potentially refactor so we store/swap these pointers on host in syncrhonisation
-    CUDA_CALL(cudaMemcpy(&d_bufferPtr, d_locationMessages->locationX, sizeof(float*), cudaMemcpyDeviceToHost));
-    deviceAllocateTexture_float(&tex_locationX, d_bufferPtr, locationMessageCount, &d_tex_locationX);
-    CUDA_CALL(cudaMemcpy(&d_bufferPtr, d_locationMessages->locationY, sizeof(float*), cudaMemcpyDeviceToHost));
-    deviceAllocateTexture_float(&tex_locationY, d_bufferPtr, locationMessageCount, &d_tex_locationY);
-#ifdef _3D
-    CUDA_CALL(cudaMemcpy(&d_bufferPtr, d_locationMessages->locationZ, sizeof(float*), cudaMemcpyDeviceToHost));
-    deviceAllocateTexture_float(&tex_locationZ, d_bufferPtr, locationMessageCount, &d_tex_locationZ);
+    //Locations
+#ifdef _GL
+#pragma unroll 3
+    for (unsigned int i = 0; i < DIMENSIONS;i++)
+        deviceAllocateGLTexture_float(i);
+#else
+#pragma unroll 3
+    for (unsigned int i = 0; i < DIMENSIONS;i++)
+        deviceAllocateTexture_float(i);
 #endif
     //PBM
-    deviceAllocateTexture_int(&tex_PBM, d_PBM, getBinCount(), &d_tex_PBM);
+    deviceAllocateTexture_int();
+}
+void SpatialPartition::fillTextures()
+{
+    float *d_bufferPtr;
+    //Potentially refactor so we store/swap these pointers on host in syncrhonisation
+    CUDA_CALL(cudaMemcpy(&d_bufferPtr, &d_locationMessages->locationX, sizeof(float*), cudaMemcpyDeviceToHost));
+    cudaMemcpy(tex_loc_ptr[0], d_bufferPtr, locationMessageCount*sizeof(float), cudaMemcpyDeviceToDevice);
+    CUDA_CALL(cudaMemcpy(&d_bufferPtr, &d_locationMessages->locationY, sizeof(float*), cudaMemcpyDeviceToHost));
+    cudaMemcpy(tex_loc_ptr[1], d_bufferPtr, locationMessageCount*sizeof(float), cudaMemcpyDeviceToDevice);
+#ifdef _3D
+    CUDA_CALL(cudaMemcpy(&d_bufferPtr, &d_locationMessages->locationZ, sizeof(float*), cudaMemcpyDeviceToHost));
+    cudaMemcpy(tex_loc_ptr[2], d_bufferPtr, locationMessageCount*sizeof(float), cudaMemcpyDeviceToDevice);
+#endif
+
+    cudaMemcpy(tex_PBM_ptr, d_PBM, getBinCount()*sizeof(unsigned int), cudaMemcpyDeviceToDevice);
 }
 
-void SpatialPartition::deviceAllocateTexture_float(cudaTextureObject_t *tex, float* d_data, const int size, cudaTextureObject_t *d_const)
+void SpatialPartition::deviceAllocateTexture_float(unsigned int i)
 {
+    if (i >= DIMENSIONS)
+        return;
+    //Allocate cuda array
+    CUDA_CALL(cudaMalloc(&tex_loc_ptr[i], maxAgents*sizeof(float)));
+    //Define cuda resource from array
     cudaResourceDesc resDesc;
     memset(&resDesc, 0, sizeof(cudaResourceDesc));
     resDesc.resType = cudaResourceTypeLinear;
-    resDesc.res.linear.devPtr = d_data;
+    resDesc.res.linear.devPtr = tex_loc_ptr[i];
     resDesc.res.linear.desc.f = cudaChannelFormatKindFloat;
     resDesc.res.linear.desc.x = 32; // bits per channel
-    resDesc.res.linear.sizeInBytes = size*sizeof(float);
-
+    resDesc.res.linear.sizeInBytes = maxAgents*sizeof(float);
+    //Define a cuda texture format
     cudaTextureDesc texDesc;
     memset(&texDesc, 0, sizeof(cudaTextureDesc));
     texDesc.readMode = cudaReadModeElementType;
-
-    cudaCreateTextureObject(tex, &resDesc, &texDesc, NULL);
-    cudaMemcpyToSymbol(d_const, tex, sizeof(cudaTextureObject_t));
+    //Create texture obj
+    CUDA_CALL(cudaCreateTextureObject(&tex_location[i], &resDesc, &texDesc, NULL));
+    //Copy obj to const memory
+    CUDA_CALL(cudaMemcpyToSymbol(d_tex_location, &tex_location[i], sizeof(cudaTextureObject_t), i*sizeof(cudaTextureObject_t)));
 }
-void SpatialPartition::deviceAllocateTexture_int(cudaTextureObject_t *tex, unsigned int* d_data, const int size, cudaTextureObject_t *d_const)
+void SpatialPartition::deviceAllocateGLTexture_float(unsigned int i)//GLuint *glTex, GLuint *glTbo, cudaGraphicsResource_t *cuGres, cudaArray_t *cuArr, cudaTextureObject_t *tex, cudaTextureObject_t *d_const, const unsigned int size)
 {
+    if (i >= DIMENSIONS)
+        return;
+    float *data = new float[maxAgents];
+    //Gen tex
+    GL_CALL(glGenTextures(1, &gl_tex[i]));
+    //Gen buffer
+    GL_CALL(glGenBuffers(1, &gl_tbo[i]));
+    //Size buffer and tie to tex
+    GL_CALL(glBindBuffer(GL_TEXTURE_BUFFER, gl_tbo[i]));
+    GL_CALL(glBindBuffer(GL_TEXTURE_BUFFER, gl_tbo[i]));
+    GL_CALL(glBufferData(GL_TEXTURE_BUFFER, maxAgents*sizeof(float), 0, GL_STATIC_DRAW));
+   
+    GL_CALL(glBindTexture(GL_TEXTURE_BUFFER, gl_tex[i]));
+    //glBindTexture(GL_TEXTURE_2D, 0);
+    GL_CALL(glTexBuffer(GL_TEXTURE_BUFFER, GL_R32F, gl_tbo[i]));
+    GL_CALL(glBindBuffer(GL_TEXTURE_BUFFER, 0));
+    GL_CALL(glBindTexture(GL_TEXTURE_BUFFER, 0));
+
+    //Get CUDA handle to texture
+    memset(&gl_gRes[i], 0, sizeof(cudaGraphicsResource_t));
+    CUDA_CALL(cudaGraphicsGLRegisterBuffer(&gl_gRes[i], gl_tbo[i], cudaGraphicsMapFlagsNone));//GL_TEXTURE_BUFFER IS UNDOCUMENTED
+    //Map/convert this to something CUarray
+    CUDA_CALL(cudaGraphicsMapResources(1, &gl_gRes[i]));
+    CUDA_CALL(cudaGraphicsResourceGetMappedPointer((void**)&tex_loc_ptr[i], 0, gl_gRes[i]));
+    CUDA_CALL(cudaGraphicsUnmapResources(1, &gl_gRes[i], 0));
+    //Create a texture object from the CUarray
     cudaResourceDesc resDesc;
     memset(&resDesc, 0, sizeof(cudaResourceDesc));
     resDesc.resType = cudaResourceTypeLinear;
-    resDesc.res.linear.devPtr = d_data;
+    resDesc.res.linear.devPtr = tex_loc_ptr[i];
+    resDesc.res.linear.desc.f = cudaChannelFormatKindFloat;
+    resDesc.res.linear.desc.x = 32; // bits per channel
+    resDesc.res.linear.sizeInBytes = maxAgents*sizeof(float);
+    cudaTextureDesc texDesc;
+    memset(&texDesc, 0, sizeof(cudaTextureDesc));
+    texDesc.readMode = cudaReadModeElementType;
+    CUDA_CALL(cudaCreateTextureObject(&tex_location[i], &resDesc, &texDesc, nullptr));
+    //Copy texture object to device constant
+    CUDA_CALL(cudaMemcpyToSymbol(d_tex_location, &tex_location[i], sizeof(cudaTextureObject_t), i*sizeof(cudaTextureObject_t)));
+    delete data;
+}
+void SpatialPartition::deviceAllocateTexture_int()
+{
+    //Define cuda array format
+    //Allocate cuda array
+    CUDA_CALL(cudaMalloc(&tex_PBM_ptr, getBinCount()*sizeof(unsigned int)));//Number of elements, not bytes
+    //Define cuda resource from array
+    cudaResourceDesc resDesc;
+    memset(&resDesc, 0, sizeof(cudaResourceDesc));
+    resDesc.resType = cudaResourceTypeLinear;
+    resDesc.res.linear.devPtr = tex_PBM_ptr;
     resDesc.res.linear.desc.f = cudaChannelFormatKindUnsigned;
     resDesc.res.linear.desc.x = 32; // bits per channel
-    resDesc.res.linear.sizeInBytes = size*sizeof(unsigned int);
+    resDesc.res.linear.sizeInBytes = getBinCount()*sizeof(unsigned int);
 
     cudaTextureDesc texDesc;
     memset(&texDesc, 0, sizeof(cudaTextureDesc));
     texDesc.readMode = cudaReadModeElementType;
 
-    cudaCreateTextureObject(tex, &resDesc, &texDesc, NULL);
-    cudaMemcpyToSymbol(d_const, tex, sizeof(cudaTextureObject_t));
+    CUDA_CALL(cudaCreateTextureObject(&tex_PBM, &resDesc, &texDesc, NULL));
+    CUDA_CALL(cudaMemcpyToSymbol(d_tex_PBM, &tex_PBM, sizeof(cudaTextureObject_t)));
 }
 void SpatialPartition::deviceDeallocateLocationMessages(LocationMessages *d_locMessage)
 {
@@ -163,12 +233,21 @@ void SpatialPartition::deviceDeallocatePrimitives(unsigned int *d_keys, unsigned
 }
 void SpatialPartition::deviceDeallocateTextures()
 {
-    cudaDestroyTextureObject(tex_locationX);
-    cudaDestroyTextureObject(tex_locationY);
-#ifdef _3D
-    cudaDestroyTextureObject(tex_locationZ);
+
+#pragma unroll
+    for (unsigned int i = 0; i < DIMENSIONS; i++)
+    {
+        cudaDestroyTextureObject(tex_location[i]);
+#ifdef _GL
+        cudaGraphicsUnregisterResource(gl_gRes[i]);
+        GL_CALL(glDeleteBuffers(1, &gl_tbo[i]));
+        GL_CALL(glDeleteTextures(1, &gl_tex[i]));
+#else
+        cudaFree(tex_loc_ptr[i]);
 #endif
+    }
     cudaDestroyTextureObject(tex_PBM);
+    cudaFree(tex_PBM_ptr);
 }
 
 unsigned int SpatialPartition::getBinCount()
@@ -180,13 +259,13 @@ void SpatialPartition::setLocationCount(unsigned int t_locationMessageCount)
     //Set local copy
     locationMessageCount = t_locationMessageCount;
     //Set device constants
-    cudaMemcpyToSymbol(&d_locationMessageCount, &locationMessageCount, sizeof(unsigned int));
+    CUDA_CALL(cudaMemcpyToSymbol(d_locationMessageCount, &locationMessageCount, sizeof(unsigned int)));
 }
 
 void SpatialPartition::launchHashLocationMessages()
 {
     int blockSize;   // The launch configurator returned block size 
-    cudaOccupancyMaxActiveBlocksPerMultiprocessor(&blockSize, hashLocationMessages, 0, 0);
+    CUDA_CALL(cudaOccupancyMaxActiveBlocksPerMultiprocessor(&blockSize, hashLocationMessages, 32, 0));//Randomly 32
     // Round up according to array size
     int gridSize = (locationMessageCount + blockSize - 1) / blockSize;
     hashLocationMessages <<<gridSize, blockSize>>>(d_keys, d_vals, d_locationMessages);
@@ -204,6 +283,7 @@ void SpatialPartition::launchReorderLocationMessages()
     int gridSize = (locationMessageCount + blockSize - 1) / blockSize;
     //Copy messages from d_messages to d_messages_swap, in hash order
     reorderLocationMessages <<<gridSize, blockSize, requiredSM_reorderLocationMessages(blockSize) >>>(d_keys, d_vals, d_PBM, d_locationMessages, d_locationMessages_swap);
+    CUDA_CALL(cudaDeviceSynchronize());//unncecssary sync
     swap();
     //Wait for return
     CUDA_CALL(cudaDeviceSynchronize());
@@ -217,14 +297,11 @@ void SpatialPartition::swap()
 
 #ifdef _DEBUG
     PBM_isBuilt = 0;
-    cudaMemcpyToSymbol(&d_PBM_isBuilt, &PBM_isBuilt, sizeof(unsigned int));
+    CUDA_CALL(cudaMemcpyToSymbol(d_PBM_isBuilt, &PBM_isBuilt, sizeof(unsigned int)));
 #endif
 }
 void SpatialPartition::buildPBM()
 {
-    //Clear previous textures
-    deviceDeallocateTextures();
-
     //If no messages, or instances, don't bother
     if (locationMessageCount<1) return;
     //Fill primitive key/val arrays for sort
@@ -269,9 +346,9 @@ void SpatialPartition::buildPBM()
     launchReorderLocationMessages();
 
     //Clone data to textures ready for neighbourhood search
-    deviceAllocateTextures();
+    fillTextures();
 #ifdef _DEBUG
     PBM_isBuilt = 1;
-    cudaMemcpyToSymbol(&d_PBM_isBuilt, &PBM_isBuilt, sizeof(unsigned int));
+    CUDA_CALL(cudaMemcpyToSymbol(d_PBM_isBuilt, &PBM_isBuilt, sizeof(unsigned int)));
 #endif
 }

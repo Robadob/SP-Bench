@@ -65,9 +65,10 @@ void Entity::render()
 
     glDisableVertexAttribArray(1);
     glDisableVertexAttribArray(0);
+    checkGLError();
 }
 
-void Entity::renderInstances(int instanceCount)
+void Entity::renderInstances(unsigned int instanceCount)
 {
     //Set vertex buffer, and init pointers to vertices, normals
     glBindBuffer(GL_ARRAY_BUFFER, vertices_vbo);
@@ -90,12 +91,13 @@ void Entity::renderInstances(int instanceCount)
     else {
         glColor4f(color.x, color.y, color.z, 1.0);
     }
-        glDrawElementsInstanced(GL_TRIANGLES, f_count * 3, GL_UNSIGNED_INT, 0, instanceCount);
+    //glDrawElements(GL_TRIANGLES, f_count * 3, GL_UNSIGNED_INT, 0);
+    glDrawElementsInstanced(GL_TRIANGLES, f_count * 3, GL_UNSIGNED_INT, 0, instanceCount);
     glPopMatrix();
 
     glDisableVertexAttribArray(1);
     glDisableVertexAttribArray(0);
-
+    checkGLError();
 }
 
 
@@ -120,6 +122,7 @@ void Entity::createVertexBufferObject(GLuint *vbo, GLenum target, GLuint size)
 void Entity::deleteVertexBufferObject(GLuint *vbo)
 {
     glDeleteBuffers(1, vbo);
+    checkGLError();
 }
 /**
  * Binds model primitive data to the vertex buffer objects
@@ -130,6 +133,7 @@ void Entity::bindVertexBufferData()
     glBufferData(GL_ARRAY_BUFFER, v_count*sizeof(glm::vec3)*2, vertices, GL_DYNAMIC_DRAW);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, faces_vbo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, f_count*sizeof(glm::ivec3), faces, GL_DYNAMIC_DRAW);
+    checkGLError();
 }
 /**
  * Loads and scales the specified model into this class's primitive storage

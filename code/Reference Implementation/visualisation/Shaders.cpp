@@ -13,7 +13,10 @@
 
 
 
-Shaders::Shaders(char* vertexShaderPath, char* fragmentShaderPath, char* geometryShaderPath) : compileSuccessFlag(true){
+Shaders::Shaders(char* vertexShaderPath, char* fragmentShaderPath, char* geometryShaderPath) 
+    : compileSuccessFlag(true)
+    , programId(0)
+{
     // This is a bit pointless but why not.
     this->vertexShaderPath = vertexShaderPath;
     this->fragmentShaderPath = fragmentShaderPath;
@@ -21,7 +24,7 @@ Shaders::Shaders(char* vertexShaderPath, char* fragmentShaderPath, char* geometr
     // Create the shaders
     this->createShaders();
     //this->useProgram();
-    this->checkGLError();
+    this->checkGLError(__FILE__, __LINE__);
 
 }
 
@@ -63,26 +66,26 @@ void Shaders::createShaders(){
         this->vertexShaderId = glCreateShader(GL_VERTEX_SHADER);
         //printf("\n>>vsi: %d\n", this->vertexShaderId);
         glShaderSource(this->vertexShaderId, 1, &vertexSource, 0);
-        this->checkGLError();
+        this->checkGLError(__FILE__, __LINE__);
         glCompileShader(this->vertexShaderId);
-        this->checkGLError();
+        this->checkGLError(__FILE__, __LINE__);
         this->checkShaderCompileError(this->vertexShaderId, this->vertexShaderPath);
 
     }
     if (hasFragmentShader()){
         this->fragmentShaderId = glCreateShader(GL_FRAGMENT_SHADER);
         glShaderSource(this->fragmentShaderId, 1, &fragmentSource, 0);
-        this->checkGLError();
+        this->checkGLError(__FILE__, __LINE__);
         glCompileShader(this->fragmentShaderId);
-        this->checkGLError();
+        this->checkGLError(__FILE__, __LINE__);
         this->checkShaderCompileError(this->fragmentShaderId, this->fragmentShaderPath);
     }
     if (hasGeometryShader()){
         this->geometryShaderId = glCreateShader(GL_GEOMETRY_SHADER);
         glShaderSource(this->geometryShaderId, 1, &geometrySource, 0);
-        this->checkGLError();
+        this->checkGLError(__FILE__, __LINE__);
         glCompileShader(this->geometryShaderId);
-        this->checkGLError();
+        this->checkGLError(__FILE__, __LINE__);
         this->checkShaderCompileError(this->geometryShaderId, this->geometryShaderPath);
     }
 
@@ -91,38 +94,38 @@ void Shaders::createShaders(){
 
         // Create the program
         int newProgramId = glCreateProgram();
-        this->checkGLError();
+        this->checkGLError(__FILE__, __LINE__);
 
         // Attach each included shader
         if (this->hasVertexShader()){
             glAttachShader(newProgramId, this->vertexShaderId);
-            this->checkGLError();
+            this->checkGLError(__FILE__, __LINE__);
         }
         if (this->hasFragmentShader()){
             glAttachShader(newProgramId, this->fragmentShaderId);
-            this->checkGLError();
+            this->checkGLError(__FILE__, __LINE__);
         }
         if (this->hasGeometryShader()){
             glAttachShader(newProgramId, this->geometryShaderId);
-            this->checkGLError();
+            this->checkGLError(__FILE__, __LINE__);
         }
         // Link the program and Ensure the program compiled correctly;
         glLinkProgram(newProgramId);
-        this->checkGLError();
+        this->checkGLError(__FILE__, __LINE__);
 
         this->checkProgramCompileError(newProgramId);
-        this->checkGLError();
+        this->checkGLError(__FILE__, __LINE__);
         // If the program compiled ok, then we update the instance variable (for live reloading
         if (this->compileSuccessFlag){
             // Destroy the old program
             this->destroyProgram();
-            this->checkGLError();
+            this->checkGLError(__FILE__, __LINE__);
             // Update the class var for the next usage.
             this->programId = newProgramId;
-            this->checkGLError();
+            this->checkGLError(__FILE__, __LINE__);
         }
     }
-    this->checkGLError();
+    this->checkGLError(__FILE__, __LINE__);
 
     // Clean up any shaders
     this->destroyShaders();
@@ -141,26 +144,30 @@ void Shaders::useProgram(){
     glUseProgram(this->programId);
 
     glBindAttribLocation(this->programId, 0, "in_position");
-    this->checkGLError();
+    //this->checkGLError(__FILE__, __LINE__);
 
-    ////glBindAttribLocation(this->programId, 1, "in_normal");
-    //this->checkGLError();
+   // glBindAttribLocation(this->programId, 1, "in_normal");
+    //this->checkGLError(__FILE__, __LINE__);
 
     //GLfloat model[16];
     //glGetFloatv(GL_MODELVIEW_MATRIX, model);
-    //this->setUniformMatrix4fv(1, model);
-    ////glUniformMatrix4fv(1, 1, GL_FALSE, model);
-    //this->checkGLError();
+    //this->setUniformMatrix4fv(0, model);
+    //glUniformMatrix4fv(1, 1, GL_FALSE, model);
+    //this->checkGLError(__FILE__, __LINE__);
     //glGetFloatv(GL_PROJECTION_MATRIX, model);
-    //this->setUniformMatrix4fv(2, model);
-    ////glUniformMatrix4fv(2, 1, GL_FALSE, model);
-    //this->checkGLError(); 
+    //this->setUniformMatrix4fv(1, model);
+    //glUniformMatrix4fv(2, 1, GL_FALSE, model);
+   // this->checkGLError(__FILE__, __LINE__);
 }
 
 void Shaders::clearProgram(){
     glUseProgram(0);
 }
 
+int Shaders::getProgram() const
+{
+    return this->programId;
+}
 void Shaders::setUniformi(int location, int value){
     if (location >= 0){
         glUniform1i(location, value);
@@ -206,33 +213,34 @@ void Shaders::destroyShaders(){
     // Destroy the shaders and program
     if (this->hasVertexShader()){
         glDeleteShader(this->vertexShaderId);
-        this->checkGLError();
+        this->checkGLError(__FILE__, __LINE__);
     }
     if (this->hasFragmentShader()){
         glDeleteShader(this->fragmentShaderId);
-        this->checkGLError();
+        this->checkGLError(__FILE__, __LINE__);
     }
     if (this->hasGeometryShader()){
         glDeleteShader(this->geometryShaderId);
-        this->checkGLError();
+        this->checkGLError(__FILE__, __LINE__);
     }
 }
 
 void Shaders::destroyProgram(){
-    glDeleteProgram(this->programId);
+    if (programId!=0)
+        glDeleteProgram(this->programId);
 }
 
-void Shaders::checkGLError(){
+void Shaders::checkGLError(const char *file, int line){
     GLuint error = glGetError();
     if (error != GL_NO_ERROR)
     {
         const char* errMessage = (const char*)gluErrorString(error);
-        fprintf(stderr, "(shaders)OpenGL Error #%d: %s\n", error, errMessage);
+        fprintf(stderr, "%s(%i) OpenGL Error #%d: %s\n", file, line, error, errMessage);
     }
 }
 
 void Shaders::checkShaderCompileError(int shaderId, char* shaderPath){
-    this->checkGLError();
+    this->checkGLError(__FILE__, __LINE__);
 
     GLint status;
     glGetShaderiv(shaderId, GL_COMPILE_STATUS, &status);
@@ -261,21 +269,21 @@ void Shaders::checkShaderCompileError(int shaderId, char* shaderPath){
 
 void Shaders::checkProgramCompileError(int programId){
     int status;
-    this->checkGLError();
+    this->checkGLError(__FILE__, __LINE__);
     glGetProgramiv(programId, GL_LINK_STATUS, &status);
-    this->checkGLError();
+    this->checkGLError(__FILE__, __LINE__);
     if (status == GL_FALSE){
         // Get the length of the info log
-        GLint len = 0;
+        GLint len=0;
         glGetProgramiv(this->programId, GL_INFO_LOG_LENGTH, &len);
         // Get the contents of the log message
         char* log = new char[len + 1];
-        glGetProgramInfoLog(this->programId, len, NULL, log);
+        glGetProgramInfoLog(this->programId, len, &len, log);
         // Print the message
         printf("Program compilation error:\n");
         printf("%s\n", log);
         this->compileSuccessFlag = false;
-        this->checkGLError();
+        this->checkGLError(__FILE__, __LINE__);
 #if EXIT_ON_ERROR == 1
         //@todo exit maybe?
         system("pause"); // @temp for pausing on output.
