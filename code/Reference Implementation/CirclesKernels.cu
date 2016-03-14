@@ -41,11 +41,18 @@ __global__ void step_model(LocationMessages *locationMessagesIn, LocationMessage
     LocationMessage *lm = locationMessagesIn->getFirstNeighbour(myLoc);
     //Always atleast 1 location message, our own location!
     int counter = -1;
-    do 
+
+    while (!(lm == 0 || lm->id == 2000))
     {
         if ((lm->id != id))
         {
             locDiff = myLoc - lm->location;//Difference
+            counter++;
+            if (locDiff==DIMENSIONS_VEC(0))//Ignore distance 0
+            {
+                lm = locationMessagesIn->getNextNeighbour(lm);
+                continue;
+            }
             theirLoc = locDiff*locDiff;//Squared
             dist = sqrt(glm::compAdd(theirLoc));//Distance (via pythagoras)
             separation = dist - d_interactionRad - d_interactionRad;
@@ -58,9 +65,8 @@ __global__ void step_model(LocationMessages *locationMessagesIn, LocationMessage
                 myLoc += (k*separation*(locDiff / dist));//(locDiff / dist) this is normalised locDiff surely?
             }
         }
-        counter++;
+        lm = locationMessagesIn->getNextNeighbour(lm);
     }
-    while (lm = locationMessagesIn->getNextNeighbour(lm));
     DIMENSIONS_IVEC a = getGridPosition(myLoc);
     unsigned int b = getHash(a);
     //Export myloc?

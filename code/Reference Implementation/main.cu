@@ -58,6 +58,8 @@ int main()
     printf("\n");
     for (unsigned long long i = 0; i < iterations; i++)
     {
+        if (i == 3307)
+            model.getPartition()->setLocationCount(623);
         const Time_Step iterTime = model.step();
         //Pass count to visualisation
         scene->setCount(model.getPartition()->getLocationCount());

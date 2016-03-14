@@ -66,8 +66,6 @@ __global__ void hashLocationMessages(unsigned int* keys, unsigned int* vals, Loc
     vals[index] = index;
 }
 
-//For-each location message in memory
-//Check whether preceding key is the same
 __global__ void reorderLocationMessages(
     unsigned int *keys,
     unsigned int *vals,
@@ -87,7 +85,7 @@ __global__ void reorderLocationMessages(
     {//Don't go out of bounds when buffer is at max capacity
         key = keys[index];
         old_pos = vals[index];
-        //Every valid thread put hash into shared memory
+        //Every valid thread put key into shared memory
         sm_data[threadIdx.x] = key;
     }
     __syncthreads();
@@ -136,14 +134,24 @@ __global__ void reorderLocationMessages(
 #endif
 }
 
-
-
 __device__ LocationMessage *LocationMessages::getNextNeighbour(LocationMessage *message)
 {
     extern __shared__ LocationMessage sm_messages[];
     //LocationMessage *sm_message = &(sm_messages[threadIdx.x]);
 
     return loadNextMessage();
+}
+__device__ bool invalidBin(glm::ivec3 bin)
+{
+    if (
+        bin.x<0 || bin.x >= d_gridDim.x ||
+        bin.y<0 || bin.y >= d_gridDim.y ||
+        bin.z<0 || bin.z >= d_gridDim.z
+        )
+    {
+        return true;
+    }
+    return false;
 }
 __device__ bool LocationMessages::nextBin()
 {
@@ -202,19 +210,39 @@ __device__ LocationMessage *LocationMessages::loadNextMessage()
 #else
             glm::ivec2 next_bin_first = sm_message->state.location + glm::ivec2(-1, sm_message->state.relative);
 #endif
+            
+            DIMENSIONS_IVEC next_bin_last = next_bin_first;
+            next_bin_last.x += 2;
+            bool firstInvalid = invalidBin(next_bin_first);
+            bool lastInvalid = invalidBin(next_bin_last);
+            if (firstInvalid)
+            {
+                if (lastInvalid)
+                {//If strip starts and ends out of bounds
+                    continue;
+                }
+                else
+                {//If strip starts out of bounds only
+                    next_bin_first.x = 0;
+                }
+            }
+            else if (lastInvalid)
+            {//If strip ends out of bounds only
+                next_bin_last.x = d_gridDim.x;
+            }
+
             int next_bin_first_hash = getHash(next_bin_first);
-            int next_bin_last_hash = next_bin_first_hash + 2;//Strips are length 3
-            //use the hash to calculate the start index (pbm stores location of
-            if (next_bin_last_hash >= d_binCount)
-                next_bin_last_hash = d_binCount - 1;
+            int next_bin_last_hash = next_bin_first_hash + (next_bin_last.x-next_bin_first.x);//Strips are at most length 3
+            //use the hash to calculate the start index (pbm stores location of 1st item after the end of bin)
+            //if (next_bin_last_hash >= d_binCount)
+            //    next_bin_last_hash = d_binCount - 1;
             sm_message->state.binIndex = tex1Dfetch<unsigned int>(d_tex_PBM, next_bin_first_hash - 1);
             sm_message->state.binIndexMax = tex1Dfetch<unsigned int>(d_tex_PBM, next_bin_last_hash);
             
             if (sm_message->state.binIndex < sm_message->state.binIndexMax)//(bin_index_min != 0xffffffff)
             {
-                break;
+                break;//Bin strip has items!
             }
-            continue;//Strip is empty, continue
         }
         else
         {
@@ -223,6 +251,16 @@ __device__ LocationMessage *LocationMessages::loadNextMessage()
     }
     sm_message->id = sm_message->state.binIndex;//Duplication of data TODO remove stateBinIndex
     //From texture
+    //if (sm_message->id >= d_locationMessageCount)
+     //   printf("eeeeeeeeeeeee");
+    //if (d_locationMessageCount<624)
+    //    printf("id:%i,bd:%i,", blockIdx.x * blockDim.x + threadIdx.x, sm_message->state.binIndex);
+    //printf("id:%i,", d_locationMessageCount);
+    //if (sm_message->state.binIndex == 160)
+    //{
+    //    sm_message->id = 2000;
+     //   return 0;
+    //}
     sm_message->location.x = tex1Dfetch<float>(d_tex_location[0], sm_message->state.binIndex);
     sm_message->location.y = tex1Dfetch<float>(d_tex_location[1], sm_message->state.binIndex);
 #ifdef _3D

@@ -37,7 +37,8 @@ vec3 hsv2rgb(vec3 hsv)
 void main()
 {
 //0 is red, ~120 is green
-  float minCount= (3-count)*120;//120-min(120, count);
+
+  float minCount= max(0,(0.5-((count<=0.001)?0.5:count))*120);//120-min(120, count);
 
   vec3 pastelPurple = hsv2rgb(vec3(minCount, 1.0, 1.0));
 //Flat shading
