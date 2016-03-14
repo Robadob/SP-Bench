@@ -42,7 +42,7 @@ __global__ void step_model(LocationMessages *locationMessagesIn, LocationMessage
     //Always atleast 1 location message, our own location!
     int counter = -1;
 
-    while (!(lm == 0 || lm->id == 2000))
+    while (lm)//change this line to `do`
     {
         if ((lm->id != id))
         {
@@ -62,11 +62,11 @@ __global__ void step_model(LocationMessages *locationMessagesIn, LocationMessage
                     k = d_attract;
                 else
                     k = d_repulse;
-                myLoc += (k*separation*(locDiff / dist));//(locDiff / dist) this is normalised locDiff surely?
+                myLoc += (k*separation*(locDiff / dist));
             }
         }
-        lm = locationMessagesIn->getNextNeighbour(lm);
-    }
+        lm = locationMessagesIn->getNextNeighbour(lm);//Returns a pointer to shared memory or 0
+    }//change this line to `}while(lm)`
     DIMENSIONS_IVEC a = getGridPosition(myLoc);
     unsigned int b = getHash(a);
     //Export myloc?

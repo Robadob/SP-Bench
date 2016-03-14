@@ -201,6 +201,7 @@ void SpatialPartition::deviceAllocateGLTexture_float(unsigned int i)//GLuint *gl
 #endif
 /*
 Allocates the PBM texture, which is only accessed via CUDA & memcpy
+We are a bit sneaky here, we allocate +1, then ++ along the pointer, after memsetting the 0th value
 */
 void SpatialPartition::deviceAllocateTexture_int()
 {
@@ -214,13 +215,14 @@ void SpatialPartition::deviceAllocateTexture_int()
     resDesc.res.linear.devPtr = tex_PBM_ptr;
     resDesc.res.linear.desc.f = cudaChannelFormatKindUnsigned;
     resDesc.res.linear.desc.x = 32; // bits per channel
-    resDesc.res.linear.sizeInBytes = getBinCount()*sizeof(unsigned int);
+    resDesc.res.linear.sizeInBytes = (getBinCount())*sizeof(unsigned int);
 
     cudaTextureDesc texDesc;
     memset(&texDesc, 0, sizeof(cudaTextureDesc));
     texDesc.readMode = cudaReadModeElementType;
 
     CUDA_CALL(cudaCreateTextureObject(&tex_PBM, &resDesc, &texDesc, NULL));
+    tex_PBM.
     CUDA_CALL(cudaMemcpyToSymbol(d_tex_PBM, &tex_PBM, sizeof(cudaTextureObject_t)));
 }
 #ifdef _GL
@@ -303,7 +305,7 @@ void SpatialPartition::deviceDeallocateTextures()
 
 unsigned int SpatialPartition::getBinCount()
 {
-    return (unsigned int)glm::compMul((environmentMax - environmentMin) / interactionRad);
+    return (unsigned int)glm::compMul(gridDim);
 }
 void SpatialPartition::setLocationCount(unsigned int t_locationMessageCount)
 {
@@ -393,7 +395,7 @@ void SpatialPartition::buildPBM()
     //CUDA_CALL(cudaMemset(d_PBM, 0xffffffff, PARTITION_GRID_BIN_COUNT * sizeof(int)));
     //Fill pbm end coords with known value 0x00000000 (this should mean if the mysterious bug does occur, the cell is just dropped, not large loop created)
     unsigned int binCount = getBinCount(); 
-    CUDA_CALL(cudaMemset(d_PBM, 0x00000000, binCount * sizeof(unsigned int)));
+    CUDA_CALL(cudaMemset(d_PBM, locationMessageCount, binCount * sizeof(unsigned int)));
     launchReorderLocationMessages();
 
     //Clone data to textures ready for neighbourhood search

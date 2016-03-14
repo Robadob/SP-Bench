@@ -112,16 +112,23 @@ __global__ void reorderLocationMessages(
     //    pbm->start[key] = index;
     //}
     //else 
+    if (index == 0)
+    {//First thread, set all bins prior to my key to 0
+        if (key>0)
+            for (int k = 0; k < key; k++)
+                pbm[k] = 0;
+    }
     if (prev_key != key)
     {//Boundary message, update (//start and) ends of boundary
         //    pbm->start[key] = index;
         for (int k = prev_key; k < key;k++)//Loop here stops empty bins being left at 0
             pbm[k] = index;
     }
-    if (index == (d_locationMessageCount - 1))
-    {//Last message, set last bin end
-        pbm[key] = index + 1;
-    }
+    //Memset handles this
+    //if (index == (d_locationMessageCount - 1))
+    //{//Last message, set my bin end
+    //    pbm[key] = index + 1;
+    //}
 
     //Order messages into swap space
     ordered_messages->locationX[index] = unordered_messages->locationX[old_pos];
@@ -228,11 +235,20 @@ __device__ LocationMessage *LocationMessages::loadNextMessage()
             }
             else if (lastInvalid)
             {//If strip ends out of bounds only
-                next_bin_last.x = d_gridDim.x;
+                next_bin_last.x = d_gridDim.x-1;//Max x coord
             }
 
             int next_bin_first_hash = getHash(next_bin_first);
             int next_bin_last_hash = next_bin_first_hash + (next_bin_last.x-next_bin_first.x);//Strips are at most length 3
+            if (next_bin_last_hash>getHash(next_bin_last))
+            {
+                printf("#%i, #%i,(%i +(%i-%i))\n", next_bin_last_hash, getHash(next_bin_last), next_bin_first_hash, next_bin_last.x, next_bin_first.x);
+            }
+            if (blockIdx.x == 9 && threadIdx.x == 32)
+            {
+               // printf("(%i,%i,%i)#%i (%i, %i, %i) #%i, #%i\n", next_bin_first.x, next_bin_first.y, next_bin_first.z, next_bin_first_hash, next_bin_last.x, next_bin_last.y, next_bin_last.z, next_bin_last_hash, getHash(next_bin_last));
+            }
+
             //use the hash to calculate the start index (pbm stores location of 1st item after the end of bin)
             //if (next_bin_last_hash >= d_binCount)
             //    next_bin_last_hash = d_binCount - 1;
@@ -276,6 +292,11 @@ __device__ LocationMessage *LocationMessages::getFirstNeighbour(DIMENSIONS_VEC l
     extern __shared__ LocationMessage sm_messages[];
     LocationMessage *sm_message = &(sm_messages[threadIdx.x]);
 
+    if (blockIdx.x==9 && threadIdx.x == 32)
+    {
+        printf("GridDim(%i,%i,%i) IV(%i, %i)\n",d_gridDim.x, d_gridDim.y, d_gridDim.z, invalidBin(glm::vec3(0,3,4)), invalidBin(glm::vec3(2,3,4)));
+    }
+
 #ifdef _DEBUG
     //If first thread and PBM isn't built, print warning
     if (!d_PBM_isBuilt && (((blockIdx.x * blockDim.x) + threadIdx.x)) == 0)
@@ -291,6 +312,10 @@ __device__ LocationMessage *LocationMessages::getFirstNeighbour(DIMENSIONS_VEC l
 #else
     sm_message->state.relative = -2;
 #endif
-
-    return loadNextMessage();
+    LocationMessage *lm = loadNextMessage();
+    if (lm==0)
+    {
+        printf("ERROR\n\n\n");
+    }
+    return lm;
 }
