@@ -40,6 +40,7 @@ __global__ void step_model(LocationMessages *locationMessagesIn, LocationMessage
     float dist, separation, k;
     LocationMessage *lm = locationMessagesIn->getFirstNeighbour(myLoc);
     //Always atleast 1 location message, our own location!
+    int counter = -1;
     do 
     {
         if ((lm->id != id))
@@ -57,6 +58,7 @@ __global__ void step_model(LocationMessages *locationMessagesIn, LocationMessage
                 myLoc += (k*separation*(locDiff / dist));//(locDiff / dist) this is normalised locDiff surely?
             }
         }
+        counter++;
     }
     while (lm = locationMessagesIn->getNextNeighbour(lm));
     DIMENSIONS_IVEC a = getGridPosition(myLoc);
@@ -66,5 +68,9 @@ __global__ void step_model(LocationMessages *locationMessagesIn, LocationMessage
     locationMessagesOut->locationY[id] = myLoc.y;
 #ifdef _3D
     locationMessagesOut->locationZ[id] = myLoc.z;
+#endif
+#ifdef _GL
+    locationMessagesOut->count[id] = counter / (float)(d_locationMessageCount-1);
+    //printf("%i/%i -> %.3f\n", counter, d_locationMessageCount, locationMessagesOut->count[id]);
 #endif
 }

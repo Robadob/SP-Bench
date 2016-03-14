@@ -59,7 +59,9 @@ public:
 #ifdef _3D
     float *locationZ;
 #endif
-
+#if _GL
+    float *count;
+#endif
     __device__ LocationMessage *getFirstNeighbour(DIMENSIONS_VEC location);
     __device__ LocationMessage *getNextNeighbour(LocationMessage *message);
 
@@ -75,20 +77,18 @@ public:
     SpatialPartition(DIMENSIONS_VEC  environmentMin, DIMENSIONS_VEC environmentMax, unsigned int maxAgents, float interactionRad);
     ~SpatialPartition();
     //Getters
-    inline unsigned int *d_getPBM() { return d_PBM; }
-    inline LocationMessages *d_getLocationMessages() { return d_locationMessages; }
-    inline LocationMessages *d_getLocationMessagesSwap() { return d_locationMessages_swap; }
-    inline unsigned int getLocationCount(){ return locationMessageCount; }
+    unsigned int *d_getPBM() { return d_PBM; }
+    LocationMessages *d_getLocationMessages() { return d_locationMessages; }
+    LocationMessages *d_getLocationMessagesSwap() { return d_locationMessages_swap; }
+    unsigned int getLocationCount(){ return locationMessageCount; }
     //Setters
     void SpatialPartition::setLocationCount(unsigned int);
     //Util
     void buildPBM();
     void swap();
 #ifdef _GL
-    GLuint *SpatialPartition::getLocationTexNames()
-    {
-        return gl_tex;
-    }
+    const GLuint *SpatialPartition::getLocationTexNames() const { return gl_tex; }
+    GLuint SpatialPartition::getCountTexName() const { return gl_tex_count; }
 #endif
 private:
     //Allocators
@@ -100,6 +100,12 @@ private:
     void deviceAllocateTexture_int();//allocate pbm tex
 #ifdef _GL
     void deviceAllocateGLTexture_float(unsigned int i);
+    void deviceAllocateGLTexture_float2();//Allocate float to be passed to shader
+    GLuint gl_tex_count;
+    GLuint gl_tbo_count;
+    cudaGraphicsResource_t gl_gRes_count;
+    cudaTextureObject_t tex_location_count;
+    float *tex_location_ptr_count;
 #endif
     //Deallocators
     void deviceDeallocateLocationMessages(LocationMessages *d_locMessage);

@@ -68,13 +68,8 @@ Circles<T>::Circles(
     , interactionRad(interactionRad)
     , attract(attract)
     , repulse(repulse)
-#ifdef _3D
-    , agentMax((int)(pow(width, 3) * density))
-    , spatialPartition(new SpatialPartition(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(width, width, width), (int)(pow(width, 3) * density), interactionRad))
-#else
-    , agentMax((int)(pow(width, 2) * density))
-    , spatialPartition(new SpatialPartition(glm::vec3(0.0f, 0.0f), glm::vec3(width, width), (int)(pow(width, 2) * density), interactionRad))
-#endif
+    , agentMax((int)(pow(width, DIMENSIONS) * density))
+    , spatialPartition(new SpatialPartition(DIMENSIONS_VEC(0.0f, 0.0f, 0.0f), DIMENSIONS_VEC(width, width, width), (int)(pow(width, DIMENSIONS) * density), interactionRad))
 {
     //Copy relevant parameters to constants
     CUDA_CALL(cudaMemcpyToSymbol(d_attract, &attract, sizeof(float)));

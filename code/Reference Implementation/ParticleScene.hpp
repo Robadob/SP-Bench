@@ -23,13 +23,16 @@ Sets the texture buffers that the shaders should use
 @param Pointer to array of DIMENSIONS texture names
 */
 template<class T>
-void ParticleScene<T>::setTex(GLuint* const tex)
+void ParticleScene<T>::setTex(const GLuint* tex)
 {
     memcpy(this->tex, tex, DIMENSIONS*sizeof(GLuint));
     this->shaders->addTextureUniform(tex[0], "tex_locX");
     this->shaders->addTextureUniform(tex[1], "tex_locY");
 #ifdef _3D
     this->shaders->addTextureUniform(tex[2], "tex_locZ");
+#endif
+#ifdef _GL
+    this->shaders->addTextureUniform(model.getPartition()->getCountTexName(), "tex_count");
 #endif
 }
 /*

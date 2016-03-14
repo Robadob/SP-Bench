@@ -210,7 +210,6 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     <ClInclude Include="visualisation\Visualisation.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ParticleScene.cpp" />
     <ClCompile Include="visualisation\Axis.cpp" />
     <ClCompile Include="visualisation\Camera.cpp" />
     <ClCompile Include="visualisation\Entity.cpp" />

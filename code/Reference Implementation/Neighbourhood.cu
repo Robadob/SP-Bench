@@ -79,6 +79,10 @@ void SpatialPartition::deviceAllocateLocationMessages(LocationMessages **d_locMe
     CUDA_CALL(cudaMalloc(&d_loc_temp, sizeof(float)*maxAgents));
     CUDA_CALL(cudaMemcpy(&((*d_locMessage)->locationZ), &d_loc_temp, sizeof(float*), cudaMemcpyHostToDevice));
 #endif
+#ifdef _GL
+    CUDA_CALL(cudaMalloc(&d_loc_temp, sizeof(float)*maxAgents));
+    CUDA_CALL(cudaMemcpy(&((*d_locMessage)->count), &d_loc_temp, sizeof(float*), cudaMemcpyHostToDevice));
+#endif
 }
 void SpatialPartition::deviceAllocatePBM(unsigned int **d_PBM_t)
 {
@@ -98,6 +102,7 @@ void SpatialPartition::deviceAllocateTextures()
 #pragma unroll 3
     for (unsigned int i = 0; i < DIMENSIONS;i++)
         deviceAllocateGLTexture_float(i);
+    deviceAllocateGLTexture_float2();//Allocate a texture to store counting info in (Used to colour the visualisation
 #else
 #pragma unroll 3
     for (unsigned int i = 0; i < DIMENSIONS;i++)
@@ -111,15 +116,19 @@ void SpatialPartition::fillTextures()
     float *d_bufferPtr;
     //Potentially refactor so we store/swap these pointers on host in syncrhonisation
     CUDA_CALL(cudaMemcpy(&d_bufferPtr, &d_locationMessages->locationX, sizeof(float*), cudaMemcpyDeviceToHost));
-    cudaMemcpy(tex_loc_ptr[0], d_bufferPtr, locationMessageCount*sizeof(float), cudaMemcpyDeviceToDevice);
+    CUDA_CALL(cudaMemcpy(tex_loc_ptr[0], d_bufferPtr, locationMessageCount*sizeof(float), cudaMemcpyDeviceToDevice));
     CUDA_CALL(cudaMemcpy(&d_bufferPtr, &d_locationMessages->locationY, sizeof(float*), cudaMemcpyDeviceToHost));
-    cudaMemcpy(tex_loc_ptr[1], d_bufferPtr, locationMessageCount*sizeof(float), cudaMemcpyDeviceToDevice);
+    CUDA_CALL(cudaMemcpy(tex_loc_ptr[1], d_bufferPtr, locationMessageCount*sizeof(float), cudaMemcpyDeviceToDevice));
 #ifdef _3D
     CUDA_CALL(cudaMemcpy(&d_bufferPtr, &d_locationMessages->locationZ, sizeof(float*), cudaMemcpyDeviceToHost));
-    cudaMemcpy(tex_loc_ptr[2], d_bufferPtr, locationMessageCount*sizeof(float), cudaMemcpyDeviceToDevice);
+    CUDA_CALL(cudaMemcpy(tex_loc_ptr[2], d_bufferPtr, locationMessageCount*sizeof(float), cudaMemcpyDeviceToDevice));
+#endif
+#ifdef _GL
+    CUDA_CALL(cudaMemcpy(&d_bufferPtr, &d_locationMessages->count, sizeof(float*), cudaMemcpyDeviceToHost));
+    CUDA_CALL(cudaMemcpy(tex_location_ptr_count, d_bufferPtr, locationMessageCount*sizeof(float), cudaMemcpyDeviceToDevice));
 #endif
 
-    cudaMemcpy(tex_PBM_ptr, d_PBM, getBinCount()*sizeof(unsigned int), cudaMemcpyDeviceToDevice);
+    CUDA_CALL(cudaMemcpy(tex_PBM_ptr, d_PBM, getBinCount()*sizeof(unsigned int), cudaMemcpyDeviceToDevice));
 }
 
 void SpatialPartition::deviceAllocateTexture_float(unsigned int i)
@@ -145,6 +154,7 @@ void SpatialPartition::deviceAllocateTexture_float(unsigned int i)
     //Copy obj to const memory
     CUDA_CALL(cudaMemcpyToSymbol(d_tex_location, &tex_location[i], sizeof(cudaTextureObject_t), i*sizeof(cudaTextureObject_t)));
 }
+#ifdef _GL
 void SpatialPartition::deviceAllocateGLTexture_float(unsigned int i)//GLuint *glTex, GLuint *glTbo, cudaGraphicsResource_t *cuGres, cudaArray_t *cuArr, cudaTextureObject_t *tex, cudaTextureObject_t *d_const, const unsigned int size)
 {
     if (i >= DIMENSIONS)
@@ -188,6 +198,10 @@ void SpatialPartition::deviceAllocateGLTexture_float(unsigned int i)//GLuint *gl
     CUDA_CALL(cudaMemcpyToSymbol(d_tex_location, &tex_location[i], sizeof(cudaTextureObject_t), i*sizeof(cudaTextureObject_t)));
     delete data;
 }
+#endif
+/*
+Allocates the PBM texture, which is only accessed via CUDA & memcpy
+*/
 void SpatialPartition::deviceAllocateTexture_int()
 {
     //Define cuda array format
@@ -209,6 +223,38 @@ void SpatialPartition::deviceAllocateTexture_int()
     CUDA_CALL(cudaCreateTextureObject(&tex_PBM, &resDesc, &texDesc, NULL));
     CUDA_CALL(cudaMemcpyToSymbol(d_tex_PBM, &tex_PBM, sizeof(cudaTextureObject_t)));
 }
+#ifdef _GL
+/*
+Allocates the count texture, which is only accessed via memcpy & GL
+*/
+void SpatialPartition::deviceAllocateGLTexture_float2()
+{
+    int *data = new int[maxAgents];
+    //Gen tex
+    GL_CALL(glGenTextures(1, &gl_tex_count));
+    //Gen buffer
+    GL_CALL(glGenBuffers(1, &gl_tbo_count));
+    //Size buffer and tie to tex
+    GL_CALL(glBindBuffer(GL_TEXTURE_BUFFER, gl_tbo_count));
+    GL_CALL(glBindBuffer(GL_TEXTURE_BUFFER, gl_tbo_count));
+    GL_CALL(glBufferData(GL_TEXTURE_BUFFER, maxAgents*sizeof(float), 0, GL_STATIC_DRAW));
+
+    GL_CALL(glBindTexture(GL_TEXTURE_BUFFER, gl_tex_count));
+    //glBindTexture(GL_TEXTURE_2D, 0);
+    GL_CALL(glTexBuffer(GL_TEXTURE_BUFFER, GL_R32F, gl_tbo_count));
+    GL_CALL(glBindBuffer(GL_TEXTURE_BUFFER, 0));
+    GL_CALL(glBindTexture(GL_TEXTURE_BUFFER, 0));
+
+    //Get CUDA handle to texture
+    memset(&gl_gRes_count, 0, sizeof(cudaGraphicsResource_t));
+    CUDA_CALL(cudaGraphicsGLRegisterBuffer(&gl_gRes_count, gl_tbo_count, cudaGraphicsMapFlagsNone));
+    //Map/convert this to something CUarray
+    CUDA_CALL(cudaGraphicsMapResources(1, &gl_gRes_count));
+    CUDA_CALL(cudaGraphicsResourceGetMappedPointer((void**)&tex_location_ptr_count, 0, gl_gRes_count));
+    CUDA_CALL(cudaGraphicsUnmapResources(1, &gl_gRes_count, 0));
+    delete data;
+}
+#endif
 void SpatialPartition::deviceDeallocateLocationMessages(LocationMessages *d_locMessage)
 {
     float *d_loc_temp;
@@ -248,6 +294,11 @@ void SpatialPartition::deviceDeallocateTextures()
     }
     cudaDestroyTextureObject(tex_PBM);
     cudaFree(tex_PBM_ptr);
+#ifdef _GL
+    cudaGraphicsUnregisterResource(gl_gRes_count);
+    GL_CALL(glDeleteBuffers(1, &gl_tbo_count));
+    GL_CALL(glDeleteTextures(1, &gl_tex_count));
+#endif
 }
 
 unsigned int SpatialPartition::getBinCount()

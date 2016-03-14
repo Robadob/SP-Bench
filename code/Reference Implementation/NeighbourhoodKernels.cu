@@ -131,6 +131,9 @@ __global__ void reorderLocationMessages(
 #ifdef _3D
     ordered_messages->locationZ[index] = unordered_messages->locationZ[old_pos];
 #endif
+#ifdef _GL
+    ordered_messages->count[index] = unordered_messages->count[old_pos];
+#endif
 }
 
 

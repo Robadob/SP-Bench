@@ -109,6 +109,5 @@
     <ClCompile Include="visualisation\Material.cpp">
       <Filter>Visualistion</Filter>
     </ClCompile>
-    <ClCompile Include="ParticleScene.cpp" />
   </ItemGroup>
 </Project>

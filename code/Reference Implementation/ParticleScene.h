@@ -26,7 +26,7 @@ public:
 
 private:
     ~ParticleScene();//Private to prevent stack allocation
-    void setTex(GLuint* const tex);
+    void setTex(const GLuint *tex);
 
     Entity entity;
     unsigned int count;// , max;
