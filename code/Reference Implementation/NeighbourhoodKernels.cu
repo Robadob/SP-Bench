@@ -77,6 +77,7 @@ __global__ void reorderLocationMessages(
     extern __shared__ int sm_data[];
 
     int index = (blockIdx.x * blockDim.x) + threadIdx.x;
+    int indexPlus1 = index + 1;
 
     //Load current key and copy it into shared
     unsigned int key;
@@ -92,18 +93,21 @@ __global__ void reorderLocationMessages(
     //Kill excess threads
     if (index >= d_locationMessageCount) return;
 
-    //Load previous key
-    unsigned int prev_key = key;//0
-    //If thread 0, no prev in warp, goto global
-    if (threadIdx.x == 0)
+    //Load next key
+    unsigned int next_key;
+    //if thread is final thread
+    if (index == d_locationMessageCount-1)
     {
-        //Skip if first thread globally
-        if (index != 0)
-            prev_key = keys[index - 1];
+        next_key = d_binCount;
+    }
+    //If thread is last in block, no next in SM, goto global
+    else if (threadIdx.x == blockDim.x-1)
+    {
+         next_key = keys[indexPlus1];
     }
     else
     {
-        prev_key = sm_data[threadIdx.x - 1];
+        next_key = sm_data[threadIdx.x + 1];
     }
 
     //Set partition boundaries
@@ -112,23 +116,21 @@ __global__ void reorderLocationMessages(
     //    pbm->start[key] = index;
     //}
     //else 
-    if (index == 0)
-    {//First thread, set all bins prior to my key to 0
-        if (key>0)
-            for (int k = 0; k < key; k++)
-                pbm[k] = 0;
-    }
-    if (prev_key != key)
-    {//Boundary message, update (//start and) ends of boundary
-        //    pbm->start[key] = index;
-        for (int k = prev_key; k < key;k++)//Loop here stops empty bins being left at 0
-            pbm[k] = index;
-    }
-    //Memset handles this
-    //if (index == (d_locationMessageCount - 1))
-    //{//Last message, set my bin end
-    //    pbm[key] = index + 1;
+    //if (index == 0)
+    //{//First thread, set all bins prior to my key to 0
+    //    if (key>0)
+    //        for (int k = 0; k < key; k++)
+    //            pbm[k] = 0;
     //}
+#if _DEBUG
+    if (next_key > 125)
+        printf("ERROR: PBM generated a next_key that is too high.");
+#endif
+    if (next_key != key)
+    {//Boundary message, set all keys after ours until (inclusive) next_key to our index +1
+        for (int k = next_key; k > key; k--)
+            pbm[k] = indexPlus1;
+    }
 
     //Order messages into swap space
     ordered_messages->locationX[index] = unordered_messages->locationX[old_pos];
@@ -244,16 +246,10 @@ __device__ LocationMessage *LocationMessages::loadNextMessage()
             {
                 printf("#%i, #%i,(%i +(%i-%i))\n", next_bin_last_hash, getHash(next_bin_last), next_bin_first_hash, next_bin_last.x, next_bin_first.x);
             }
-            if (blockIdx.x == 9 && threadIdx.x == 32)
-            {
-               // printf("(%i,%i,%i)#%i (%i, %i, %i) #%i, #%i\n", next_bin_first.x, next_bin_first.y, next_bin_first.z, next_bin_first_hash, next_bin_last.x, next_bin_last.y, next_bin_last.z, next_bin_last_hash, getHash(next_bin_last));
-            }
 
-            //use the hash to calculate the start index (pbm stores location of 1st item after the end of bin)
-            //if (next_bin_last_hash >= d_binCount)
-            //    next_bin_last_hash = d_binCount - 1;
-            sm_message->state.binIndex = tex1Dfetch<unsigned int>(d_tex_PBM, next_bin_first_hash - 1);
-            sm_message->state.binIndexMax = tex1Dfetch<unsigned int>(d_tex_PBM, next_bin_last_hash);
+            //use the hash to calculate the start index (pbm stores location of 1st item)
+            sm_message->state.binIndex = tex1Dfetch<unsigned int>(d_tex_PBM, next_bin_first_hash);
+            sm_message->state.binIndexMax = tex1Dfetch<unsigned int>(d_tex_PBM, next_bin_last_hash+1);
             
             if (sm_message->state.binIndex < sm_message->state.binIndexMax)//(bin_index_min != 0xffffffff)
             {
@@ -266,17 +262,6 @@ __device__ LocationMessage *LocationMessages::loadNextMessage()
         }
     }
     sm_message->id = sm_message->state.binIndex;//Duplication of data TODO remove stateBinIndex
-    //From texture
-    //if (sm_message->id >= d_locationMessageCount)
-     //   printf("eeeeeeeeeeeee");
-    //if (d_locationMessageCount<624)
-    //    printf("id:%i,bd:%i,", blockIdx.x * blockDim.x + threadIdx.x, sm_message->state.binIndex);
-    //printf("id:%i,", d_locationMessageCount);
-    //if (sm_message->state.binIndex == 160)
-    //{
-    //    sm_message->id = 2000;
-     //   return 0;
-    //}
     sm_message->location.x = tex1Dfetch<float>(d_tex_location[0], sm_message->state.binIndex);
     sm_message->location.y = tex1Dfetch<float>(d_tex_location[1], sm_message->state.binIndex);
 #ifdef _3D
@@ -291,12 +276,6 @@ __device__ LocationMessage *LocationMessages::getFirstNeighbour(DIMENSIONS_VEC l
 {
     extern __shared__ LocationMessage sm_messages[];
     LocationMessage *sm_message = &(sm_messages[threadIdx.x]);
-
-    if (blockIdx.x==9 && threadIdx.x == 32)
-    {
-        printf("GridDim(%i,%i,%i) IV(%i, %i)\n",d_gridDim.x, d_gridDim.y, d_gridDim.z, invalidBin(glm::vec3(0,3,4)), invalidBin(glm::vec3(2,3,4)));
-    }
-
 #ifdef _DEBUG
     //If first thread and PBM isn't built, print warning
     if (!d_PBM_isBuilt && (((blockIdx.x * blockDim.x) + threadIdx.x)) == 0)
@@ -312,10 +291,14 @@ __device__ LocationMessage *LocationMessages::getFirstNeighbour(DIMENSIONS_VEC l
 #else
     sm_message->state.relative = -2;
 #endif
+#ifdef _DEBUG
     LocationMessage *lm = loadNextMessage();
     if (lm==0)
     {
-        printf("ERROR\n\n\n");
+        printf("ERROR: getFirstNeighbour() ret 0\n");
     }
     return lm;
+#else
+    return loadNextMessage();
+#endif
 }

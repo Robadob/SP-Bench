@@ -122,7 +122,7 @@ private:
     void launchHashLocationMessages();
     void launchReorderLocationMessages();
     //Device pointers
-    unsigned int *d_PBM; //Each int points to the end index of the relevant bin index
+    unsigned int *d_PBM; //Each int points to the first message index of the relevant bin index
     LocationMessages *d_locationMessages;
     LocationMessages *d_locationMessages_swap;
     //Device primitive pointers (used by thrust/CUB methods)

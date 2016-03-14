@@ -87,7 +87,7 @@ void SpatialPartition::deviceAllocateLocationMessages(LocationMessages **d_locMe
 void SpatialPartition::deviceAllocatePBM(unsigned int **d_PBM_t)
 {
     unsigned int binCount = getBinCount();
-    CUDA_CALL(cudaMalloc(d_PBM_t, sizeof(unsigned int)*binCount));
+    CUDA_CALL(cudaMalloc(d_PBM_t, sizeof(unsigned int)*(binCount+1)));
 }
 void SpatialPartition::deviceAllocatePrimitives(unsigned int **d_keys, unsigned int **d_vals)
 {
@@ -128,7 +128,7 @@ void SpatialPartition::fillTextures()
     CUDA_CALL(cudaMemcpy(tex_location_ptr_count, d_bufferPtr, locationMessageCount*sizeof(float), cudaMemcpyDeviceToDevice));
 #endif
 
-    CUDA_CALL(cudaMemcpy(tex_PBM_ptr, d_PBM, getBinCount()*sizeof(unsigned int), cudaMemcpyDeviceToDevice));
+    CUDA_CALL(cudaMemcpy(tex_PBM_ptr, d_PBM, (getBinCount()+1)*sizeof(unsigned int), cudaMemcpyDeviceToDevice));
 }
 
 void SpatialPartition::deviceAllocateTexture_float(unsigned int i)
@@ -201,13 +201,13 @@ void SpatialPartition::deviceAllocateGLTexture_float(unsigned int i)//GLuint *gl
 #endif
 /*
 Allocates the PBM texture, which is only accessed via CUDA & memcpy
-We are a bit sneaky here, we allocate +1, then ++ along the pointer, after memsetting the 0th value
 */
 void SpatialPartition::deviceAllocateTexture_int()
 {
     //Define cuda array format
     //Allocate cuda array
-    CUDA_CALL(cudaMalloc(&tex_PBM_ptr, getBinCount()*sizeof(unsigned int)));//Number of elements, not bytes
+    unsigned int size = getBinCount() + 1;
+    CUDA_CALL(cudaMalloc(&tex_PBM_ptr, size*sizeof(unsigned int)));//Number of elements, not bytes
     //Define cuda resource from array
     cudaResourceDesc resDesc;
     memset(&resDesc, 0, sizeof(cudaResourceDesc));
@@ -215,14 +215,13 @@ void SpatialPartition::deviceAllocateTexture_int()
     resDesc.res.linear.devPtr = tex_PBM_ptr;
     resDesc.res.linear.desc.f = cudaChannelFormatKindUnsigned;
     resDesc.res.linear.desc.x = 32; // bits per channel
-    resDesc.res.linear.sizeInBytes = (getBinCount())*sizeof(unsigned int);
+    resDesc.res.linear.sizeInBytes = size*sizeof(unsigned int);
 
     cudaTextureDesc texDesc;
     memset(&texDesc, 0, sizeof(cudaTextureDesc));
     texDesc.readMode = cudaReadModeElementType;
 
     CUDA_CALL(cudaCreateTextureObject(&tex_PBM, &resDesc, &texDesc, NULL));
-    tex_PBM.
     CUDA_CALL(cudaMemcpyToSymbol(d_tex_PBM, &tex_PBM, sizeof(cudaTextureObject_t)));
 }
 #ifdef _GL
@@ -395,7 +394,7 @@ void SpatialPartition::buildPBM()
     //CUDA_CALL(cudaMemset(d_PBM, 0xffffffff, PARTITION_GRID_BIN_COUNT * sizeof(int)));
     //Fill pbm end coords with known value 0x00000000 (this should mean if the mysterious bug does occur, the cell is just dropped, not large loop created)
     unsigned int binCount = getBinCount(); 
-    CUDA_CALL(cudaMemset(d_PBM, locationMessageCount, binCount * sizeof(unsigned int)));
+    CUDA_CALL(cudaMemset(d_PBM, 0x00000000, (binCount + 1) * sizeof(unsigned int)));
     launchReorderLocationMessages();
 
     //Clone data to textures ready for neighbourhood search
