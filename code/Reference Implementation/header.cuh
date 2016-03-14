@@ -36,7 +36,7 @@ static void HandleCUDAError(const char *file,
 }
 #define CUDA_CALL( err ) (HandleCUDAError(__FILE__, __LINE__ , err))
 #define CUDA_CHECK() (HandleCUDAError(__FILE__, __LINE__))
-#include "GLcheck.h"
+
 //Set bits in a state from the mask
 __device__ __host__ static int performSetBitwise(int state, int mask, int op) {
     //op: 0 - UnSet, 1 - Set

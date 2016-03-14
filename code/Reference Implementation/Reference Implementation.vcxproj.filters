@@ -31,45 +31,39 @@
       <Filter>Circles</Filter>
     </ClInclude>
     <ClInclude Include="visualisation\Axis.h">
-      <Filter>Visualisation\Headers</Filter>
+      <Filter>Headers\Visualisation</Filter>
     </ClInclude>
     <ClInclude Include="visualisation\Camera.h">
-      <Filter>Visualisation\Headers</Filter>
+      <Filter>Headers\Visualisation</Filter>
     </ClInclude>
     <ClInclude Include="visualisation\Entity.h">
-      <Filter>Visualisation\Headers</Filter>
+      <Filter>Headers\Visualisation</Filter>
     </ClInclude>
-    <ClInclude Include="visualisation\resource.h">
-      <Filter>Visualisation\Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="visualisation\Quaternion.h">
-      <Filter>Visualisation\Headers</Filter>
+    <ClInclude Include="visualisation\GLcheck.h">
+      <Filter>Headers\Visualisation</Filter>
     </ClInclude>
     <ClInclude Include="visualisation\Material.h">
-      <Filter>Visualisation\Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="visualisation\Shaders.h">
-      <Filter>Visualisation\Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="visualisation\Skybox.h">
-      <Filter>Visualisation\Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="visualisation\Texture.h">
-      <Filter>Visualisation\Headers</Filter>
+      <Filter>Headers\Visualisation</Filter>
     </ClInclude>
     <ClInclude Include="visualisation\Visualisation.h">
-      <Filter>Visualisation\Headers</Filter>
+      <Filter>Headers\Visualisation</Filter>
     </ClInclude>
-    <ClInclude Include="visualisation\VisualisationScene.h">
-      <Filter>Visualisation\Headers</Filter>
+    <ClInclude Include="visualisation\Scene.h">
+      <Filter>Headers\Visualisation</Filter>
+    </ClInclude>
+    <ClInclude Include="visualisation\Shaders.h">
+      <Filter>Headers\Visualisation</Filter>
+    </ClInclude>
+    <ClInclude Include="visualisation\Skybox.h">
+      <Filter>Headers\Visualisation</Filter>
+    </ClInclude>
+    <ClInclude Include="visualisation\Texture.h">
+      <Filter>Headers\Visualisation</Filter>
     </ClInclude>
     <ClInclude Include="ParticleScene.h">
-      <Filter>Visualisation\Headers</Filter>
+      <Filter>Headers</Filter>
     </ClInclude>
-    <ClInclude Include="visualisation\Visualisation.hpp">
-      <Filter>Visualisation</Filter>
-    </ClInclude>
-    <ClInclude Include="GLcheck.h">
+    <ClInclude Include="ParticleScene.hpp">
       <Filter>Headers</Filter>
     </ClInclude>
   </ItemGroup>
@@ -80,40 +74,41 @@
     <Filter Include="Circles">
       <UniqueIdentifier>{51a516f2-9ada-4c06-baa2-879f353861eb}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Visualisation">
-      <UniqueIdentifier>{9e57c05c-d352-4484-a36d-fef1821f9748}</UniqueIdentifier>
+    <Filter Include="Headers\Visualisation">
+      <UniqueIdentifier>{b0919a28-122c-44f1-98f3-fee2830c1444}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Visualisation\Headers">
-      <UniqueIdentifier>{03a15a90-55be-472f-922c-9fa48ac687af}</UniqueIdentifier>
+    <Filter Include="Visualistion">
+      <UniqueIdentifier>{8a8a1952-eaee-4f0f-9df9-2a87aca09524}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="visualisation\Axis.cpp">
-      <Filter>Visualisation</Filter>
-    </ClCompile>
-    <ClCompile Include="visualisation\Camera.cpp">
-      <Filter>Visualisation</Filter>
-    </ClCompile>
-    <ClCompile Include="visualisation\Entity.cpp">
-      <Filter>Visualisation</Filter>
-    </ClCompile>
-    <ClCompile Include="visualisation\Material.cpp">
-      <Filter>Visualisation</Filter>
+    <ClCompile Include="visualisation\Scene.cpp">
+      <Filter>Visualistion</Filter>
     </ClCompile>
     <ClCompile Include="visualisation\Shaders.cpp">
-      <Filter>Visualisation</Filter>
+      <Filter>Visualistion</Filter>
     </ClCompile>
     <ClCompile Include="visualisation\Skybox.cpp">
-      <Filter>Visualisation</Filter>
+      <Filter>Visualistion</Filter>
     </ClCompile>
     <ClCompile Include="visualisation\Texture.cpp">
-      <Filter>Visualisation</Filter>
+      <Filter>Visualistion</Filter>
     </ClCompile>
-    <ClCompile Include="visualisation\VisualisationScene.cpp">
-      <Filter>Visualisation</Filter>
+    <ClCompile Include="visualisation\Visualisation.cpp">
+      <Filter>Visualistion</Filter>
     </ClCompile>
-    <ClCompile Include="ParticleScene.cpp">
-      <Filter>Visualisation</Filter>
+    <ClCompile Include="visualisation\Axis.cpp">
+      <Filter>Visualistion</Filter>
     </ClCompile>
+    <ClCompile Include="visualisation\Camera.cpp">
+      <Filter>Visualistion</Filter>
+    </ClCompile>
+    <ClCompile Include="visualisation\Entity.cpp">
+      <Filter>Visualistion</Filter>
+    </ClCompile>
+    <ClCompile Include="visualisation\Material.cpp">
+      <Filter>Visualistion</Filter>
+    </ClCompile>
+    <ClCompile Include="ParticleScene.cpp" />
   </ItemGroup>
 </Project>

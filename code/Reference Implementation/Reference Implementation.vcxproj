@@ -191,25 +191,23 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
   <ItemGroup>
     <ClInclude Include="Circles.cuh" />
     <ClInclude Include="CirclesKernels.cuh" />
-    <ClInclude Include="GLcheck.h" />
     <ClInclude Include="header.cuh" />
     <ClInclude Include="CirclesModel.cuh" />
     <ClInclude Include="Neighbourhood.cuh" />
     <ClInclude Include="NeighbourhoodConstants.cuh" />
     <ClInclude Include="NeighbourhoodKernels.cuh" />
     <ClInclude Include="ParticleScene.h" />
+    <ClInclude Include="ParticleScene.hpp" />
     <ClInclude Include="visualisation\Axis.h" />
     <ClInclude Include="visualisation\Camera.h" />
     <ClInclude Include="visualisation\Entity.h" />
+    <ClInclude Include="visualisation\GLcheck.h" />
     <ClInclude Include="visualisation\Material.h" />
-    <ClInclude Include="visualisation\Quaternion.h" />
-    <ClInclude Include="visualisation\resource.h" />
+    <ClInclude Include="visualisation\Scene.h" />
     <ClInclude Include="visualisation\Shaders.h" />
     <ClInclude Include="visualisation\Skybox.h" />
     <ClInclude Include="visualisation\Texture.h" />
     <ClInclude Include="visualisation\Visualisation.h" />
-    <ClInclude Include="visualisation\Visualisation.hpp" />
-    <ClInclude Include="visualisation\VisualisationScene.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ParticleScene.cpp" />
@@ -217,10 +215,11 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     <ClCompile Include="visualisation\Camera.cpp" />
     <ClCompile Include="visualisation\Entity.cpp" />
     <ClCompile Include="visualisation\Material.cpp" />
+    <ClCompile Include="visualisation\Scene.cpp" />
     <ClCompile Include="visualisation\Shaders.cpp" />
     <ClCompile Include="visualisation\Skybox.cpp" />
     <ClCompile Include="visualisation\Texture.cpp" />
-    <ClCompile Include="visualisation\VisualisationScene.cpp" />
+    <ClCompile Include="visualisation\Visualisation.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

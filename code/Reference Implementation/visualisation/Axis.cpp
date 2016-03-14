@@ -1,22 +1,28 @@
 #include "Axis.h"
 
-#include <stdio.h>
-#include "SDL/SDL_opengl.h"
-
+#include "GLcheck.h"
+/*
+Constructs a new axis object
+@param length The length of each drawn axis
+*/
 Axis::Axis(float length){
     this->length = length;
 }
-
-
-Axis::~Axis()
-{
+/*
+Default destructor
+*/
+Axis::~Axis(){
 }
-
-
+/*
+Renders a simple axis marker. Red displays the positive x, Green the positive y and Blue the positive z.
+*/
 void Axis::render(){
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glUseProgram(0); //Use default shader
+    GL_CALL(glPolygonMode(GL_FRONT_AND_BACK, GL_LINE));
     glPushMatrix();
-        glBegin(GL_LINES);
+    glDisable(GL_LIGHTING);
+    glPushAttrib(GL_ENABLE_BIT);
+    glBegin(GL_LINES);
             // X axis
             glColor3f(1.0, 0.0, 0.0);     // Red
             glVertex3f(0.0, 0.0, 0.0);
@@ -31,7 +37,9 @@ void Axis::render(){
             glColor3f(0.0, 0.0, 1.0);     // Blue
             glVertex3f(0.0, 0.0, 0.0);
             glVertex3f(0.0, 0.0, this->length);
-        glEnd();
+    glEnd();
+    GL_CHECK();
+    glPopAttrib();
     glPopMatrix();
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    GL_CALL(glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
 }

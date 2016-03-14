@@ -1,85 +1,83 @@
-#pragma once
-
-#include <stdio.h>
-#include <thread>
-#include <gl/glew.h>
+#ifndef __Visualisation_h__
+#define __Visualisation_h__
 
 #include <SDL/SDL.h>
-#include <SDL/SDL_opengl.h>
-
 #include <glm/glm.hpp>
-#include <glm/gtx/transform.hpp>
-#include "glm/gtc/type_ptr.hpp"
 
-#include "VisualisationScene.h"
+//#include "Scene.h"
 #include "Camera.h"
 #include "Axis.h"
 #include "Skybox.h"
 
-#undef main
+#undef main //SDL breaks the regular main entry point, this fixes
 
-#define DEFAULT_WINDOW_WIDTH 1280
-#define DEFAULT_WINDOW_HEIGHT 720
-template<class T>
+class Scene;
+
+/*
+This class provides an OpenGL window
+*/
 class Visualisation
 {
 public:
-    Visualisation(char* windowTitle, int windowWidth = DEFAULT_WINDOW_WIDTH, int windowHeight = DEFAULT_WINDOW_HEIGHT);
+    Visualisation(char *windowTitle, int windowWidth, int windowHeight);
     ~Visualisation();
 
-    bool init();
-    void handleKeypress(SDL_Keycode keycode, int x, int y);
-    void close();
+    Scene *setScene(Scene *scene);
+    void Visualisation::render();
     void run(); // @todo - improve
-    void runAsync();
-    void renderStep();
 
-    char* getWindowTitle();
-    void setWindowTitle(char* windowTitle);
+    const char *getWindowTitle() const;
+    void setWindowTitle(const char *windowTitle);
     
-    void setQuit(bool quit);
+    void quit();
     void toggleFullScreen();
     void toggleMouseMode();
     void resizeWindow();
-    void handleMouseMove(int x, int y);
-    bool isFullscreen();
-    void updateFPS();
+    bool isFullscreen() const;
 
     void defaultProjection();
     void defaultLighting();
-    void clearFrame();
-    void renderAxis();
     void setRenderAxis(bool state);
-
-    Camera *getCamera();
-    T *getScene() const;
+    void setMSAA(bool state); 
+    void Visualisation::setSkybox(bool state);
+    const Camera *getCamera() const;
+    const Scene *getScene() const;
+    const glm::mat4 *getFrustrumPtr() const;
 
 private:
-    std::thread *renderThread;
+    void clearFrame();
+    void handleKeypress(SDL_Keycode keycode, int x, int y);
+    void handleMouseMove(int x, int y);
+    void updateFPS();
+    bool init();
+    void close();
 
     SDL_Window* window;
+    SDL_Rect windowedBounds;
     SDL_GLContext context;
+
     Camera camera;
-    T* scene;
+    Scene* scene;
     glm::mat4 frustum;
 
     bool isInitialised;
-    bool quit;
+    bool continueRender;
 
     bool renderAxisState;
+    bool msaaState;
+
+    //Default objects
     Axis axis;
     Skybox *skybox;
 
-    char* windowTitle;
+    const char* windowTitle;
     int windowWidth;
     int windowHeight;
-    
-    SDL_Rect windowedBounds;
 
+    //FPS tracking stuff
     unsigned int previousTime = 0;
     unsigned int currentTime;
     unsigned int frameCount = 0;
-
 };
 
-#include "Visualisation.hpp"
+#endif //ifndef __Visualisation_h__

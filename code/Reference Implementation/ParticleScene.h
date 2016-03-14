@@ -1,35 +1,40 @@
-#pragma once
+#ifndef __ParticleScene_h__
+#define __ParticleScene_h__
 
-
-#include "visualisation/VisualisationScene.h"
+#include "visualisation/Scene.h"
 #include "visualisation/Entity.h"
-#include "visualisation/Shaders.h"
-#include <driver_types.h>
+#include "Circles.cuh"
+
 #ifdef _3D
 #define DIMENSIONS 3
 #else
 #define DIMENSIONS 2
 #endif
-class ParticleScene : public VisualisationScene
+
+template<class T>
+class ParticleScene : protected Scene
 {
 public:
-    ParticleScene(Camera* camera = nullptr);
-    ~ParticleScene();
 
-    void update() override;
+    ParticleScene(Visualisation &visualisation, Circles<T> &model);
+
+    void render() override;
     void reload() override;
-    void render(glm::mat4 projection) override;
-    void generate() override;
+    void update() override;
+
     void setCount(unsigned int count);
-    //void setMax(unsigned int max);
-    void setTex(GLuint* const tex);
 
 private:
-    //void createTextureBufferObject(GLuint *tbo, GLuint *tex, GLuint size, GLuint type);
-   // void deleteTextureBufferObject(GLuint *tbo, GLuint *tex);
+    ~ParticleScene();//Private to prevent stack allocation
+    void setTex(GLuint* const tex);
+
     Entity entity;
-    Shaders shaders;
     unsigned int count;// , max;
     GLuint tex[DIMENSIONS];
+
+    Circles<T> &model;
 };
 
+#include "ParticleScene.hpp"
+
+#endif __ParticleScene_h__

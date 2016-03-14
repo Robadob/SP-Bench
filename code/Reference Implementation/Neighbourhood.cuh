@@ -5,7 +5,7 @@
 #include "glm/gtx/component_wise.hpp"
 
 #ifdef _GL
-#include <GL\glew.h>
+#include "visualisation/GLcheck.h"
 #endif
 
 
