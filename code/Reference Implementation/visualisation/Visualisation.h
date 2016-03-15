@@ -74,6 +74,8 @@ private:
     int windowWidth;
     int windowHeight;
 
+    float fieldOfView;
+
     //FPS tracking stuff
     unsigned int previousTime = 0;
     unsigned int currentTime;

@@ -59,7 +59,7 @@ public:
 #ifdef _3D
     float *locationZ;
 #endif
-#if _GL
+#if defined(_GL) || defined(_DEBUG)
     float *count;
 #endif
     __device__ LocationMessage *getFirstNeighbour(DIMENSIONS_VEC location);
@@ -86,6 +86,17 @@ public:
     //Util
     void buildPBM();
     void swap();
+    DIMENSIONS_IVEC getGridDim() const { return gridDim; }
+    DIMENSIONS_VEC getEnvironmentMin() const { return environmentMin; }
+    DIMENSIONS_VEC getEnvironmentMax() const { return environmentMax; }
+    float getCellSize() const { return interactionRad;  }
+#ifdef _DEBUG
+    DIMENSIONS_IVEC getGridPosition(DIMENSIONS_VEC worldPos);
+    bool isValid(DIMENSIONS_IVEC bin) const;
+    int getHash(DIMENSIONS_IVEC gridPos);
+    DIMENSIONS_IVEC getPos(unsigned int hash);
+    void assertSearch();
+#endif
 #ifdef _GL
     const GLuint *SpatialPartition::getLocationTexNames() const { return gl_tex; }
     GLuint SpatialPartition::getCountTexName() const { return gl_tex_count; }

@@ -21,8 +21,6 @@ __global__ void init_particles(curandState *state, LocationMessages *locationMes
 #endif
 }
 
-extern __device__ int getHash(DIMENSIONS_IVEC gridPos);
-extern __device__ DIMENSIONS_IVEC getGridPosition(DIMENSIONS_VEC worldPos);
 __global__ void step_model(LocationMessages *locationMessagesIn, LocationMessages *locationMessagesOut)
 {
 
@@ -40,14 +38,13 @@ __global__ void step_model(LocationMessages *locationMessagesIn, LocationMessage
     float dist, separation, k;
     LocationMessage *lm = locationMessagesIn->getFirstNeighbour(myLoc);
     //Always atleast 1 location message, our own location!
-    int counter = -1;
-
-    while (lm)//change this line to `do`
+    int counter = 0;
+    do
     {
+        counter++;
         if ((lm->id != id))
         {
             locDiff = myLoc - lm->location;//Difference
-            counter++;
             if (locDiff==DIMENSIONS_VEC(0))//Ignore distance 0
             {
                 lm = locationMessagesIn->getNextNeighbour(lm);
@@ -66,17 +63,15 @@ __global__ void step_model(LocationMessages *locationMessagesIn, LocationMessage
             }
         }
         lm = locationMessagesIn->getNextNeighbour(lm);//Returns a pointer to shared memory or 0
-    }//change this line to `}while(lm)`
-    DIMENSIONS_IVEC a = getGridPosition(myLoc);
-    unsigned int b = getHash(a);
+    } while (lm);
     //Export myloc?
     locationMessagesOut->locationX[id] = myLoc.x;
     locationMessagesOut->locationY[id] = myLoc.y;
 #ifdef _3D
     locationMessagesOut->locationZ[id] = myLoc.z;
 #endif
-#ifdef _GL
-    locationMessagesOut->count[id] = counter / (float)(d_locationMessageCount-1);
-    //printf("%i/%i -> %.3f\n", counter, d_locationMessageCount, locationMessagesOut->count[id]);
+#if defined(_GL) || defined(_DEBUG)
+    locationMessagesOut->count[id] = counter/(float)d_locationMessageCount;
+  //  printf("%.3f\n", locationMessagesOut->count[id]);
 #endif
 }

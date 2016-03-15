@@ -34,13 +34,19 @@ vec3 hsv2rgb(vec3 hsv)
   }
 
 }
+float normalDist(float x, float mean, float variance)
+{
+#define M_PI 3.1415926535897932384626433832795
+    float scale = sqrt(variance);
+    return (1.0f/(scale*sqrt(2.0f*M_PI))) * exp(-pow(x-mean,2.0f)/(2.0f*variance));
+} 
 void main()
 {
 //0 is red, ~120 is green
+  //int icount = int(count);
+  //float minCount= max(0,(0.5-((count<=0.001)?0.5:count))*120);//120-min(120, count);
 
-  float minCount= max(0,(0.5-((count<=0.001)?0.5:count))*120);//120-min(120, count);
-
-  vec3 pastelPurple = hsv2rgb(vec3(minCount, 1.0, 1.0));
+vec3 pastelPurple = hsv2rgb(vec3(normalDist(count, -0.49f,pow(0.42f,2.0f))*240,1.0f,1.0f));//Normal dist returns a value 0->0.5 and 1->0
 //Flat shading
   vec3 N  = normalize(cross(dFdx(u_normal), dFdy(u_normal)));//Face Normal
   vec3 L = normalize(vec3(0,0,0)-u_normal);

@@ -1,6 +1,6 @@
 #include "NeighbourhoodKernels.cuh"
 //getHash already clamps.
-#define SP_NO_CLAMP_GRID //Clamp grid coords to within grid (if it's possible for model to go out of bounds)
+//#define SP_NO_CLAMP_GRID //Clamp grid coords to within grid (if it's possible for model to go out of bounds)
 
 __device__ DIMENSIONS_IVEC getGridPosition(DIMENSIONS_VEC worldPos)
 {
@@ -150,12 +150,21 @@ __device__ LocationMessage *LocationMessages::getNextNeighbour(LocationMessage *
 
     return loadNextMessage();
 }
-__device__ bool invalidBin(glm::ivec3 bin)
+__device__ bool invalidBinYZ(glm::ivec3 bin)
 {
     if (
-        bin.x<0 || bin.x >= d_gridDim.x ||
         bin.y<0 || bin.y >= d_gridDim.y ||
         bin.z<0 || bin.z >= d_gridDim.z
+        )
+    {
+        return true;
+    }
+    return false;
+}
+__device__ bool invalidBinX(glm::ivec3 bin)
+{
+    if (
+        bin.x<0 || bin.x >= d_gridDim.x 
         )
     {
         return true;
@@ -222,20 +231,17 @@ __device__ LocationMessage *LocationMessages::loadNextMessage()
             
             DIMENSIONS_IVEC next_bin_last = next_bin_first;
             next_bin_last.x += 2;
-            bool firstInvalid = invalidBin(next_bin_first);
-            bool lastInvalid = invalidBin(next_bin_last);
+            bool firstInvalid = invalidBinX(next_bin_first);
+            bool lastInvalid = invalidBinX(next_bin_last);
+            if (invalidBinYZ(next_bin_first))
+            {//Whole strip invalid, skip
+                continue;
+            }
             if (firstInvalid)
             {
-                if (lastInvalid)
-                {//If strip starts and ends out of bounds
-                    continue;
-                }
-                else
-                {//If strip starts out of bounds only
-                    next_bin_first.x = 0;
-                }
+                next_bin_first.x = 0;
             }
-            else if (lastInvalid)
+            if (lastInvalid)
             {//If strip ends out of bounds only
                 next_bin_last.x = d_gridDim.x-1;//Max x coord
             }
@@ -293,9 +299,15 @@ __device__ LocationMessage *LocationMessages::getFirstNeighbour(DIMENSIONS_VEC l
 #endif
 #ifdef _DEBUG
     LocationMessage *lm = loadNextMessage();
+    //if (d_PBM_isBuilt && (((blockIdx.x * blockDim.x) + threadIdx.x)) == 0)
+    //{
+    //    DIMENSIONS_IVEC pos = getGridPosition(location);
+    //    int hash = getHash(pos);
+    //    printf("GridDim(%i,%i,%i) Hash(%i) GridPos(%i,%i,%i)\n", d_gridDim.x, d_gridDim.y, d_gridDim.z, hash, pos.x, pos.y, pos.z);
+    //}
     if (lm==0)
     {
-        printf("ERROR: getFirstNeighbour() ret 0\n");
+        //printf("ERROR: getFirstNeighbour() ret 0\n");
     }
     return lm;
 #else
