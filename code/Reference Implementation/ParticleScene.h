@@ -21,7 +21,7 @@ public:
     void render() override;
     void reload() override;
     void update() override;
-
+    void renderPBM();
     void setCount(unsigned int count);
 
 private:
