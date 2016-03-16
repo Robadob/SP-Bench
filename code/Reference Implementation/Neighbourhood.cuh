@@ -178,7 +178,10 @@ extern __device__ __constant__ DIMENSIONS_VEC  d_environmentMax;
 #ifdef _DEBUG
 extern __device__ __constant__ unsigned int d_PBM_isBuilt;
 #endif
-
+#if defined(_GL) || defined(_DEBUG)
+extern __device__ __constant__ LocationMessages *d_locationMessagesA;
+extern __device__ __constant__ LocationMessages *d_locationMessagesB;
+#endif
 extern __device__ __constant__ cudaTextureObject_t d_tex_location[DIMENSIONS];
 extern __device__ __constant__ cudaTextureObject_t d_tex_PBM;
 

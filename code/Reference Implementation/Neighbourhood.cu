@@ -51,7 +51,12 @@ SpatialPartition::SpatialPartition(DIMENSIONS_VEC  environmentMin, DIMENSIONS_VE
 #endif
     setLocationCount(locationMessageCount);
     unsigned int t_binCount = getBinCount();
-    CUDA_CALL(cudaMemcpyToSymbol(d_binCount, &t_binCount, sizeof(unsigned int)));
+    CUDA_CALL(cudaMemcpyToSymbol(d_binCount, &t_binCount, sizeof(LocationMessages *)));
+
+#if defined(_GL) || defined(_DEBUG)
+    CUDA_CALL(cudaMemcpyToSymbol(d_locationMessagesA, &d_locationMessages, sizeof(LocationMessages *)));
+    CUDA_CALL(cudaMemcpyToSymbol(d_locationMessagesB, &d_locationMessages_swap, sizeof(LocationMessages *)));
+#endif
 }
 SpatialPartition::~SpatialPartition()
 {

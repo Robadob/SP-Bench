@@ -38,10 +38,8 @@ __global__ void step_model(LocationMessages *locationMessagesIn, LocationMessage
     float dist, separation, k;
     LocationMessage *lm = locationMessagesIn->getFirstNeighbour(myLoc);
     //Always atleast 1 location message, our own location!
-    int counter = 0;
     do
     {
-        counter++;
         if ((lm->id != id))
         {
             locDiff = myLoc - lm->location;//Difference
@@ -69,9 +67,5 @@ __global__ void step_model(LocationMessages *locationMessagesIn, LocationMessage
     locationMessagesOut->locationY[id] = myLoc.y;
 #ifdef _3D
     locationMessagesOut->locationZ[id] = myLoc.z;
-#endif
-#if defined(_GL) || defined(_DEBUG)
-    locationMessagesOut->count[id] = counter/(float)d_locationMessageCount;
-  //  printf("%.3f\n", locationMessagesOut->count[id]);
 #endif
 }

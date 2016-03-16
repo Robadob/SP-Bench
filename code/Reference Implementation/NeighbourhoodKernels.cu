@@ -264,9 +264,19 @@ __device__ LocationMessage *LocationMessages::loadNextMessage()
         }
         else
         {
+#if defined(_GL) || defined(_DEBUG)
+            int id = blockIdx.x * blockDim.x + threadIdx.x;
+            d_locationMessagesA->count[id] /= d_locationMessageCount;
+            d_locationMessagesB->count[id] /= d_locationMessageCount;
+#endif
             return 0;//All bins exhausted
         }
     }
+#if defined(_GL) || defined(_DEBUG)
+    int id = blockIdx.x * blockDim.x + threadIdx.x;
+    d_locationMessagesA->count[id] += 1.0;
+    d_locationMessagesB->count[id] += 1.0;
+#endif
     sm_message->id = sm_message->state.binIndex;//Duplication of data TODO remove stateBinIndex
     sm_message->location.x = tex1Dfetch<float>(d_tex_location[0], sm_message->state.binIndex);
     sm_message->location.y = tex1Dfetch<float>(d_tex_location[1], sm_message->state.binIndex);
@@ -287,6 +297,14 @@ __device__ LocationMessage *LocationMessages::getFirstNeighbour(DIMENSIONS_VEC l
     if (!d_PBM_isBuilt && (((blockIdx.x * blockDim.x) + threadIdx.x)) == 0)
         printf("PBM has not been rebuilt after calling swap()!\n");
 #endif
+#if defined(_GL) || defined(_DEBUG)
+    //Store the locations of these in a constant
+    //Set both, so we don't have to identify which is current.
+    //Set counter to 0
+    int id = blockIdx.x * blockDim.x + threadIdx.x;
+    d_locationMessagesA->count[id] = 0;
+    d_locationMessagesB->count[id] = 0;
+#endif
     sm_message->state.location = getGridPosition(location);
     sm_message->state.binIndex = 0;//Init binIndex greater than equal to binIndexMax to force bin change
     sm_message->state.binIndexMax = 0;
@@ -297,20 +315,6 @@ __device__ LocationMessage *LocationMessages::getFirstNeighbour(DIMENSIONS_VEC l
 #else
     sm_message->state.relative = -2;
 #endif
-#ifdef _DEBUG
-    LocationMessage *lm = loadNextMessage();
-    //if (d_PBM_isBuilt && (((blockIdx.x * blockDim.x) + threadIdx.x)) == 0)
-    //{
-    //    DIMENSIONS_IVEC pos = getGridPosition(location);
-    //    int hash = getHash(pos);
-    //    printf("GridDim(%i,%i,%i) Hash(%i) GridPos(%i,%i,%i)\n", d_gridDim.x, d_gridDim.y, d_gridDim.z, hash, pos.x, pos.y, pos.z);
-    //}
-    if (lm==0)
-    {
-        //printf("ERROR: getFirstNeighbour() ret 0\n");
-    }
-    return lm;
-#else
     return loadNextMessage();
-#endif
+
 }
