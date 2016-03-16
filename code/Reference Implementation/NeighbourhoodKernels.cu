@@ -96,41 +96,36 @@ __global__ void reorderLocationMessages(
     //Load next key
     unsigned int next_key;
     //if thread is final thread
-    if (index == d_locationMessageCount-1)
+    if (index == d_locationMessageCount - 1)
     {
         next_key = d_binCount;
     }
     //If thread is last in block, no next in SM, goto global
-    else if (threadIdx.x == blockDim.x-1)
+    else if (threadIdx.x == blockDim.x - 1)
     {
-         next_key = keys[indexPlus1];
+        next_key = keys[indexPlus1];
     }
     else
     {
         next_key = sm_data[threadIdx.x + 1];
     }
-
-    //Set partition boundaries
-    //if (index == 0)
-    //{//First message, set first bin start
-    //    pbm->start[key] = index;
-    //}
-    //else 
-    //if (index == 0)
-    //{//First thread, set all bins prior to my key to 0
-    //    if (key>0)
-    //        for (int k = 0; k < key; k++)
-    //            pbm[k] = 0;
-    //}
-#if _DEBUG
-    if (next_key > 125)
-        printf("ERROR: PBM generated a next_key that is too high.");
-#endif
+    //Boundary message, set all keys after ours until (inclusive) next_key to our index +1
     if (next_key != key)
-    {//Boundary message, set all keys after ours until (inclusive) next_key to our index +1
+    {
         for (int k = next_key; k > key; k--)
             pbm[k] = indexPlus1;
     }
+
+#if _DEBUG
+    if (next_key > d_binCount)
+    {
+        printf("ERROR: PBM generated an out of range next_key.\n");
+    }
+    if (old_pos >= d_locationMessageCount)
+    {
+        printf("ERROR: PBM generated an out of range old_pos.\n");
+    }
+#endif
 
     //Order messages into swap space
     ordered_messages->locationX[index] = unordered_messages->locationX[old_pos];
@@ -138,8 +133,15 @@ __global__ void reorderLocationMessages(
 #ifdef _3D
     ordered_messages->locationZ[index] = unordered_messages->locationZ[old_pos];
 #endif
-#ifdef _GL
-    ordered_messages->count[index] = unordered_messages->count[old_pos];
+#if _DEBUG
+    //Check these rather than ordered in hopes of memory coealesce
+    if (ordered_messages->locationX[index] == NAN ||
+        ordered_messages->locationY[index] == NAN ||
+        ordered_messages->locationZ[index] == NAN
+        )
+    {
+        printf("ERROR: Location containing NaN detected.\n");
+    }
 #endif
 }
 
