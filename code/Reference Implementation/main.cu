@@ -24,6 +24,7 @@ __global__ void initLocations(
 
 int main()
 {
+    cudaSetDevice(0);
     cudaEvent_t start, stop;
     cudaEventCreate(&start);
     cudaEventCreate(&stop);
@@ -43,11 +44,11 @@ int main()
 
     //Init model
     printf("Init Complete - Times\n");
-    printf("CuRand init - %.3fs\n", initTimes.initCurand * 1000);
-    printf("Main kernel - %.3fs\n", initTimes.kernel * 1000);
-    printf("Build PBM   - %.3fs\n", initTimes.pbm * 1000);
-    printf("CuRand free - %.3fs\n", initTimes.freeCurand * 1000);
-    printf("Combined    - %.3fs\n", initTimes.overall * 1000);
+    printf("CuRand init - %.3fs\n", initTimes.initCurand / 1000);
+    printf("Main kernel - %.3fs\n", initTimes.kernel / 1000);
+    printf("Build PBM   - %.3fs\n", initTimes.pbm / 1000);
+    printf("CuRand free - %.3fs\n", initTimes.freeCurand / 1000);
+    printf("Combined    - %.3fs\n", initTimes.overall / 1000);
     printf("\n");
     //Start visualisation
     //v.runAsync();
@@ -69,9 +70,9 @@ int main()
         printf("\r%6llu/%llu", i, iterations);
     }
     printf("Model complete - Average Times\n");
-    printf("Main kernel - %.3fs\n", average.kernel * 1000);
-    printf("Build PBM   - %.3fs\n", average.texture * 1000);
-    printf("Combined    - %.3fs\n", average.overall * 1000);
+    printf("Main kernel - %.3fs\n", average.kernel / 1000);
+    printf("Build PBM   - %.3fs\n", average.texture / 1000);
+    printf("Combined    - %.3fs\n", average.overall / 1000);
     printf("\n");
 
     //Calculate final timing
