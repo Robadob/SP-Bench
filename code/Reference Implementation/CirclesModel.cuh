@@ -194,7 +194,6 @@ void Circles<T>::launchStep()
     LocationMessages *d_lm2 = spatialPartition->d_getLocationMessagesSwap();
     //Launch kernel
     step_model << <gridSize, blockSize, requiredSM_stepModel(blockSize) >> >(d_lm, d_lm2);
-    CUDA_CALL(cudaDeviceSynchronize());//unncecssary sync
     //Swap
     spatialPartition->swap();
     //Wait for return

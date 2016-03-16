@@ -519,7 +519,7 @@ void SpatialPartition::deviceDeallocateTextures()
 #endif
 }
 
-unsigned int SpatialPartition::getBinCount()
+unsigned int SpatialPartition::getBinCount() const
 {
     return (unsigned int)glm::compMul(gridDim);
 }
@@ -544,6 +544,18 @@ int requiredSM_reorderLocationMessages(int blockSize)
 {
     return sizeof(unsigned int)*blockSize;
 }
+#ifdef _DEBUG
+void SpatialPartition::launchAssertPBMIntegerity()
+{
+    int blockSize;   // The launch configurator returned block size 
+    CUDA_CALL(cudaOccupancyMaxActiveBlocksPerMultiprocessor(&blockSize, hashLocationMessages, 32, 0));//Randomly 32
+    // Round up according to array size
+    int gridSize = (getBinCount() + blockSize - 1) / blockSize;
+    //Copy messages from d_messages to d_messages_swap, in hash order
+    assertPBMIntegrity<<<gridSize, blockSize>>>();
+    //No sync, called directly after textures have been updated
+}
+#endif
 void SpatialPartition::launchReorderLocationMessages()
 {
     int minGridSize, blockSize;   // The launch configurator returned block size 
@@ -552,7 +564,6 @@ void SpatialPartition::launchReorderLocationMessages()
     int gridSize = (locationMessageCount + blockSize - 1) / blockSize;
     //Copy messages from d_messages to d_messages_swap, in hash order
     reorderLocationMessages <<<gridSize, blockSize, requiredSM_reorderLocationMessages(blockSize) >>>(d_keys, d_vals, d_PBM, d_locationMessages, d_locationMessages_swap);
-    CUDA_CALL(cudaDeviceSynchronize());//unncecssary sync
     swap();
     //Wait for return
     CUDA_CALL(cudaDeviceSynchronize());
@@ -616,10 +627,10 @@ void SpatialPartition::buildPBM()
     unsigned int binCount = getBinCount(); 
     CUDA_CALL(cudaMemset(d_PBM, 0x00000000, (binCount + 1) * sizeof(unsigned int)));
     launchReorderLocationMessages();
-
     //Clone data to textures ready for neighbourhood search
     fillTextures();
 #ifdef _DEBUG
+    launchAssertPBMIntegerity();
     PBM_isBuilt = 1;
     CUDA_CALL(cudaMemcpyToSymbol(d_PBM_isBuilt, &PBM_isBuilt, sizeof(unsigned int)));
 #endif

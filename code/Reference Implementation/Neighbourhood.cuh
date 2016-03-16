@@ -96,6 +96,7 @@ public:
     int getHash(DIMENSIONS_IVEC gridPos);
     DIMENSIONS_IVEC getPos(unsigned int hash);
     void assertSearch();
+    void launchAssertPBMIntegerity();
 #endif
 #ifdef _GL
     const GLuint *SpatialPartition::getLocationTexNames() const { return gl_tex; }
@@ -126,7 +127,7 @@ private:
     
     void fillTextures();
 
-    unsigned int getBinCount();//(ceil((X_MAX-X_MIN)/SEARCH_RADIUS)*ceil((Y_MAX-Y_MIN)/SEARCH_RADIUS)*ceil((Z_MAX-Z_MIN)/SEARCH_RADIUS))
+    unsigned int getBinCount() const;//(ceil((X_MAX-X_MIN)/SEARCH_RADIUS)*ceil((Y_MAX-Y_MIN)/SEARCH_RADIUS)*ceil((Z_MAX-Z_MIN)/SEARCH_RADIUS))
     const unsigned int maxAgents;
     float interactionRad;//Radius of agent interaction
     //Kernel launchers

@@ -65,7 +65,35 @@ __global__ void hashLocationMessages(unsigned int* keys, unsigned int* vals, Loc
     keys[index] = hash;
     vals[index] = index;
 }
+#ifdef _DEBUG
+__global__ void assertPBMIntegrity()
+{
+    int index = (blockIdx.x * blockDim.x) + threadIdx.x;
 
+    unsigned int prev = 0, me = 0, next = d_locationMessageCount;
+    // (tex->local)x3, is faster than (tex->local)x1 (local->shared)x1 (shared->local)x2 right?
+    if (index <= d_binCount)
+    {
+        if (index > 0)
+            prev = tex1Dfetch<unsigned int>(d_tex_PBM, index-1);
+
+        me = tex1Dfetch<unsigned int>(d_tex_PBM, index);
+        if (index < d_binCount)
+            next = tex1Dfetch<unsigned int>(d_tex_PBM, index+1);
+    }
+
+    //Assert Order
+    if (prev>me||me>next)
+    {
+        printf("ERROR: PBM contains values which are out of order.\nid:%i, prev:%i, me:%i, next:%i, count:%i\n", index, prev, me, next, d_binCount);
+    }
+    //Assert Range
+    if (me > d_locationMessageCount)
+    {
+        printf("ERROR: PBM contains out of range values.\nid:%i, prev:%i, me:%i, next:%i, count:%i\n", index, prev, me, next, d_binCount);
+    }
+}
+#endif
 __global__ void reorderLocationMessages(
     unsigned int *keys,
     unsigned int *vals,
@@ -250,10 +278,6 @@ __device__ LocationMessage *LocationMessages::loadNextMessage()
 
             int next_bin_first_hash = getHash(next_bin_first);
             int next_bin_last_hash = next_bin_first_hash + (next_bin_last.x-next_bin_first.x);//Strips are at most length 3
-            if (next_bin_last_hash>getHash(next_bin_last))
-            {
-                printf("#%i, #%i,(%i +(%i-%i))\n", next_bin_last_hash, getHash(next_bin_last), next_bin_first_hash, next_bin_last.x, next_bin_first.x);
-            }
 
             //use the hash to calculate the start index (pbm stores location of 1st item)
             sm_message->state.binIndex = tex1Dfetch<unsigned int>(d_tex_PBM, next_bin_first_hash);

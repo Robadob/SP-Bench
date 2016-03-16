@@ -19,5 +19,5 @@ __global__ void reorderLocationMessages(
     LocationMessages *unordered_messages,
     LocationMessages *ordered_messages
     );
-
+__global__ void assertPBMIntegrity();
 #endif
