@@ -81,7 +81,7 @@ bool Visualisation::init(){
         SDL_WINDOWPOS_UNDEFINED,
         this->windowWidth,
         this->windowHeight,
-        SDL_WINDOW_HIDDEN | SDL_WINDOW_OPENGL //| SDL_WINDOW_BORDERLESS
+        SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL //| SDL_WINDOW_HIDDEN
         );
 
     if (this->window == NULL){

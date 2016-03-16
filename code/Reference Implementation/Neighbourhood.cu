@@ -25,9 +25,9 @@ SpatialPartition::SpatialPartition(DIMENSIONS_VEC  environmentMin, DIMENSIONS_VE
 #endif
 {
     //Allocate bins in GPU memory
-    deviceAllocateLocationMessages(&d_locationMessages);
+    deviceAllocateLocationMessages(&d_locationMessages, &hd_locationMessages);
     //Allocate bins swap in GPU memory
-    deviceAllocateLocationMessages(&d_locationMessages_swap);
+    deviceAllocateLocationMessages(&d_locationMessages_swap, &hd_locationMessages_swap);
     //Allocate PBM
     deviceAllocatePBM(&d_PBM);
     //Allocate primitive structures
@@ -61,9 +61,9 @@ SpatialPartition::SpatialPartition(DIMENSIONS_VEC  environmentMin, DIMENSIONS_VE
 SpatialPartition::~SpatialPartition()
 {
     //Dellocate bins in GPU memory
-    deviceDeallocateLocationMessages(d_locationMessages);
+    deviceDeallocateLocationMessages(d_locationMessages, hd_locationMessages);
     //Dellocate bins swap in GPU memory
-    deviceDeallocateLocationMessages(d_locationMessages_swap);
+    deviceDeallocateLocationMessages(d_locationMessages_swap, hd_locationMessages_swap);
     //Dellocate PBM
     deviceDeallocatePBM(d_PBM);
     //Deallocated primitive structures
@@ -283,22 +283,21 @@ void SpatialPartition::assertSearch()
     free(PBM_neighbourhoodSize);
 }
 #endif
-void SpatialPartition::deviceAllocateLocationMessages(LocationMessages **d_locMessage)
+void SpatialPartition::deviceAllocateLocationMessages(LocationMessages **d_locMessage, LocationMessages *hd_locMessage)
 {
     unsigned int binCount = getBinCount();
     CUDA_CALL(cudaMalloc(d_locMessage, sizeof(LocationMessages)));
-    float *d_loc_temp;
-    CUDA_CALL(cudaMalloc(&d_loc_temp, sizeof(float)*maxAgents));
-    CUDA_CALL(cudaMemcpy(&((*d_locMessage)->locationX), &d_loc_temp, sizeof(float*), cudaMemcpyHostToDevice));
-    CUDA_CALL(cudaMalloc(&d_loc_temp, sizeof(float)*maxAgents));
-    CUDA_CALL(cudaMemcpy(&((*d_locMessage)->locationY), &d_loc_temp, sizeof(float*), cudaMemcpyHostToDevice));
+    CUDA_CALL(cudaMalloc(&hd_locMessage->locationX, sizeof(float)*maxAgents));
+    CUDA_CALL(cudaMemcpy(&((*d_locMessage)->locationX), &(hd_locMessage->locationX), sizeof(float*), cudaMemcpyHostToDevice));
+    CUDA_CALL(cudaMalloc(&hd_locMessage->locationY, sizeof(float)*maxAgents));
+    CUDA_CALL(cudaMemcpy(&((*d_locMessage)->locationY), &(hd_locMessage->locationY), sizeof(float*), cudaMemcpyHostToDevice));
 #ifdef _3D
-    CUDA_CALL(cudaMalloc(&d_loc_temp, sizeof(float)*maxAgents));
-    CUDA_CALL(cudaMemcpy(&((*d_locMessage)->locationZ), &d_loc_temp, sizeof(float*), cudaMemcpyHostToDevice));
+    CUDA_CALL(cudaMalloc(&hd_locMessage->locationZ, sizeof(float)*maxAgents));
+    CUDA_CALL(cudaMemcpy(&((*d_locMessage)->locationZ), &(hd_locMessage->locationZ), sizeof(float*), cudaMemcpyHostToDevice));
 #endif
 #if defined(_GL) || defined(_DEBUG)
-    CUDA_CALL(cudaMalloc(&d_loc_temp, sizeof(float)*maxAgents));
-    CUDA_CALL(cudaMemcpy(&((*d_locMessage)->count), &d_loc_temp, sizeof(float*), cudaMemcpyHostToDevice));
+    CUDA_CALL(cudaMalloc(&hd_locMessage->count, sizeof(float)*maxAgents));
+    CUDA_CALL(cudaMemcpy(&((*d_locMessage)->count), &(hd_locMessage->count), sizeof(float*), cudaMemcpyHostToDevice));
 #endif
 }
 void SpatialPartition::deviceAllocatePBM(unsigned int **d_PBM_t)
@@ -330,19 +329,13 @@ void SpatialPartition::deviceAllocateTextures()
 }
 void SpatialPartition::fillTextures()
 {
-    float *d_bufferPtr;
-    //Potentially refactor so we store/swap these pointers on host in syncrhonisation
-    CUDA_CALL(cudaMemcpy(&d_bufferPtr, &d_locationMessages->locationX, sizeof(float*), cudaMemcpyDeviceToHost));
-    CUDA_CALL(cudaMemcpy(tex_loc_ptr[0], d_bufferPtr, locationMessageCount*sizeof(float), cudaMemcpyDeviceToDevice));
-    CUDA_CALL(cudaMemcpy(&d_bufferPtr, &d_locationMessages->locationY, sizeof(float*), cudaMemcpyDeviceToHost));
-    CUDA_CALL(cudaMemcpy(tex_loc_ptr[1], d_bufferPtr, locationMessageCount*sizeof(float), cudaMemcpyDeviceToDevice));
+    CUDA_CALL(cudaMemcpy(tex_loc_ptr[0], hd_locationMessages.locationX, locationMessageCount*sizeof(float), cudaMemcpyDeviceToDevice));
+    CUDA_CALL(cudaMemcpy(tex_loc_ptr[1], hd_locationMessages.locationY, locationMessageCount*sizeof(float), cudaMemcpyDeviceToDevice));
 #ifdef _3D
-    CUDA_CALL(cudaMemcpy(&d_bufferPtr, &d_locationMessages->locationZ, sizeof(float*), cudaMemcpyDeviceToHost));
-    CUDA_CALL(cudaMemcpy(tex_loc_ptr[2], d_bufferPtr, locationMessageCount*sizeof(float), cudaMemcpyDeviceToDevice));
+    CUDA_CALL(cudaMemcpy(tex_loc_ptr[2], hd_locationMessages.locationZ, locationMessageCount*sizeof(float), cudaMemcpyDeviceToDevice));
 #endif
 #ifdef _GL
-    CUDA_CALL(cudaMemcpy(&d_bufferPtr, &d_locationMessages->count, sizeof(float*), cudaMemcpyDeviceToHost));
-    CUDA_CALL(cudaMemcpy(tex_location_ptr_count, d_bufferPtr, locationMessageCount*sizeof(float), cudaMemcpyDeviceToDevice));
+    CUDA_CALL(cudaMemcpy(tex_location_ptr_count, hd_locationMessages.count, locationMessageCount*sizeof(float), cudaMemcpyDeviceToDevice));
 #endif
 
     CUDA_CALL(cudaMemcpy(tex_PBM_ptr, d_PBM, (getBinCount()+1)*sizeof(unsigned int), cudaMemcpyDeviceToDevice));
@@ -473,17 +466,14 @@ void SpatialPartition::deviceAllocateGLTexture_float2()
     delete data;
 }
 #endif
-void SpatialPartition::deviceDeallocateLocationMessages(LocationMessages *d_locMessage)
+void SpatialPartition::deviceDeallocateLocationMessages(LocationMessages *d_locMessage, LocationMessages hd_locMessage)
 {
-    float *d_loc_temp;
-    CUDA_CALL(cudaMemcpy(&d_loc_temp, d_locMessage->locationX, sizeof(float*), cudaMemcpyHostToDevice));
-    CUDA_CALL(cudaFree(d_loc_temp));
-    CUDA_CALL(cudaMemcpy(&d_loc_temp, d_locMessage->locationY, sizeof(float*), cudaMemcpyHostToDevice));
-    CUDA_CALL(cudaFree(d_loc_temp));
+    CUDA_CALL(cudaFree(hd_locMessage.locationX));
+    CUDA_CALL(cudaFree(hd_locMessage.locationY));
 #ifdef _3D
-    CUDA_CALL(cudaMemcpy(d_loc_temp, d_locMessage->locationZ, sizeof(float*), cudaMemcpyHostToDevice));
-    CUDA_CALL(cudaFree(d_loc_temp));
+    CUDA_CALL(cudaFree(hd_locMessage.locationZ));
 #endif
+    CUDA_CALL(cudaFree(hd_locMessage.count));
     CUDA_CALL(cudaFree(d_locMessage));
 }
 void SpatialPartition::deviceDeallocatePBM(unsigned int *d_PBM_t)
@@ -574,6 +564,10 @@ void SpatialPartition::swap()
     LocationMessages* d_locationmessages_temp = d_locationMessages;
     d_locationMessages = d_locationMessages_swap;
     d_locationMessages_swap = d_locationmessages_temp;
+    //Switch hd_locationMessages and hd_locationMessages_swap
+    LocationMessages hd_locationmessages_temp = hd_locationMessages;
+    hd_locationMessages = hd_locationMessages_swap;
+    hd_locationMessages_swap = hd_locationmessages_temp;
 
 #ifdef _DEBUG
     PBM_isBuilt = 0;

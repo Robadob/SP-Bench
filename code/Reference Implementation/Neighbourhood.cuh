@@ -104,7 +104,7 @@ public:
 #endif
 private:
     //Allocators
-    void deviceAllocateLocationMessages(LocationMessages **d_locMessage);
+    void deviceAllocateLocationMessages(LocationMessages **d_locMessage, LocationMessages *hd_locMessage);
     void deviceAllocatePBM(unsigned int **d_PBM_t);
     void deviceAllocatePrimitives(unsigned int **d_keys, unsigned int **d_vals);
     void deviceAllocateTextures();
@@ -120,7 +120,7 @@ private:
     float *tex_location_ptr_count;
 #endif
     //Deallocators
-    void deviceDeallocateLocationMessages(LocationMessages *d_locMessage);
+    void deviceDeallocateLocationMessages(LocationMessages *d_locMessage, LocationMessages hd_locMessage);
     void deviceDeallocatePBM(unsigned int *d_PBM_t);
     void deviceDeallocatePrimitives(unsigned int *d_keys, unsigned int *d_vals);
     void deviceDeallocateTextures();
@@ -135,8 +135,8 @@ private:
     void launchReorderLocationMessages();
     //Device pointers
     unsigned int *d_PBM; //Each int points to the first message index of the relevant bin index
-    LocationMessages *d_locationMessages;
-    LocationMessages *d_locationMessages_swap;
+    LocationMessages *d_locationMessages, *d_locationMessages_swap;
+    LocationMessages hd_locationMessages, hd_locationMessages_swap;
     //Device primitive pointers (used by thrust/CUB methods)
     unsigned int *d_keys;
     unsigned int *d_vals;
