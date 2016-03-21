@@ -6,8 +6,9 @@
 
 #include "GLcheck.h"
 #include "Scene.h"
+#include "Skybox.h"
 
-#define FOVY 57.0f
+#define FOVY 60.0f
 #define NEAR_CLIP 0.001f
 #define FAR_CLIP 500.0f
 #define DELTA_THETA_PHI 0.01f
@@ -42,7 +43,6 @@ Visualisation::Visualisation(char *windowTitle, int windowWidth = DEFAULT_WINDOW
     , axis(25)
     , msaaState(true)
     , skybox(0)
-    , fieldOfView(FOVY)
     , scene(0)
 {
     this->isInitialised = this->init();
@@ -58,8 +58,6 @@ Initialises SDL and creates the window
 @note This method doesn't begin the render loop, use run() for that
 */
 bool Visualisation::init(){
-    bool result = true;
-
     SDL_Init(SDL_INIT_VIDEO);
 
     // Enable MSAA (Must occur before SDL_CreateWindow)
@@ -104,8 +102,8 @@ bool Visualisation::init(){
         
         // Setup gl stuff
         glEnable(GL_DEPTH_TEST);
-        glEnable(GL_CULL_FACE);
         glCullFace(GL_BACK);
+        glEnable(GL_CULL_FACE);
         glShadeModel(GL_SMOOTH);
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         glEnable(GL_LIGHTING);
@@ -169,7 +167,7 @@ void Visualisation::handleKeypress(SDL_Keycode keycode, int x, int y){
         if (this->skybox)
             this->skybox->reload();
         if (this->scene)
-            this->scene->reload();
+            this->scene->_reload();
         break;
     default:
         // Do nothing?
@@ -245,12 +243,8 @@ void Visualisation::render()
             this->handleKeypress(e.key.keysym.sym, x, y);
         }
             break;
-        case SDL_MOUSEWHEEL:
-            fieldOfView += e.wheel.y;
-            fieldOfView = glm::clamp(fieldOfView, 0.0f, 360.0f);
-
-            resizeWindow();
-            break;
+            //case SDL_MOUSEWHEEL:
+            //break;
         case SDL_MOUSEMOTION:
             this->handleMouseMove(e.motion.xrel, e.motion.yrel);
             break;
@@ -266,7 +260,7 @@ void Visualisation::render()
     // render
     this->clearFrame();
     if (this->skybox)
-        this->skybox->render(&camera, this->frustum);
+        this->skybox->render();
     this->defaultProjection();
     if (this->renderAxisState)
         this->axis.render();
@@ -354,7 +348,12 @@ Toggles whether the skybox should be used or not
 */
 void Visualisation::setSkybox(bool state){
     if (state&&!this->skybox)
-        this->skybox = new Skybox(this->getCamera()->getSkyboxViewMatPtr(), this->getFrustrumPtr());
+    {
+        this->skybox = new Skybox();
+        this->skybox->setModelViewMatPtr(&this->camera);
+        this->skybox->setProjectionMatPtr(this);
+        this->skybox->setYOffset(-1.0f);
+    }
     else if (!state&&this->skybox)
     {
         delete this->skybox;
@@ -443,13 +442,15 @@ void Visualisation::resizeWindow(){
     SDL_GL_GetDrawableSize(this->window, &this->windowWidth, &this->windowHeight);
 
     float fAspect = static_cast<float>(this->windowWidth) / static_cast<float>(this->windowHeight);
+    //double fovy = FOVY;
 
     glViewport(0, 0, this->windowWidth, this->windowHeight);
-    //float top = static_cast<float>(tan(glm::radians(fieldOfView * 0.5)) * NEAR_CLIP);
-    //float bottom = -top;
-    //float left = fAspect * bottom;
-    //float right = fAspect * top;
-    this->frustum = glm::perspective<float>(fieldOfView, fAspect, NEAR_CLIP, FAR_CLIP);
+    float top = static_cast<float>(tan(glm::radians(FOVY * 0.5f)) * NEAR_CLIP);
+    float bottom = -top;
+    float left = fAspect * bottom;
+    float right = fAspect * top;
+    this->frustum = glm::frustum<float>(left, right, bottom, top, NEAR_CLIP, FAR_CLIP);
+    //this->frustum = glm::perspective<float>(FOVY, fAspect, NEAR_CLIP, FAR_CLIP);
 }
 /*
 @return True if the window is currently full screen

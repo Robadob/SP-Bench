@@ -4,19 +4,15 @@
 
 template<class T>
 ParticleScene<T>::ParticleScene(Visualisation &visualisation, Circles<T> &model)
-    : Scene(visualisation, new Shaders("../shaders/instanced.vert", "../shaders/instanced.frag"))
-    , entity("../models/icosphere.obj", 1.0f, shaders)
+    : Scene(visualisation)
+    , icosphere(new Entity(Stock::Models::ICOSPHERE, 1.0f, std::make_shared<Shaders>("../shaders/instanced.vert","../shaders/instanced.frag")))
     , count(model.agentMax)
     , model(model)
 {
+    registerEntity(icosphere);
     this->visualisation.setWindowTitle("Circles Benchmark");
     this->visualisation.setRenderAxis(true);
     setTex(model.getPartition()->getLocationTexNames());
-}
-template<class T>
-ParticleScene<T>::~ParticleScene()
-{
-    delete shaders;
 }
 /*
 Sets the texture buffers that the shaders should use
@@ -26,13 +22,13 @@ template<class T>
 void ParticleScene<T>::setTex(const GLuint* tex)
 {
     memcpy(this->tex, tex, DIMENSIONS*sizeof(GLuint));
-    this->shaders->addTextureUniform(tex[0], "tex_locX");
-    this->shaders->addTextureUniform(tex[1], "tex_locY");
+    this->icosphere->getShaders()->addTextureUniform(tex[0], "tex_locX");
+    this->icosphere->getShaders()->addTextureUniform(tex[1], "tex_locY");
 #ifdef _3D
-    this->shaders->addTextureUniform(tex[2], "tex_locZ");
+    this->icosphere->getShaders()->addTextureUniform(tex[2], "tex_locZ");
 #endif
 #ifdef _GL
-    this->shaders->addTextureUniform(model.getPartition()->getCountTexName(), "tex_count");
+    this->icosphere->getShaders()->addTextureUniform(model.getPartition()->getCountTexName(), "tex_count");
 #endif
 }
 /*
@@ -59,7 +55,7 @@ Refreshes shaders
 template<class T>
 void ParticleScene<T>::reload()
 {
-    this->shaders->reload();
+//Restart model?
 }
 /*
 Renders a frame
@@ -69,9 +65,8 @@ void ParticleScene<T>::render()
 {
     if (this->count <= 0)
         return;
-    this->shaders->useProgram();
     this->renderPBM();
-    this->entity.renderInstances(count);
+    this->icosphere->renderInstances(count);
 }
 /*
 Renders a frame

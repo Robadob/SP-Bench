@@ -21,16 +21,16 @@ public:
     void render() override;
     void reload() override;
     void update() override;
-    void renderPBM();
     void setCount(unsigned int count);
 
 private:
+    void renderPBM();
     ~ParticleScene();//Private to prevent stack allocation
-    void setTex(const GLuint *tex);
+    void setTex(const GLuint *tex);//Sets the instance data arrays
 
-    Entity entity;
-    unsigned int count;// , max;
-    GLuint tex[DIMENSIONS];
+    std::shared_ptr<Entity> icosphere;
+    unsigned int count;// Number of agents within the texture buffer
+    GLuint tex[DIMENSIONS];//Array of texture arrays containing our instance data to be rendered
 
     Circles<T> &model;
 };

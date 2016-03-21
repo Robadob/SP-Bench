@@ -4,14 +4,13 @@
 #include <SDL/SDL.h>
 #include <glm/glm.hpp>
 
-//#include "Scene.h"
 #include "Camera.h"
 #include "Axis.h"
-#include "Skybox.h"
 
 #undef main //SDL breaks the regular main entry point, this fixes
 
 class Scene;
+class Skybox;
 
 /*
 This class provides an OpenGL window
@@ -73,8 +72,6 @@ private:
     const char* windowTitle;
     int windowWidth;
     int windowHeight;
-
-    float fieldOfView;
 
     //FPS tracking stuff
     unsigned int previousTime = 0;

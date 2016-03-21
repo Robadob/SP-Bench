@@ -206,7 +206,9 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     <ClInclude Include="visualisation\Scene.h" />
     <ClInclude Include="visualisation\Shaders.h" />
     <ClInclude Include="visualisation\Skybox.h" />
-    <ClInclude Include="visualisation\Texture.h" />
+    <ClInclude Include="visualisation\texture\Texture.h" />
+    <ClInclude Include="visualisation\texture\Texture2D.h" />
+    <ClInclude Include="visualisation\texture\TextureCubeMap.h" />
     <ClInclude Include="visualisation\Visualisation.h" />
   </ItemGroup>
   <ItemGroup>
@@ -217,7 +219,9 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     <ClCompile Include="visualisation\Scene.cpp" />
     <ClCompile Include="visualisation\Shaders.cpp" />
     <ClCompile Include="visualisation\Skybox.cpp" />
-    <ClCompile Include="visualisation\Texture.cpp" />
+    <ClCompile Include="visualisation\texture\Texture.cpp" />
+    <ClCompile Include="visualisation\texture\Texture2D.cpp" />
+    <ClCompile Include="visualisation\texture\TextureCubeMap.cpp" />
     <ClCompile Include="visualisation\Visualisation.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

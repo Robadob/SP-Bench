@@ -15,6 +15,7 @@ report/paper.pdf
 *.user
 *.userosscache
 *.sln.docstates
+*.sdl_export
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs

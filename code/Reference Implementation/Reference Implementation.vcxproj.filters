@@ -39,9 +39,6 @@
     <ClInclude Include="visualisation\Entity.h">
       <Filter>Headers\Visualisation</Filter>
     </ClInclude>
-    <ClInclude Include="visualisation\GLcheck.h">
-      <Filter>Headers\Visualisation</Filter>
-    </ClInclude>
     <ClInclude Include="visualisation\Material.h">
       <Filter>Headers\Visualisation</Filter>
     </ClInclude>
@@ -57,14 +54,23 @@
     <ClInclude Include="visualisation\Skybox.h">
       <Filter>Headers\Visualisation</Filter>
     </ClInclude>
-    <ClInclude Include="visualisation\Texture.h">
-      <Filter>Headers\Visualisation</Filter>
-    </ClInclude>
     <ClInclude Include="ParticleScene.h">
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="ParticleScene.hpp">
       <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="visualisation\GLcheck.h">
+      <Filter>Headers\Visualisation\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="visualisation\texture\Texture.h">
+      <Filter>Headers\Visualisation\Textures</Filter>
+    </ClInclude>
+    <ClInclude Include="visualisation\texture\Texture2D.h">
+      <Filter>Headers\Visualisation\Textures</Filter>
+    </ClInclude>
+    <ClInclude Include="visualisation\texture\TextureCubeMap.h">
+      <Filter>Headers\Visualisation\Textures</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -80,6 +86,15 @@
     <Filter Include="Visualistion">
       <UniqueIdentifier>{8a8a1952-eaee-4f0f-9df9-2a87aca09524}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Headers\Visualisation\Util">
+      <UniqueIdentifier>{5c0e4767-b56e-4757-8061-79ee2b21f33c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Headers\Visualisation\Textures">
+      <UniqueIdentifier>{49d18db0-2d5b-43bb-8ca9-26fe0f91a944}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Visualistion\Textures">
+      <UniqueIdentifier>{a1408e7f-bbec-46a0-9f85-36ad039387f4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="visualisation\Scene.cpp">
@@ -89,9 +104,6 @@
       <Filter>Visualistion</Filter>
     </ClCompile>
     <ClCompile Include="visualisation\Skybox.cpp">
-      <Filter>Visualistion</Filter>
-    </ClCompile>
-    <ClCompile Include="visualisation\Texture.cpp">
       <Filter>Visualistion</Filter>
     </ClCompile>
     <ClCompile Include="visualisation\Visualisation.cpp">
@@ -108,6 +120,15 @@
     </ClCompile>
     <ClCompile Include="visualisation\Material.cpp">
       <Filter>Visualistion</Filter>
+    </ClCompile>
+    <ClCompile Include="visualisation\texture\Texture.cpp">
+      <Filter>Visualistion\Textures</Filter>
+    </ClCompile>
+    <ClCompile Include="visualisation\texture\Texture2D.cpp">
+      <Filter>Visualistion\Textures</Filter>
+    </ClCompile>
+    <ClCompile Include="visualisation\texture\TextureCubeMap.cpp">
+      <Filter>Visualistion\Textures</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
