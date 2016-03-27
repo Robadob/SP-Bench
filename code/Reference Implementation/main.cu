@@ -49,13 +49,13 @@ int main()
     for (unsigned long long i = 0; i < iterations; i++)
     {
         const Time_Step iterTime = model.step();
-        //Pass count to visualisation
-        scene->setCount(model.getPartition()->getLocationCount());
         //Calculate averages
         average.overall += iterTime.overall / iterations;
         average.kernel += iterTime.kernel / iterations;
         average.texture += iterTime.texture / iterations;
 #ifdef _GL
+        //Pass count to visualisation
+        scene->setCount(model.getPartition()->getLocationCount());
         v.render();
 #endif
         printf("\r%6llu/%llu", i, iterations);
