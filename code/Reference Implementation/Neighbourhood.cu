@@ -473,7 +473,9 @@ void SpatialPartition::deviceDeallocateLocationMessages(LocationMessages *d_locM
 #ifdef _3D
     CUDA_CALL(cudaFree(hd_locMessage.locationZ));
 #endif
+#ifdef _GL
     CUDA_CALL(cudaFree(hd_locMessage.count));
+#endif
     CUDA_CALL(cudaFree(d_locMessage));
 }
 void SpatialPartition::deviceDeallocatePBM(unsigned int *d_PBM_t)
