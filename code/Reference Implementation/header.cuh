@@ -37,53 +37,5 @@ static void HandleCUDAError(const char *file,
 #define CUDA_CALL( err ) (HandleCUDAError(__FILE__, __LINE__ , err))
 #define CUDA_CHECK() (HandleCUDAError(__FILE__, __LINE__))
 
-//Set bits in a state from the mask
-__device__ __host__ static int performSetBitwise(int state, int mask, int op) {
-    //op: 0 - UnSet, 1 - Set
-    int ret = -1;
-    switch (op) {
-    case 0:
-        ret = ~((~state) | mask);
-        break;
-    case 1:
-        ret = state | mask;
-        break;
-    }
-    return ret;
-}
-#define PERFORM_SET_BITWISE(state, mask, op) (performSetBitwise(state,mask, op))
-#define SELECT_MASK 1
-
-#define DEVICE_RND \
-__device__ static float rnd( curandState* globalState, int index ){ \
-	curandState localState = globalState[index]; \
-	float RANDOM = curand_uniform( &localState ); \
-	globalState[index] = localState; \
-	return RANDOM; \
-}
-
-#define THREADS_PER_TILE 128
-
-#define KERNEL_PARAMS(count) \
-const int threads_per_tile = THREADS_PER_TILE; \
-int tile_size; \
-dim3 grid; \
-dim3 threads; \
-tile_size = (int) ceil((float) count /threads_per_tile); \
-grid = dim3(tile_size, 1, 1); \
-threads = dim3(threads_per_tile, 1, 1);
-
-#define RE_KERNEL_PARAMS(count) \
-tile_size = (int) ceil((float) count /threads_per_tile); \
-grid = dim3(tile_size, 1, 1); \
-threads = dim3(threads_per_tile, 1, 1);
-
-#define COLLISION_SHARE threads_per_tile*sizeof(LocationMessage)
-
-//h(ost) because cuda headers already def float3 & int3 as structs
-//typedef float h_float3[3];
-//typedef float h_float4[4];
-//typedef int h_int3[3];
-
 
 #endif
