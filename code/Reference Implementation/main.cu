@@ -1,6 +1,8 @@
 #include "Neighbourhood.cuh"
 #include "Circles.cuh"
+#ifdef _GL
 #include "Visualisation/Visualisation.h"
+#endif
 #include "ParticleScene.h"
 //#include <cuda_runtime.h>
 //#include <device_launch_parameters.h>
@@ -20,10 +22,14 @@ int main()
     const float repulsionForce = 0.0001f;
     const unsigned long long iterations = 10000;
 
+#ifdef _GL
     Visualisation v("Visulisation Example", 1280, 720);
+#endif
     Circles<SpatialPartition> model(width, density, interactionRad, attractionForce, repulsionForce);
     const Time_Init initTimes = model.initPopulation();//Need to init textures before creating the scene
+#ifdef _GL
     ParticleScene<SpatialPartition> *scene = new ParticleScene<SpatialPartition>(v, model);
+#endif
 
     //Init model
     printf("Init Complete - Times\n");
@@ -49,7 +55,9 @@ int main()
         average.overall += iterTime.overall / iterations;
         average.kernel += iterTime.kernel / iterations;
         average.texture += iterTime.texture / iterations;
+#ifdef _GL
         v.render();
+#endif
         printf("\r%6llu/%llu", i, iterations);
     }
     printf("Model complete - Average Times\n");
@@ -66,7 +74,9 @@ int main()
 
     printf("Total Runtime: %.3fs\n", totalTime * 1000);
 
+#ifdef _GL
     v.run();
+#endif
 
     //Wait for input before exit
     getchar();
