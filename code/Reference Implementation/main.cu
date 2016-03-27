@@ -72,7 +72,7 @@ int main()
     float totalTime;
     cudaEventElapsedTime(&totalTime, start, stop);
 
-    printf("Total Runtime: %.3fs\n", totalTime * 1000);
+    printf("Total Runtime: %.3fs\n", totalTime / 1000);
 
 #ifdef _GL
     v.run();
