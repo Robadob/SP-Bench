@@ -2,8 +2,8 @@
 #include "Circles.cuh"
 #ifdef _GL
 #include "Visualisation/Visualisation.h"
-#endif
 #include "ParticleScene.h"
+#endif
 //#include <cuda_runtime.h>
 //#include <device_launch_parameters.h>
 
@@ -23,7 +23,7 @@ int main()
     const unsigned long long iterations = 10000;
 
 #ifdef _GL
-    Visualisation v("Visulisation Example", 1280, 720);
+    Visualisation v("Visulisation Example", 1280, 720);//Need to init GL before creating CUDA textures
 #endif
     Circles<SpatialPartition> model(width, density, interactionRad, attractionForce, repulsionForce);
     const Time_Init initTimes = model.initPopulation();//Need to init textures before creating the scene
