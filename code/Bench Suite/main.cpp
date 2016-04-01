@@ -1,0 +1,186 @@
+#define _CRT_SECURE_NO_WARNINGS
+#include <cstdio>
+#include <memory>
+#include <string>
+
+#include "results.h"
+#include <ctime>
+
+void execString(const char* executable, ModelParams model, char **rtn);
+bool executeBenchmark(const char* executable, ModelParams modelArgs, Time_Init *initRes, Time_Step_dbl *stepRes, float *totalTime);
+void logResult(FILE *out, const ModelParams* modelArgs, const Time_Init *initRes, const Time_Step_dbl *stepRes, const float totalTime);
+void logHeader(FILE *out);
+const char *EXE_REFERENCE = "Release-Reference Implementation.exe";
+const char *DIR_X64 = "..\\bin\\x64\\";
+int main(int argc, char* argv[])
+{
+	//Create log
+	std::string logPath("out-");
+	logPath = logPath.append(std::to_string(time(0)));
+	logPath = logPath.append(".csv");
+	FILE *log = fopen(logPath.c_str(), "w");
+	if (!log)
+		return 1;
+	//Init model arg start
+	ModelParams start = {};
+	start.iterations = 5000;
+	start.density = 0.001f;
+	start.interactionRad = 2.5f;
+	//Init model arg end
+	ModelParams end = {};
+	end.iterations = 5000;
+	end.density = 0.5f;
+	end.interactionRad = 2.5f;
+	//Init step count
+	const int steps = 251;
+	const float stepsM1 =(float) steps-1.0f;
+	//Create log header
+	logHeader(log);
+	//Create objects for use within the loop
+	Time_Init initRes;
+	Time_Step_dbl stepRes;
+	ModelParams modelArgs;
+	float totalTime;
+	//For each benchmark
+	for (unsigned int i = 0; i < steps;i++)
+	{
+		printf("\rExecuting run %i/%i",i,(int)stepsM1);
+		//Interpolate model
+		modelArgs.width = start.width + (unsigned int)((i / stepsM1)*(end.width - start.width));
+		modelArgs.density = start.density + ((i / stepsM1)*(end.density - start.density));
+		modelArgs.interactionRad = start.interactionRad + ((i / stepsM1)*(end.interactionRad - start.interactionRad));
+		modelArgs.attractionForce = start.attractionForce + ((i / stepsM1)*(end.attractionForce - start.attractionForce));
+		modelArgs.repulsionForce = start.repulsionForce + ((i / stepsM1)*(end.repulsionForce - start.repulsionForce));
+		modelArgs.iterations = start.iterations + (unsigned long long)((i / stepsM1)*(end.iterations - start.iterations));
+		//executeBenchmark
+		if (!executeBenchmark(EXE_REFERENCE, modelArgs, &initRes, &stepRes, &totalTime))
+			return 1;
+		//logResult
+		logResult(log, &modelArgs, &initRes, &stepRes, totalTime);
+	}
+	//Close log
+	fclose(log);
+	printf("\nComplete\n");
+}
+
+bool executeBenchmark(const char* executable, ModelParams modelArgs, Time_Init *initRes, Time_Step_dbl *stepRes, float *totalTime)
+{
+	char *command;
+	execString(executable, modelArgs, &command);
+	std::shared_ptr<FILE> pipe(_popen(command, "r"), _pclose);
+	if (!pipe) return false;
+	fread(initRes, sizeof(Time_Init), 1, pipe.get());
+	fread(stepRes, sizeof(Time_Step_dbl), 1, pipe.get());
+	fread(totalTime, sizeof(double), 1, pipe.get());
+	return true;
+}
+
+void execString(const char* executable, ModelParams modelArgs, char **rtn)
+{
+	std::string buffer("\"");
+	buffer = buffer.append(DIR_X64);
+	buffer = buffer.append(executable);
+	buffer = buffer.append("\"");
+	buffer = buffer.append(" -pipe");
+	buffer = buffer.append(" ");
+	buffer = buffer.append(" -device");
+	buffer = buffer.append(" ");
+	buffer = buffer.append(std::to_string(0));
+	buffer = buffer.append(" ");
+	buffer = buffer.append(" -model");
+	buffer = buffer.append(" ");
+	buffer = buffer.append(std::to_string(modelArgs.width));
+	buffer = buffer.append(" ");
+	buffer = buffer.append(std::to_string(modelArgs.density));
+	buffer = buffer.append(" ");
+	buffer = buffer.append(std::to_string(modelArgs.interactionRad));
+	buffer = buffer.append(" ");
+	buffer = buffer.append(std::to_string(modelArgs.attractionForce));
+	buffer = buffer.append(" ");
+	buffer = buffer.append(std::to_string(modelArgs.repulsionForce));
+	buffer = buffer.append(" ");
+	buffer = buffer.append(std::to_string(modelArgs.iterations));
+	const char *src = buffer.c_str();
+	*rtn = (char *)malloc(sizeof(char*)*(buffer.length() + 1));
+	memcpy(*rtn, src, sizeof(char*)*(buffer.length() + 1));
+}
+void logHeader(FILE *out)
+{
+	fputs("model", out);
+	fputs(",,,,,,", out);
+	fputs("init (s)", out);
+	fputs(",,,,,", out);
+	fputs("step avg (s)", out);
+	fputs(",,,", out);
+	fputs("overall (s)", out);
+	fputs(",", out);
+	fputs("\n", out);
+	//ModelArgs
+	fputs("width", out);
+	fputs(",", out);
+	fputs("density", out);
+	fputs(",", out);
+	fputs("interactionRad", out);
+	fputs(",", out);
+	fputs("attractionForce", out);
+	fputs(",", out);
+	fputs("repulsionForce", out);
+	fputs(",", out);
+	fputs("iterations", out);
+	fputs(",", out);
+	//Init
+	fputs("overall", out);
+	fputs(",", out);
+	fputs("initCurand", out);
+	fputs(",", out);
+	fputs("kernel", out);
+	fputs(",", out);
+	fputs("pbm", out);
+	fputs(",", out);
+	fputs("freeCurand", out);
+	fputs(",", out);
+	//Step avg
+	fputs("overall", out);
+	fputs(",", out);
+	fputs("kernel", out);
+	fputs(",", out);
+	fputs("texture", out);
+	fputs(",", out);
+	//Total
+	fputs("time", out);
+	fputs(",", out);
+	//ln
+	fputs("\n", out);
+}
+void logResult(FILE *out, const ModelParams* modelArgs, const Time_Init *initRes, const Time_Step_dbl *stepRes, const float totalTime)
+{	//ModelArgs
+	fprintf(out, "%i,%f,%f,%f,%f,%llu,",
+		modelArgs->width,
+		modelArgs->density,
+		modelArgs->interactionRad,
+		modelArgs->attractionForce,
+		modelArgs->repulsionForce,
+		modelArgs->iterations
+		);
+	//Init
+	fprintf(out, "%f,%f,%f,%f,%f,",
+		initRes->overall/1000,
+		initRes->initCurand / 1000,
+		initRes->kernel / 1000,
+		initRes->pbm / 1000,
+		initRes->freeCurand / 1000
+		);
+	//Step avg
+	fprintf(out, "%f,%f,%f,",
+		stepRes->overall / 1000,
+		stepRes->kernel / 1000,
+		stepRes->texture / 1000
+		);
+	//Total
+	fprintf(out, "%f,",
+		totalTime /1000
+		);
+	//ln
+	fputs("\n", out);
+	fflush(out);
+}

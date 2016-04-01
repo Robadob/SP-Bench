@@ -2,28 +2,7 @@
 #define __Model_cuh__
 
 #include <math.h>
-
-/*Benchmarking Structs*/
-struct Time_Init
-{
-    float overall;
-    float initCurand;
-    float kernel;
-    float pbm;
-    float freeCurand;
-};
-struct Time_Step
-{
-    float overall;
-    float kernel;
-    float texture;
-};
-struct Time_Step_dbl
-{
-    double overall;
-    double kernel;
-    double texture;
-};
+#include "results.h"
 template <class T>
 class Circles
 {

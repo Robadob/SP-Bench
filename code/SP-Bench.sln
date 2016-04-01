@@ -4,8 +4,16 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 12.0.30501.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Bench Suite", "Bench Suite\Bench Suite.vcxproj", "{3BC3156C-9BBF-40A8-A402-810D9ADBAEA9}"
+	ProjectSection(ProjectDependencies) = postProject
+		{E4072939-4F0A-4CC1-A00E-87428A4C7F70} = {E4072939-4F0A-4CC1-A00E-87428A4C7F70}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Reference Implementation", "Reference Implementation\Reference Implementation.vcxproj", "{E4072939-4F0A-4CC1-A00E-87428A4C7F70}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Common", "Common", "{7AA820A0-4AC8-4BB8-ADD0-67AA101A94BE}"
+	ProjectSection(SolutionItems) = preProject
+		common\results.h = common\results.h
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
