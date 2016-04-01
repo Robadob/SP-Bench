@@ -580,7 +580,7 @@ void SpatialPartition::buildPBM()
 {
     //If no messages, or instances, don't bother
     if (locationMessageCount<1) return;
-#if _DEBUG
+#ifdef _DEBUG
     assertSearch();
 #endif
     //Fill primitive key/val arrays for sort

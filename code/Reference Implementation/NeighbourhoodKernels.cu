@@ -85,12 +85,14 @@ __global__ void assertPBMIntegrity()
     //Assert Order
     if (prev>me||me>next)
     {
-        printf("ERROR: PBM contains values which are out of order.\nid:%i, prev:%i, me:%i, next:%i, count:%i\n", index, prev, me, next, d_binCount);
+		printf("ERROR: PBM contains values which are out of order.\nid:%i, prev:%i, me:%i, next:%i, count:%i\n", index, prev, me, next, d_binCount);
+		assert(0);
     }
     //Assert Range
     if (me > d_locationMessageCount)
     {
         printf("ERROR: PBM contains out of range values.\nid:%i, prev:%i, me:%i, next:%i, count:%i\n", index, prev, me, next, d_binCount);
+		assert(0);
     }
 }
 #endif
@@ -143,15 +145,16 @@ __global__ void reorderLocationMessages(
         for (int k = next_key; k > key; k--)
             pbm[k] = indexPlus1;
     }
-
 #if _DEBUG
     if (next_key > d_binCount)
     {
-        printf("ERROR: PBM generated an out of range next_key.\n");
+		printf("ERROR: PBM generated an out of range next_key.\n");
+		assert(0);
     }
     if (old_pos >= d_locationMessageCount)
     {
-        printf("ERROR: PBM generated an out of range old_pos.\n");
+		printf("ERROR: PBM generated an out of range old_pos.\n");
+		assert(0);
     }
 #endif
 
@@ -291,6 +294,7 @@ __device__ LocationMessage *LocationMessages::loadNextMessage()
         else
         {
 #if defined(_GL) || defined(_DEBUG)
+			//No more neighbours, finalise count by dividing by the number of messages.
             int id = blockIdx.x * blockDim.x + threadIdx.x;
             d_locationMessagesA->count[id] /= d_locationMessageCount;
             d_locationMessagesB->count[id] /= d_locationMessageCount;
@@ -299,6 +303,7 @@ __device__ LocationMessage *LocationMessages::loadNextMessage()
         }
     }
 #if defined(_GL) || defined(_DEBUG)
+	//Found a neighbour, increment count.
     int id = blockIdx.x * blockDim.x + threadIdx.x;
     d_locationMessagesA->count[id] += 1.0;
     d_locationMessagesB->count[id] += 1.0;
