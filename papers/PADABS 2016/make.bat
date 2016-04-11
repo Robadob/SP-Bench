@@ -3,6 +3,7 @@ SET TEX_MAIN=paper
 :start
 mkdir build
 copy tex\%TEX_MAIN%.tex build
+xcopy /D /e /v /Q /Y llncs build
 cd build
 pdflatex %TEX_MAIN%.tex
 bibtex %TEX_MAIN%
