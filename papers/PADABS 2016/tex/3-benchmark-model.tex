@@ -1,0 +1,26 @@
+\section{Benchmark Model\label{sec:benchmark-model}}
+\textit{Don't mention the origin for the benchmark from FLAMEGPU, as this somewhat outs the anonymity}
+  The `circles' benchmark model is designed to utilise neighbourhood search in a manner analogous to a simplified particle simulation in two or three dimensions (although it could easily be extended to higher levels of dimensionality if required). Within the model each agent represents a particle whose motion is driven by forces applied from particles within their local neighbourhood.
+    
+  \subsection{Specification}
+    The benchmark model is configured using the parameters in Table \ref{tab:benchmark-parameters}. In addition to these parameters 
+
+    \begin{table}
+      \begin{tabu}{ |c|>{\raggedright}X| }
+        \hline
+        \textbf{Parameter} & \textbf{Description} \\ \hline
+        $k_{rep}$ & The repulsive dampening argument. Increasing this value encourages agents to repel. \\ \hline
+        $k_{att}$ & The attractive dampening argument. Increasing this value encourages agents to attract. \\ \hline
+        $r$ & The interaction radius. Increasing this value increases the radius of the neighbourhoods searched, subsequently increasing agent communication. \\ \hline
+        $ \rho $ & The density of agents within the environment. \\ \hline
+        $W$ & The diameter of the environment, this value is shared by each dimension therefore in a two dimensional environment it represents the width and height. Increasing this value is equivalent to increasing the scale of the problem (e.g. the number of agents) assuming $ \rho $ remains unchanged.\\ \hline
+      \end{tabu}
+      \caption{\label{tab:benchmark-parameters}The parameters for configuring the `circles' benchmark model.}
+    \end{table}
+  
+  \subsection{Effective Usage}
+    %Details of what the benchmark assesses and how changing parameters leads to assessment of different metrics.
+   
+    %Lightly touch on metrics the benchmark is incapable of assessing.
+  \subsection{Limitations}
+    %Discussion of tertiary benchmarks or extensions to ‘circles’ that may be used in future to assess the metrics current benchmark is incapable of assessing.
