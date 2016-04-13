@@ -3,7 +3,7 @@
   The `circles' benchmark model is designed to utilise neighbourhood search in a manner analogous to a simplified particle simulation in two or three dimensions (although it could easily be extended to higher levels of dimensionality if required). Within the model each agent represents a particle whose motion is driven by forces applied from particles within their local neighbourhood.
     
   \subsection{Specification}  
-    The benchmark model is configured using the parameters in Table \ref{tab:benchmark-parameters}. In addition to these parameters the dimensionality of the environment ($E_{dim}$) must be decided, in most cases this will be 2 or 3. The value of $E_{dim}$ is not considered a model parameter as changes to this value are likely to require implementation changes.
+    The benchmark model is configured using the parameters in Table \ref{tab:benchmark-parameters}. In addition to these parameters the dimensionality of the environment ($E_{dim}$) must be decided, in most cases this will be 2 or 3. The value of $E_{dim}$ is not considered a model parameter as changes to this value are likely to require implementation changes. Over a number of iterations the model will resolve to a stable state.\footnote{In some cases this stable state may consist of agents vibrating due to floating-point precision preventing clean agent overlap.}
 
     \begin{table}
       \begin{tabu}{ |c|>{\raggedright}X| }
@@ -18,14 +18,15 @@
       \caption{\label{tab:benchmark-parameters}The parameters for configuring the `circles' benchmark model.}
     \end{table}    
     
-    Each particle agent is solely represented by their location. The total number of particle agents $A_{pop}$ is calculated using Equation \ref{eq:agent_population_size}.\footnote{$\left\lfloor\:\right\rfloor$ represents the mathematical operation floor.} Initially the particle agents are randomly positioned within the environment of diameter $W$ and $E_{dim}$ dimensions.      
-    
-    \begin{equation}\label{eq:agent_population_size}
-      A_{pop} = \left\lfloor{W^{E_{dim}} \rho}\right\rfloor
-    \end{equation}
+    \subsubsection{Initialisation}
+      Each particle agent is solely represented by their location. The total number of particle agents $A_{pop}$ is calculated using Equation \ref{eq:agent_population_size}.\footnote{$\left\lfloor\:\right\rfloor$ represents the mathematical operation floor.} Initially the particle agents are randomly positioned within the environment of diameter $W$ and $E_{dim}$ dimensions.      
+      
+      \begin{equation}\label{eq:agent_population_size}
+        A_{pop} = \left\lfloor{W^{E_{dim}} \rho}\right\rfloor
+      \end{equation}
     
     \subsubsection{Single Iteration}
-      Each timestep of the benchmark model, every particle agent's location must be updated. The position $x$ of a particle agent $i$ at the discrete timestep $t-1$ is given by Equation \ref{eq:timestep-global}, whereby $F_{i}$ denotes the force exerted on the agent $i$ as calculated by Equation \ref{eq:timestep-force}.\footnote{The square Iversion bracket notation $[\:]$ denotes a conditional statement, when the statement evaluates to true a value of $1$ is returned otherwise $0$} Within Equation \ref{eq:timestep-force} $F_{ij}^{rep}$ and $F_{ij}^{att}$ represent the respective attractive and repulsive forces between agents $i$ and $j$. The value of $F_{ij}^{rep}$ is calculated using Equation \ref{eq:timestep-repulsion}, the same formula can be used to calculate $F_{ij}^{att}$ by replacing $k_{rep}$ with $k_{att}$.
+      Each timestep of the benchmark model, every particle agent's location must be updated. The position $x$ of a particle agent $i$ at the discrete timestep $t+1$ is given by Equation \ref{eq:timestep-global}, whereby $F_{i}$ denotes the force exerted on the agent $i$ as calculated by Equation \ref{eq:timestep-force}.\footnote{The square Iversion bracket notation $[\:]$ denotes a conditional statement, when the statement evaluates to true a value of $1$ is returned otherwise $0$} Within Equation \ref{eq:timestep-force} $F_{ij}^{rep}$ and $F_{ij}^{att}$ represent the respective attractive and repulsive forces between agents $i$ and $j$. The value of $F_{ij}^{rep}$ is calculated using Equation \ref{eq:timestep-repulsion}, the same formula can be used to calculate $F_{ij}^{att}$ by replacing $k_{rep}$ with $k_{att}$.
       
       \begin{equation}\label{eq:timestep-global}
         x_{i(t+1)} = x_{i(t)} + F_{i}
@@ -38,9 +39,11 @@
       \begin{equation}\label{eq:timestep-repulsion}
         F_{ij}^{rep} = \frac{k_{rep}(d_{ij} - 2r)(x_{j} - x_{i})} {d_{ij}}
       \end{equation}
-    
+      
+      The benchmark is to be executed for the stated number of model iterations. This may result in multiple iterations in a steady state, however this does not diminish the validity of the measured metrics.
     
   \subsection{Effective Usage}
+    %There are many considerations to account for when benchmarking technologies intended for high performance computation. %Move this towards lit review
     %Details of what the benchmark assesses and how changing parameters leads to assessment of different metrics.
    
     %Lightly touch on metrics the benchmark is incapable of assessing.
