@@ -30,11 +30,12 @@ __global__ void step_model(LocationMessages *locationMessagesIn, LocationMessage
 
     //Get my local location
 #ifdef _3D
-    glm::vec3 myLoc(locationMessagesIn->locationX[id], locationMessagesIn->locationY[id], locationMessagesIn->locationZ[id]), theirLoc, locDiff;
+    glm::vec3 myLoc(locationMessagesIn->locationX[id], locationMessagesIn->locationY[id], locationMessagesIn->locationZ[id]), locDiff, newLoc;
 #else
-    glm::vec2 myLoc(locationMessagesIn->locationX[id], locationMessagesIn->locationY[id]), theirLoc, locDiff;
+	glm::vec2 myLoc(locationMessagesIn->locationX[id], locationMessagesIn->locationY[id]), locDiff, newLoc;
 #endif
-    //Get first message
+	newLoc = myLoc;
+	//Get first message
     float dist, separation, k;
     LocationMessage *lm = locationMessagesIn->getFirstNeighbour(myLoc);
     //Always atleast 1 location message, our own location!
@@ -42,30 +43,30 @@ __global__ void step_model(LocationMessages *locationMessagesIn, LocationMessage
     {
         if ((lm->id != id))
         {
-            locDiff = myLoc - lm->location;//Difference
+			locDiff = myLoc - lm->location;//Difference
             if (locDiff==DIMENSIONS_VEC(0))//Ignore distance 0
             {
                 lm = locationMessagesIn->getNextNeighbour(lm);
                 continue;
             }
-            theirLoc = locDiff*locDiff;//Squared
-            dist = sqrt(glm::compAdd(theirLoc));//Distance (via pythagoras)
-            separation = dist - d_interactionRad - d_interactionRad;
+			dist = length(locDiff);//Distance (via pythagoras)
+            separation = dist - d_interactionRad;
             if (separation < d_interactionRad)
             {
                 if (separation > 0.0f)
                     k = d_attract;
                 else
-                    k = d_repulse;
-                myLoc += (k*separation*(locDiff / dist));
+                    k = -d_repulse;
+				newLoc += (k * separation * locDiff / d_interactionRad);
             }
         }
         lm = locationMessagesIn->getNextNeighbour(lm);//Returns a pointer to shared memory or 0
     } while (lm);
-    //Export myloc?
-    locationMessagesOut->locationX[id] = myLoc.x;
-    locationMessagesOut->locationY[id] = myLoc.y;
+    //Export newLoc
+	newLoc = glm::clamp(newLoc, d_environmentMin, d_environmentMax);
+	locationMessagesOut->locationX[id] = newLoc.x;
+	locationMessagesOut->locationY[id] = newLoc.y;
 #ifdef _3D
-    locationMessagesOut->locationZ[id] = myLoc.z;
+	locationMessagesOut->locationZ[id] = newLoc.z;
 #endif
 }

@@ -79,7 +79,7 @@ int main(int argc, char * argv[])
 #ifdef _GL
 	Visualisation v("Visulisation Example", args.GLwidth, args.GLheight);//Need to init GL before creating CUDA textures
 #endif
-	Circles<SpatialPartition> model(args.model.width, args.model.density, args.model.interactionRad, args.model.attractionForce, args.model.repulsionForce);
+	Circles<SpatialPartition> model(args.model.width, args.model.density, args.model.interactionRad*2, args.model.attractionForce, args.model.repulsionForce);
 	const Time_Init initTimes = model.initPopulation();//Need to init textures before creating the scene
 #ifdef _GL
 	ParticleScene<SpatialPartition> *scene = new ParticleScene<SpatialPartition>(v, model);
