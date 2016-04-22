@@ -2,8 +2,10 @@
 ## Latex build stuff
 
 build/
-report/paper.pdf
-
+*paper.pdf
+*.csv
+*.nvprof
+*.bib.bak
 ##Random windows detritus
 *.ini
 
