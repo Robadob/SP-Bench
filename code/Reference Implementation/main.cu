@@ -16,8 +16,10 @@ struct ArgData
 	ArgData()
 		: pipe(false)
 		, device(0)
+#ifdef _GL
 		, GLwidth(1280)
 		, GLheight(720)
+#endif
 		, model()
 	{}
 	bool pipe = false;
@@ -150,11 +152,11 @@ int main(int argc, char * argv[])
 #ifdef _GL
     v.run();
 #endif
-
+	cudaDeviceReset();
     //Wait for input before exit
 	if (!args.pipe)
 	{
-		getchar();
+		getchar();//This line appears to hurt the profiler, add new option to skip without piping
 	}
     return 0;
 }
