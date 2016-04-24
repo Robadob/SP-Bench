@@ -7,6 +7,9 @@
     <CudaCompile Include="CirclesKernels.cu">
       <Filter>Circles</Filter>
     </CudaCompile>
+    <CudaCompile Include="visualisation\texture\TextureBuffer.cu">
+      <Filter>Visualistion\Textures</Filter>
+    </CudaCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Neighbourhood.cuh">
@@ -70,6 +73,12 @@
       <Filter>Headers\Visualisation\Textures</Filter>
     </ClInclude>
     <ClInclude Include="visualisation\texture\TextureCubeMap.h">
+      <Filter>Headers\Visualisation\Textures</Filter>
+    </ClInclude>
+    <ClInclude Include="visualisation\util\cuda.cuh">
+      <Filter>Headers\Visualisation\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="visualisation\texture\TextureBuffer.h">
       <Filter>Headers\Visualisation\Textures</Filter>
     </ClInclude>
   </ItemGroup>

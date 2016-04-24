@@ -20,12 +20,13 @@ public:
 
     void render() override;
     void reload() override;
-    void update() override;
+    void update(unsigned int frameTime) override;
+    bool keypress(SDL_Keycode keycode, int x, int y) override;
     void setCount(unsigned int count);
 
 private:
+    bool drawPBM;
     void renderPBM();
-    ~ParticleScene();//Private to prevent stack allocation
     void setTex(const GLuint *tex);//Sets the instance data arrays
 
     std::shared_ptr<Entity> icosphere;

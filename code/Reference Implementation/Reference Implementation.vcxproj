@@ -382,6 +382,12 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
       <NvccCompilation Condition="'$(Configuration)|$(Platform)'=='Debug GL|Win32'">compile</NvccCompilation>
     </CudaCompile>
     <CudaCompile Include="NeighbourhoodKernels.cu" />
+    <CudaCompile Include="visualisation\texture\TextureBuffer.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </CudaCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Circles.cuh" />
@@ -403,7 +409,9 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     <ClInclude Include="visualisation\Skybox.h" />
     <ClInclude Include="visualisation\texture\Texture.h" />
     <ClInclude Include="visualisation\texture\Texture2D.h" />
+    <ClInclude Include="visualisation\texture\TextureBuffer.h" />
     <ClInclude Include="visualisation\texture\TextureCubeMap.h" />
+    <ClInclude Include="visualisation\util\cuda.cuh" />
     <ClInclude Include="visualisation\Visualisation.h" />
   </ItemGroup>
   <ItemGroup>

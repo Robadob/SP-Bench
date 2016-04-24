@@ -25,12 +25,12 @@ struct Time_Step_dbl
 struct ModelParams
 {
 	ModelParams()
-		: width(50)
+		: width(100)
 		, density(0.005f)
 		, interactionRad(10.0f)
-		, attractionForce(0.0001f)
-		, repulsionForce(0.0001f)
-		, iterations(10000)
+		, attractionForce(0.00001f)
+		, repulsionForce(0.00001f)
+		, iterations(5000)
 	{ }
 	unsigned int width;
 	float density;

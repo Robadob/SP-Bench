@@ -8,6 +8,7 @@ ParticleScene<T>::ParticleScene(Visualisation &visualisation, Circles<T> &model)
     , icosphere(new Entity(Stock::Models::ICOSPHERE, 1.0f, std::make_shared<Shaders>("../shaders/instanced.vert","../shaders/instanced.frag")))
     , count(model.agentMax)
     , model(model)
+    , drawPBM(true)
 {
     registerEntity(icosphere);
     this->visualisation.setWindowTitle("Circles Benchmark");
@@ -44,10 +45,28 @@ Steps the model
 @note This is currently done externally
 */
 template<class T>
-void ParticleScene<T>::update()
+void ParticleScene<T>::update(unsigned int frameTime)
 {
     //Update agent count
     setCount(this->model.getPartition()->getLocationCount());
+}
+/*
+Steps the model
+@note This is currently done externally
+*/
+template<class T>
+bool ParticleScene<T>::keypress(SDL_Keycode keycode, int x, int y)
+{
+    switch (keycode)
+    {
+    case SDLK_p:
+        this->drawPBM = !this->drawPBM;
+        break;
+    default:
+        //Only permit the keycode to be processed if we haven't handled personally
+        return true;
+    }
+    return false;
 }
 /*
 Refreshes shaders
@@ -65,7 +84,8 @@ void ParticleScene<T>::render()
 {
     if (this->count <= 0)
         return;
-    this->renderPBM();
+    if (this->drawPBM)
+        this->renderPBM();
     this->icosphere->renderInstances(count);
 }
 /*
