@@ -3,6 +3,7 @@
   
   Each of the parameter sets utilised, targeted a different performance metric identified in Section \label{sec:benchmark-model}. Results were collected by monitoring the total runtime of 1000 iterations of 3D implementations of the benchmark (executed sans visualisation) and are presented as the per iteration mean. Initialisation timings are excluded as the benchmarks focal point is the performance of the nearest neighbours search carried out within each iteration.
   \begin{figure}[tb]
+\begin{center}
 \begin{tikzpicture}
   \begin{axis} 
   [
@@ -200,10 +201,11 @@
   \end{axis}
 \end{tikzpicture}
 \caption{\label{fig:graph-agent-pop}Graph plotting average iteration time of each framework against the agent population.}
+\end{center}
 \end{figure}
   The results in Figure \ref{fig:graph-agent-pop} present the variation in performance as the scale of the problem increases. This is achieved by increasing the parameter $W$, which increases the volume of the environment and hence the agent population.
   
-  Most apparent from these results is that FLAMEGPU which utilises \gls{gpu} computation, as opposed to the other frameworks which utilise a multi-threaded \gls{cpu} approach, consistently outperforms the best multi-core framework by a margin of 2-5 times. This is inline with the expectations of \gls{gpu} accelerated computation\cite{LK*10}, whereby the additional hardware cost must be factored in. Although MASON and Repast Simphony are both Java based frameworks, MASON's performance trailed that of Repast by around 2-3x. Observation during runtime showed MASON with much lower multi-core utilisation than Repast, which likely explains this disparity.
+  Most apparent from these results is that FLAMEGPU which utilises \gls{gpu} computation, as opposed to the other frameworks which utilise a multi-threaded \gls{cpu} approach, consistently outperforms the best multi-core framework by a margin of 2-5 times. This is inline with the expectations of \gls{gpu} accelerated computation\cite{LK*10}, whereby the minor additional initial hardware cost must be factored in\footnote{The Palit GeForce GTX 750 Ti \gls{gpu} used to produce these results is available for a relatively conservative cost (~£100/\$120) considering the available performance improvements.} Although MASON and Repast Simphony are both Java based frameworks, MASON's performance trailed that of Repast by around 2-3x. Observation during runtime showed MASON with much lower multi-core utilisation than Repast, which likely explains this disparity.
   % Width: 50,60..300
   % Density: 0.01
   % Interaction Rad: 5.0
@@ -211,6 +213,7 @@
   % Repulsion Force: 0.00001
   % Iterations: 1000
   \begin{figure}[tb]
+\begin{center}
 \begin{tikzpicture}
   \begin{axis} 
   [
@@ -342,6 +345,7 @@
   \end{axis}
 \end{tikzpicture}
 \caption{\label{fig:graph-neighbourhood-pop}Graph plotting average iteration time of each framework against the expected neighbourhood population.}
+\end{center}
 \end{figure}
   
   The next parameter set, shown in Figure \ref{fig:graph-neighbourhood-pop}, assessed the performance of each framework in response to increases in the agent populations within each neighbourhood. The purpose of this benchmark set was to assess how each framework performed when agents were presented with a greater number of neighbours to survey. This was achieved by increasing the parameter $R$, hence increasing the volume of each agents radial neighbourhood. The results show a fairly linear relationship for each framework. MASON initially outperformed Repast Simphony, however the effect of increased neighbourhood sizes saw Repast Simphony perform quicker when neighbourhoods were greater than 6 agents.

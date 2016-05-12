@@ -3,15 +3,15 @@
    
   The parameters (explained below) of the circles benchmark allow it to be used to assess how the performance of FRNNs search implementations are affected by changes to factors such as problem size and neighbourhood size. This assessment can then be utilised in the research of FRNNs ensuring comparisons against existing work and to advise design decisions when requiring FRNNs during the implementation of \gls{abs}.
   
-  \subsection{Specification}  
+  \subsection{Model Specification}  
     The benchmark model is configured using the parameters in Table \ref{tab:benchmark-parameters}. In addition to these parameters the dimensionality of the environment ($E_{dim}$) must be decided, in most cases this will be 2 or 3. The value of $E_{dim}$ is not considered a model parameter as changes to this value are likely to require implementation changes.
 
     \begin{table}
       \begin{tabu}{ |c|>{\raggedright}X|c|c| }
         \hline
         \textbf{Parameter} & \textbf{Description} & Fig. \ref{fig:graph-agent-pop} & Fig. \ref{fig:graph-neighbourhood-pop} \\ \hline
-        $k_{rep}$ & The repulsive dampening argument. Increasing this value encourages agents to repel. & 0.00001 & 0.00001 \\ \hline
-        $k_{att}$ & The attractive dampening argument. Increasing this value encourages agents to attract. & 0.00001 & 0.00001 \\ \hline
+        $k_{rep}$ & The repulsive dampening argument. Increasing this value encourages agents to repel. & $1\times10^{-5}$ & $1\times10^{-5}$ \\ \hline
+        $k_{att}$ & The attractive dampening argument. Increasing this value encourages agents to attract. & $1\times10^{-5}$ & $1\times10^{-5}$ \\ \hline
         $r$ & The interaction radius. Increasing this value increases the radius of the neighbourhoods searched, subsequently increasing agent communication. & 5 & 1-15 \\ \hline
         $ \rho $ & The density of agents within the environment. & 0.01 & 0.01 \\ \hline
         $W$ & The diameter of the environment, this value is shared by each dimension therefore in a two dimensional environment it represents the width and height. Increasing this value is equivalent to increasing the scale of the problem (e.g. the number of agents) assuming $ \rho $ remains unchanged. & 50-300 & 100\\ \hline
@@ -53,7 +53,8 @@
 \caption{\label{algo:circles}Pseudo-code for the calculation of a single particle's new location.}
 \end{algorithm}
 
-      The benchmark is to be executed for the stated number of model iterations. This may result in multiple iterations in a steady state, however this does not diminish the validity of the measured metrics.
+      %The benchmark is to be executed for the stated number of model iterations. This may result in multiple iterations in a steady state, however this does not diminish the validity of the measured metrics.
+      
   \subsection{Validation}
     There are several checks that can be carried out to ensure that the benchmark has been implemented correctly. Most significantly it should be confirmed that agent locations remain within the environmental bounds, the absence of this clamping has a significant effect on the agent distributions over time, which may artificially benefit performance. It is intended that the benchmark model is able to reach a steady state over a number of iterations, however in some cases high magnitudes forces $F_{att}$F \& $F_{rep}$ may instead cause the agents to vibrate. When the cumulative force applied to each agent is however within a reasonable range it is possible to predict the eventual steady state.\textit{TODO: clarify param combinations:final state.}
   
@@ -68,8 +69,8 @@
         N_{size} = \rho \pi (2r)^{E_{dim}}
     \end{equation}
       
-    Modifying the speed of the agents motion, affects the rate at which the data-structure holding the neighbourhood data must change (for which reason it is referred to as changing the entropy, the energy within the system). Most implementations are unaffected by changes to this value, however optimisations such as those by Sun et al\cite{HY*15} should see performance improvements at lower speeds, due to a reduced number of agents transitioning between cells within the environment per timestep. The speed of an agent within the circles model is calculated using Equation \ref{eq:timestep-force}, there are many variables which impact this speed, however the most significant modifiers are those of attractive force ($k_{att}$) and repulsive force ($k_{rep}$). Closer these two forces are to $0$ the slower that the agents move. If these forces are particularly high, agents are likely to oscillate rather than reaching a steady state.\textit{TODO: Why do we care?}
+    Modifying the speed of the agents motion, affects the rate at which the data-structure holding the neighbourhood data must change (for which reason it is referred to as changing the entropy, the energy within the system). Most implementations are unaffected by changes to this value, however optimisations such as those by Sun et al\cite{HY*15} should see performance improvements at lower speeds, due to a reduced number of agents transitioning between cells within the environment per timestep. The speed of an agent within the circles model is calculated using Equation \ref{eq:timestep-force}, there are many variables which impact this speed, however the most significant modifiers are those of attractive force ($k_{att}$) and repulsive force ($k_{rep}$). Closer these two forces are to $0$ the slower that the agents move. If these forces are particularly high, agents are likely to oscillate rather than reaching a steady state as described in the previous subsection.
     
     Location uniformity, refers to how uniformly distributed the agents are within the environment. When agents are distributed non-uniformly, as may be found within many natural scenarios, the size of agent neighbourhoods are likely to vary more significantly. This can be detrimental to the performance of implementations which parallelise the neighbourhood search such that each agents search is carried out in a separate thread via single instruction multiple data (SIMD) execution. This is caused by sparse neighbourhoods spending large amounts of time idling whilst larger neighbourhoods executed simultaneously are searched. It is not currently possible to suitably affect the location uniformity within the circles model.
     
-    \textit{Paul had comment about mentioning OpenAB here, not sure if meant end of this section or start of next}
+    Independent of model parameters, the circles benchmark is also capable of assessing the performance of FRNNs when scaled across distributed systems, however that is outside the scope of the results presented within this paper.
