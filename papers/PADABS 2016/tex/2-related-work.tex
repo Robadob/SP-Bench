@@ -1,5 +1,6 @@
+\vspace{-0.3cm}
 \section{Related Research\label{sec:related-work}}
-\vspace{-0.5cm}
+\vspace{-0.4cm}
   FRNNs searches are most often found within agent-based models. They have also been used alongside similar algorithms within the fields of \gls{sph} and collision detection. FRNNs is the process whereby each agent considers the properties of every other agent located within a radial area about their location. This searched area can be considered the agent’s neighbourhood and must be searched every timestep of a simulation to ensure agents have live information. Whilst various spatial data-structures such as kd-trees and R-trees are capable of providing efficient access to spatial neighbourhoods, their expensive constructions make them unsuitable for the large dynamic agent populations found within agent-based models.
 
   The naive technique for carrying out a neighbourhood search is via a brute-force technique, individually considering whether each agent is located within the target neighbourhood. This technique may be suitable for small agent populations, however the overhead quickly becomes significant as agent populations increase, reducing the proportional volume of the neighbourhoods with respect to the volume of the environment.
