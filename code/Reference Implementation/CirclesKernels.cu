@@ -44,20 +44,16 @@ __global__ void step_model(LocationMessages *locationMessagesIn, LocationMessage
         if ((lm->id != id))
         {
 			locDiff = myLoc - lm->location;//Difference
-            if (locDiff==DIMENSIONS_VEC(0))//Ignore distance 0
-            {
-                lm = locationMessagesIn->getNextNeighbour(lm);
-                continue;
-            }
-			dist = length(locDiff);//Distance (via pythagoras)
-            separation = dist - d_interactionRad;
-            if (separation < d_interactionRad)
-            {
-                if (separation > 0.0f)
-                    k = d_attract;
-                else
-                    k = -d_repulse;
-				newLoc += (k * separation * locDiff / d_interactionRad);
+            if (locDiff!=DIMENSIONS_VEC(0))//Ignore distance 0
+			{
+				dist = length(locDiff);//Distance (via pythagoras)
+				separation = dist - d_interactionRad;
+				if (separation < d_interactionRad)
+				{
+
+					k = (separation > 0.0f) ? d_attract : -d_repulse;
+					newLoc += (k * separation * locDiff / d_interactionRad);
+				}
             }
         }
         lm = locationMessagesIn->getNextNeighbour(lm);//Returns a pointer to shared memory or 0

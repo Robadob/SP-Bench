@@ -166,7 +166,7 @@ template <class T>
 void Circles<T>::launchStep()
 {
     int minGridSize, blockSize;   // The launch configurator returned block size 
-    cudaOccupancyMaxPotentialBlockSizeVariableSMem(&minGridSize, &blockSize, step_model, requiredSM_stepModel, 128);//random 128
+    cudaOccupancyMaxPotentialBlockSizeVariableSMem(&minGridSize, &blockSize, step_model, requiredSM_stepModel, 0);//random 128
     // Round up according to array size
     int gridSize = (agentMax + blockSize - 1) / blockSize;
     LocationMessages *d_lm = spatialPartition->d_getLocationMessages();

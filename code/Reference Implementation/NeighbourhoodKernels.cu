@@ -246,10 +246,9 @@ __device__ LocationMessage *LocationMessages::loadNextMessage()
     extern __shared__ LocationMessage sm_messages[];
     LocationMessage *sm_message = &(sm_messages[threadIdx.x]);
 
-    bool changeBin = true;
     sm_message->state.binIndex++;
-    if (sm_message->state.binIndex < sm_message->state.binIndexMax)
-        changeBin = false;
+    
+	bool changeBin = (sm_message->state.binIndex >= sm_message->state.binIndexMax);
 
     while (changeBin)
     {

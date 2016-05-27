@@ -33,7 +33,8 @@ SpatialPartition::SpatialPartition(DIMENSIONS_VEC  environmentMin, DIMENSIONS_VE
     //Allocate primitive structures
     deviceAllocatePrimitives(&d_keys, &d_vals);
 #ifndef THRUST
-    deviceAllocatePrimitives(&d_keys_swap, &d_vals_swap);
+	deviceAllocatePrimitives(&d_keys_swap, &d_vals_swap); 
+	deviceAllocateCUBTemp(&d_CUB_temp_storage, d_CUB_temp_storage_bytes);
 #endif
     //Allocate tex
     deviceAllocateTextures();
@@ -69,7 +70,8 @@ SpatialPartition::~SpatialPartition()
     //Deallocated primitive structures
     deviceDeallocatePrimitives(d_keys, d_vals);
 #ifndef THRUST
-    deviceDeallocatePrimitives(d_keys_swap, d_vals_swap);
+	deviceDeallocatePrimitives(d_keys_swap, d_vals_swap);
+	deviceDeallocateCUBTemp(d_CUB_temp_storage);
 #endif
     //Deallocate tex
     deviceDeallocateTextures();
@@ -311,6 +313,19 @@ void SpatialPartition::deviceAllocatePrimitives(unsigned int **d_keys, unsigned 
     CUDA_CALL(cudaMalloc(d_keys, sizeof(unsigned int)*maxAgents));
     CUDA_CALL(cudaMalloc(d_vals, sizeof(unsigned int)*maxAgents));
 }
+#ifndef THRUST
+void SpatialPartition::deviceAllocateCUBTemp(void **d_CUB_temp, size_t &d_cub_temp_bytes)
+{
+
+	//CUB version
+	// Determine temporary device storage requirements
+	d_cub_temp_bytes = 0;
+	*d_CUB_temp = NULL;
+	cub::DeviceRadixSort::SortPairs(*d_CUB_temp, d_cub_temp_bytes, d_keys, d_keys_swap, d_vals, d_vals_swap, maxAgents);
+	// Allocate temporary storage
+	CUDA_CALL(cudaMalloc(d_CUB_temp, d_cub_temp_bytes));
+}
+#endif
 void SpatialPartition::deviceAllocateTextures()
 {
     //Locations
@@ -487,6 +502,12 @@ void SpatialPartition::deviceDeallocatePrimitives(unsigned int *d_keys, unsigned
     CUDA_CALL(cudaFree(d_keys));
     CUDA_CALL(cudaFree(d_vals));
 }
+#ifndef THRUST
+void SpatialPartition::deviceDeallocateCUBTemp(void *d_CUB_temp)
+{
+	CUDA_CALL(cudaFree(d_CUB_temp));
+}
+#endif
 void SpatialPartition::deviceDeallocateTextures()
 {
 
@@ -587,15 +608,15 @@ void SpatialPartition::buildPBM()
     launchHashLocationMessages();
     //Sort key val arrays using thrust/CUB
 #ifndef THRUST
-    //CUB version
-    // Determine temporary device storage requirements
-    void *d_temp_storage = NULL;
-    size_t   temp_storage_bytes = 0;
-    cub::DeviceRadixSort::SortPairs(d_temp_storage, temp_storage_bytes, d_keys, d_keys_swap, d_vals, d_vals_swap, locationMessageCount);
-    // Allocate temporary storage
-    cudaMalloc(&d_temp_storage, temp_storage_bytes);
+    ////CUB version
+    //// Determine temporary device storage requirements
+    //void *d_temp_storage = NULL;
+    //size_t   temp_storage_bytes = 0;
+    //cub::DeviceRadixSort::SortPairs(d_temp_storage, temp_storage_bytes, d_keys, d_keys_swap, d_vals, d_vals_swap, locationMessageCount);
+    //// Allocate temporary storage
+    //cudaMalloc(&d_temp_storage, temp_storage_bytes);
     // Run sorting operation
-    cub::DeviceRadixSort::SortPairs(d_temp_storage, temp_storage_bytes, d_keys, d_keys_swap, d_vals, d_vals_swap, locationMessageCount);
+	cub::DeviceRadixSort::SortPairs(d_CUB_temp_storage, d_CUB_temp_storage_bytes, d_keys, d_keys_swap, d_vals, d_vals_swap, locationMessageCount);
     //Swap arrays
     unsigned int *temp;
     temp = d_keys;
@@ -603,9 +624,9 @@ void SpatialPartition::buildPBM()
     d_keys_swap = temp;
     temp = d_vals;
     d_vals = d_vals_swap;
-    d_vals_swap = temp;
-    //Free temporary memory
-    cudaFree(d_temp_storage);
+    //d_vals_swap = temp;
+    ////Free temporary memory
+    //cudaFree(d_temp_storage);
 #else
     //Thrust version
     //cudaStream_t s1;

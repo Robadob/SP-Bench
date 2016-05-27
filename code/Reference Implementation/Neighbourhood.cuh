@@ -106,7 +106,10 @@ private:
     //Allocators
     void deviceAllocateLocationMessages(LocationMessages **d_locMessage, LocationMessages *hd_locMessage);
     void deviceAllocatePBM(unsigned int **d_PBM_t);
-    void deviceAllocatePrimitives(unsigned int **d_keys, unsigned int **d_vals);
+	void deviceAllocatePrimitives(unsigned int **d_keys, unsigned int **d_vals);
+#ifndef THRUST
+	void deviceAllocateCUBTemp(void **d_CUB_temp, size_t &d_cub_temp_bytes);
+#endif
     void deviceAllocateTextures();
     void deviceAllocateTexture_float(unsigned int i);
     void deviceAllocateTexture_int();//allocate pbm tex
@@ -123,7 +126,10 @@ private:
     void deviceDeallocateLocationMessages(LocationMessages *d_locMessage, LocationMessages hd_locMessage);
     void deviceDeallocatePBM(unsigned int *d_PBM_t);
     void deviceDeallocatePrimitives(unsigned int *d_keys, unsigned int *d_vals);
-    void deviceDeallocateTextures();
+	void deviceDeallocateTextures();
+#ifndef THRUST
+	void deviceDeallocateCUBTemp(void *d_CUB_temp);
+#endif
     
     void fillTextures();
 
@@ -143,6 +149,8 @@ private:
 #ifndef THRUST
     unsigned int *d_keys_swap;
     unsigned int *d_vals_swap;
+	void *d_CUB_temp_storage;
+	size_t d_CUB_temp_storage_bytes;
 #endif
     //Local copies of device constants
     unsigned int locationMessageCount;

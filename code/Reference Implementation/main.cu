@@ -15,6 +15,7 @@ struct ArgData
 {
 	ArgData()
 		: pipe(false)
+		, profile(false)
 		, device(0)
 #ifdef _GL
 		, GLwidth(1280)
@@ -23,6 +24,7 @@ struct ArgData
 		, model()
 	{}
 	bool pipe = false;
+	bool profile = false;
 	unsigned int device;
 #ifdef _GL
 	unsigned int GLwidth;
@@ -42,6 +44,11 @@ ArgData parseArgs(int argc, char * argv[])
 		if (arg.compare("-pipe") == 0)
 		{
 			data.pipe = true;
+		}
+		//-profile, Disables all console IO
+		if (arg.compare("-profile") == 0)
+		{
+			data.profile = true;
 		}
 		//-device <uint>, Uses the specified cuda device, defaults to 0
 		else if (arg.compare("-device") == 0)
@@ -88,7 +95,7 @@ int main(int argc, char * argv[])
 #endif
 
 	//Init model
-	if (!args.pipe)
+	if (!args.pipe&&!args.profile)
 	{
 		printf("Init Complete - Times\n");
 		printf("CuRand init - %.3fs\n", initTimes.initCurand / 1000);
@@ -115,12 +122,12 @@ int main(int argc, char * argv[])
 		scene->setCount(model.getPartition()->getLocationCount());
 		v.render();
 #endif
-		if (!args.pipe)
+		if (!args.pipe&&!args.profile)
 		{
 			printf("\r%6llu/%llu", i, args.model.iterations);
 		}
 	}
-	if (!args.pipe)
+	if (!args.pipe&&!args.profile)
 	{
 		printf("\nModel complete - Average Times\n");
 		printf("Main kernel - %.3fs\n", average.kernel / 1000);
@@ -135,7 +142,7 @@ int main(int argc, char * argv[])
     float totalTime;
     cudaEventElapsedTime(&totalTime, start, stop);
 
-	if (!args.pipe)
+	if (!args.pipe&&!args.profile)
 	{
 		printf("Total Runtime: %.3fs\n", totalTime / 1000);
 	}
@@ -154,7 +161,7 @@ int main(int argc, char * argv[])
 #endif
 	cudaDeviceReset();
     //Wait for input before exit
-	if (!args.pipe)
+	if (!args.pipe&&!args.profile)
 	{
 		getchar();//This line appears to hurt the profiler, add new option to skip without piping
 	}
