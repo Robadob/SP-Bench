@@ -89,7 +89,7 @@ int main(int argc, char * argv[])
 	Visualisation v("Visulisation Example", args.GLwidth, args.GLheight);//Need to init GL before creating CUDA textures
 #endif
 	Circles<SpatialPartition> model(args.model.width, args.model.density, args.model.interactionRad*2, args.model.attractionForce, args.model.repulsionForce);
-	const Time_Init initTimes = model.initPopulation();//Need to init textures before creating the scene
+	const Time_Init initTimes = model.initPopulation(args.model.seed);//Need to init textures before creating the scene
 #ifdef _GL
 	ParticleScene<SpatialPartition> *scene = new ParticleScene<SpatialPartition>(v, model);
 #endif
@@ -151,10 +151,37 @@ int main(int argc, char * argv[])
 	{
 		//FILE *pipe = fopen("CON", "wb+");// _popen("", "wb");
 		setmode(fileno(stdout), O_BINARY);
-		fwrite(&initTimes, sizeof(Time_Init), 1, stdout);
-		fwrite(&average, sizeof(Time_Step_dbl), 1, stdout);
-		fwrite(&totalTime, sizeof(float), 1, stdout);
-		//_pclose(pipe);
+		if (fwrite(&args.model, sizeof(ModelParams), 1, stdout) != 1)
+		{
+			freopen("error.log", "a", stderr);
+			fprintf(stderr, "Writing model params failed.\n"); 
+			fflush(stderr);
+		};
+		if (fwrite(&model.agentMax, sizeof(unsigned int), 1, stdout) != 1)
+		{
+
+			freopen("error.log", "a", stderr);
+			fprintf(stderr, "Writing agent max failed.\n"); 
+			fflush(stderr);
+		};
+		if (fwrite(&initTimes, sizeof(Time_Init), 1, stdout) != 1)
+		{
+			freopen("error.log", "a", stderr);
+			fprintf(stderr, "Writing init times failed.\n"); 
+			fflush(stderr);
+		};
+		if (fwrite(&average, sizeof(Time_Step_dbl), 1, stdout) != 1)
+		{
+			freopen("error.log", "a", stderr);
+			fprintf(stderr, "Writing step times failed.\n");
+			fflush(stderr);
+		};
+		if (fwrite(&totalTime, sizeof(float), 1, stdout) != 1)
+		{
+			freopen("error.log", "a", stderr);
+			fprintf(stderr, "Writing total time failed.\n"); 
+			fflush(stderr);
+		};
 	}
 #ifdef _GL
     v.run();
@@ -163,7 +190,7 @@ int main(int argc, char * argv[])
     //Wait for input before exit
 	if (!args.pipe&&!args.profile)
 	{
-		getchar();//This line appears to hurt the profiler, add new option to skip without piping
+		getchar();
 	}
     return 0;
 }

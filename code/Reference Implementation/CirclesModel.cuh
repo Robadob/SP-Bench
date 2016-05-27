@@ -47,8 +47,8 @@ Circles<T>::Circles(
     , interactionRad(interactionRad)
     , attract(attract)
     , repulse(repulse)
-    , agentMax((int)(pow(width, DIMENSIONS) * density))
-    , spatialPartition(new SpatialPartition(DIMENSIONS_VEC(0.0f, 0.0f, 0.0f), DIMENSIONS_VEC(width, width, width), (int)(pow(width, DIMENSIONS) * density), interactionRad))
+    , agentMax((int)(round(pow(width, DIMENSIONS) * (double)density)))
+	, spatialPartition(new SpatialPartition(DIMENSIONS_VEC(0.0f, 0.0f, 0.0f), DIMENSIONS_VEC(width, width, width), (int)round(pow(width, DIMENSIONS) * (double)density), interactionRad))
 {
     //Copy relevant parameters to constants
     CUDA_CALL(cudaMemcpyToSymbol(d_attract, &attract, sizeof(float)));

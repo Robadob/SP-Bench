@@ -1,5 +1,6 @@
 #ifndef __results_h__
 #define __results_h__
+#include <ctime>
 
 struct Time_Init
 {
@@ -31,6 +32,7 @@ struct ModelParams
 		, attractionForce(0.00001f)
 		, repulsionForce(0.00001f)
 		, iterations(5000)
+		, seed(12)
 	{ }
 	unsigned int width;
 	float density;
@@ -38,5 +40,6 @@ struct ModelParams
 	float attractionForce;
 	float repulsionForce;
 	unsigned long long iterations;
+	unsigned long long seed;
 };
 #endif
