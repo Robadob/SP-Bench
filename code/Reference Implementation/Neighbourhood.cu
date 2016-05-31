@@ -229,54 +229,54 @@ void SpatialPartition::assertSearch()
     fprintf(file, "|-----¦-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|\n");
     for (unsigned int i = 0; i < (outCount / 10)-1; i++)
     {
-        fprintf(file, "|%4u0¦%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|\n", i, 
-            PBM_raw[((outCount / 10)*i) + 0],
-            PBM_raw[((outCount / 10)*i) + 1],
-            PBM_raw[((outCount / 10)*i) + 2],
-            PBM_raw[((outCount / 10)*i) + 3],
-            PBM_raw[((outCount / 10)*i) + 4],
-            PBM_raw[((outCount / 10)*i) + 5],
-            PBM_raw[((outCount / 10)*i) + 6],
-            PBM_raw[((outCount / 10)*i) + 7],
-            PBM_raw[((outCount / 10)*i) + 8],
-            PBM_raw[((outCount / 10)*i) + 9]
-            );
-    }
-    fprintf(file, "Bin Size\n");
-    fprintf(file, "|%5s¦%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|\n", "", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9");
-    fprintf(file, "|-----¦-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|\n");
-    for (unsigned int i = 0; i < (outCount / 10) - 1; i++)
-    {
-        fprintf(file, "|%4u0¦%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|\n", i,
-            PBM_binSize[((outCount / 10)*i) + 0],
-            PBM_binSize[((outCount / 10)*i) + 1],
-            PBM_binSize[((outCount / 10)*i) + 2],
-            PBM_binSize[((outCount / 10)*i) + 3],
-            PBM_binSize[((outCount / 10)*i) + 4],
-            PBM_binSize[((outCount / 10)*i) + 5],
-            PBM_binSize[((outCount / 10)*i) + 6],
-            PBM_binSize[((outCount / 10)*i) + 7],
-            PBM_binSize[((outCount / 10)*i) + 8],
-            PBM_binSize[((outCount / 10)*i) + 9]
-            );
-    }
-    fprintf(file, "Neighbour Count\n");
-    fprintf(file, "|%5s¦%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|\n", "", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9");
-    fprintf(file, "|-----¦-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|\n");
-    for (unsigned int i = 0; i < (outCount / 10) - 1; i++)
-    {
-        fprintf(file, "|%4u0¦%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|\n", i,
-            PBM_neighbourhoodSize[((outCount / 10)*i) + 0],
-            PBM_neighbourhoodSize[((outCount / 10)*i) + 1],
-            PBM_neighbourhoodSize[((outCount / 10)*i) + 2],
-            PBM_neighbourhoodSize[((outCount / 10)*i) + 3],
-            PBM_neighbourhoodSize[((outCount / 10)*i) + 4],
-            PBM_neighbourhoodSize[((outCount / 10)*i) + 5],
-            PBM_neighbourhoodSize[((outCount / 10)*i) + 6],
-            PBM_neighbourhoodSize[((outCount / 10)*i) + 7],
-            PBM_neighbourhoodSize[((outCount / 10)*i) + 8],
-            PBM_neighbourhoodSize[((outCount / 10)*i) + 9]
-            );
+		fprintf(file, "|%4u0¦%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|\n", i,
+			PBM_raw[(10 * i) + 0],
+			PBM_raw[(10 * i) + 1],
+			PBM_raw[(10 * i) + 2],
+			PBM_raw[(10 * i) + 3],
+			PBM_raw[(10 * i) + 4],
+			PBM_raw[(10 * i) + 5],
+			PBM_raw[(10 * i) + 6],
+			PBM_raw[(10 * i) + 7],
+			PBM_raw[(10 * i) + 8],
+			PBM_raw[(10 * i) + 9]
+			);
+	}
+	fprintf(file, "Bin Size\n");
+	fprintf(file, "|%5s¦%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|\n", "", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9");
+	fprintf(file, "|-----¦-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|\n");
+	for (unsigned int i = 0; i < (outCount / 10) - 1; i++)
+	{
+		fprintf(file, "|%4u0¦%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|\n", i,
+			PBM_binSize[(10 * i) + 0],
+			PBM_binSize[(10 * i) + 1],
+			PBM_binSize[(10 * i) + 2],
+			PBM_binSize[(10 * i) + 3],
+			PBM_binSize[(10 * i) + 4],
+			PBM_binSize[(10 * i) + 5],
+			PBM_binSize[(10 * i) + 6],
+			PBM_binSize[(10 * i) + 7],
+			PBM_binSize[(10 * i) + 8],
+			PBM_binSize[(10 * i) + 9]
+			);
+	}
+	fprintf(file, "Neighbour Count\n");
+	fprintf(file, "|%5s¦%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|\n", "", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9");
+	fprintf(file, "|-----¦-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|\n");
+	for (unsigned int i = 0; i < (outCount / 10) - 1; i++)
+	{
+		fprintf(file, "|%4u0¦%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|\n", i,
+			PBM_neighbourhoodSize[(10 * i) + 0],
+			PBM_neighbourhoodSize[(10 * i) + 1],
+			PBM_neighbourhoodSize[(10 * i) + 2],
+			PBM_neighbourhoodSize[(10 * i) + 3],
+			PBM_neighbourhoodSize[(10 * i) + 4],
+			PBM_neighbourhoodSize[(10 * i) + 5],
+			PBM_neighbourhoodSize[(10 * i) + 6],
+			PBM_neighbourhoodSize[(10 * i) + 7],
+			PBM_neighbourhoodSize[(10 * i) + 8],
+			PBM_neighbourhoodSize[(10 * i) + 9]
+			);
     }
     //Cleanup resources
     fclose(file);
