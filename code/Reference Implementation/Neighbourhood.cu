@@ -142,17 +142,25 @@ void SpatialPartition::assertSearch()
     CUDA_CALL(cudaMemcpy(PBM_raw, d_PBM, sizeof(unsigned int)*outCount, cudaMemcpyDeviceToHost));
 
     //Calculate the size of every bin
+	unsigned int agtCount = 0;
     unsigned int *PBM_binSize = static_cast<unsigned int *>(malloc(sizeof(unsigned int)*tableSize));
     for (unsigned int i = 0; i < tableSize; i++)
     {
-        if (i < outCount - 1)
-            PBM_binSize[i] = PBM_raw[i + 1] - PBM_raw[i];
+		if (i < outCount - 1)
+		{
+			PBM_binSize[i] = PBM_raw[i + 1] - PBM_raw[i];
+			agtCount += PBM_binSize[i];
+		}
         else
         {
             PBM_binSize[i] = 11111;
         }
 
-    }
+	}
+	if (agtCount != maxAgents&&agtCount != 0)
+	{
+		printf("%i PBM records exist for %i agents.\n", agtCount, maxAgents);
+	}
 
     //Calculate the size of each bin's neighbourhood
     unsigned int *PBM_neighbourhoodSize = static_cast<unsigned int *>(malloc(sizeof(unsigned int)*tableSize));
