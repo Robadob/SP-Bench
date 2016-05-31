@@ -624,7 +624,7 @@ void SpatialPartition::buildPBM()
     d_keys_swap = temp;
     temp = d_vals;
     d_vals = d_vals_swap;
-    //d_vals_swap = temp;
+    d_vals_swap = temp;
     ////Free temporary memory
     //cudaFree(d_temp_storage);
 #else
