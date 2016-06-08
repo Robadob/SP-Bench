@@ -27,15 +27,17 @@ int main(int argc, char* argv[])
 	start.iterations = 1000;
 	start.density = 0.01f;
 	start.interactionRad = 5.0f;
-	start.width = 50;
+	start.width = 300;
+	start.seed = 100;
 	//Init model arg end
 	ModelParams end = {};
 	end.iterations = 1000;
 	end.density = 0.01f;
 	end.interactionRad = 5.0f;
 	end.width = 300;	
+	end.seed = 250;
 	//Init step count
-	const int steps = 26;
+	const int steps = 11;
 
 	//Neighbourhood Scale
 	////Init model arg start
@@ -67,12 +69,13 @@ int main(int argc, char* argv[])
 	{
 		printf("\rExecuting run %i/%i",i,(int)stepsM1);
 		//Interpolate model
-		modelArgs.width = start.width + (unsigned int)((i / stepsM1)*(end.width - start.width));
+		modelArgs.seed = start.seed + (long long)((i / stepsM1)*((long long)end.seed - (long long)start.seed));
+		modelArgs.width = start.width + (int)((i / stepsM1)*((int)end.width - (int)start.width));
 		modelArgs.density = start.density + ((i / stepsM1)*(end.density - start.density));
 		modelArgs.interactionRad = start.interactionRad + ((i / stepsM1)*(end.interactionRad - start.interactionRad));
 		modelArgs.attractionForce = start.attractionForce + ((i / stepsM1)*(end.attractionForce - start.attractionForce));
 		modelArgs.repulsionForce = start.repulsionForce + ((i / stepsM1)*(end.repulsionForce - start.repulsionForce));
-		modelArgs.iterations = start.iterations + (unsigned long long)((i / stepsM1)*(end.iterations - start.iterations));
+		modelArgs.iterations = start.iterations + (long long)((i / stepsM1)*((int)end.iterations - (int)start.iterations));
 		//Clear output structures
 		memset(&modelParamsOut, 0, sizeof(ModelParams));
 		memset(&stepRes, 0, sizeof(Time_Step_dbl));
@@ -145,6 +148,14 @@ void execString(const char* executable, ModelParams modelArgs, char **rtn)
 	buffer = buffer.append(std::to_string(modelArgs.repulsionForce));
 	buffer = buffer.append(" ");
 	buffer = buffer.append(std::to_string(modelArgs.iterations));
+	if (modelArgs.seed!=12)
+	{
+
+		buffer = buffer.append(" ");
+		buffer = buffer.append(" -seed");
+		buffer = buffer.append(" ");
+		buffer = buffer.append(std::to_string(modelArgs.seed));
+	}
 	const char *src = buffer.c_str();
 	*rtn = (char *)malloc(sizeof(char*)*(buffer.length() + 1));
 	memcpy(*rtn, src, sizeof(char*)*(buffer.length() + 1));

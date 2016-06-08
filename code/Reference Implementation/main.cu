@@ -50,6 +50,11 @@ ArgData parseArgs(int argc, char * argv[])
 		{
 			data.profile = true;
 		}
+		//-seed <ulong>, Uses the specified rng seed, defaults to 12
+		else if (arg.compare("-seed") == 0)
+		{
+			data.model.seed = (unsigned int)strtoul(argv[++i], nullptr, 0);
+		}
 		//-device <uint>, Uses the specified cuda device, defaults to 0
 		else if (arg.compare("-device") == 0)
 		{
