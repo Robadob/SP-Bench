@@ -11,6 +11,8 @@
 #include "results.h"
 #include <fcntl.h>
 #include <io.h>
+#include "export.h"
+
 struct ArgData
 {
 	ArgData()
@@ -98,7 +100,7 @@ int main(int argc, char * argv[])
 #ifdef _GL
 	ParticleScene<SpatialPartition> *scene = new ParticleScene<SpatialPartition>(v, model);
 #endif
-
+	exportPopulation(model.getPartition(), &args.model, "text.xml");
 	//Init model
 	if (!args.pipe&&!args.profile)
 	{

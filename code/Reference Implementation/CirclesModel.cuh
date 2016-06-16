@@ -20,6 +20,7 @@ public:
 private:
     void launchStep();//Launches step_model kernel
     T *spatialPartition;
+	unsigned int smCount;//Count of streaming multi processors on current GPU
     //If values are constant, might aswell make them public, save writing accessor methods
 public:
     T *getPartition(){ return spatialPartition; }
@@ -58,7 +59,11 @@ Circles<T>::Circles(
     //unsigned int d_locationMessageCount == agentMax (in this case where all agents submit a single location message)
     //glm::vec3  d_environmentMin == min env values (for wrapping purposes)
     //glm::vec3  d_environmentMax == max env values (for wrapping purposes)
-
+	cudaDeviceProp properties;
+	int device;
+	cudaGetDevice(&device);
+	cudaGetDeviceProperties(&properties, device);
+	this->smCount = properties.multiProcessorCount;
 }
 
 template <class T>
@@ -78,8 +83,8 @@ const Time_Init Circles<T>::initPopulation(const unsigned long long rngSeed)
     curandState *d_rng;
     CUDA_CALL(cudaMalloc(&d_rng, agentMax*sizeof(curandState)));
     //Arbitrary thread block sizes (speed not too important during one off initialisation)
-    unsigned int initThreads = 1024;
-    unsigned int initBlocks = (agentMax / 1024) + 1;
+    unsigned int initThreads = 512;
+	unsigned int initBlocks = (agentMax / initThreads) + 1;
     spatialPartition->setLocationCount(agentMax);
     init_curand << <initBlocks, initThreads >> >(d_rng, rngSeed);
     CUDA_CALL(cudaDeviceSynchronize());
@@ -169,12 +174,23 @@ void Circles<T>::launchStep()
     cudaOccupancyMaxPotentialBlockSizeVariableSMem(&minGridSize, &blockSize, step_model, requiredSM_stepModel, 0);//random 128
     // Round up according to array size
     int gridSize = (agentMax + blockSize - 1) / blockSize;
+	////If grid size is less than SMs, reduce block size
+	//if ((unsigned int)gridSize < this->smCount*2)
+	//{
+	//	gridSize = this->smCount*5;
+	//	blockSize = (agentMax / (this->smCount*2)) + 1;
+	//}
     LocationMessages *d_lm = spatialPartition->d_getLocationMessages();
     LocationMessages *d_lm2 = spatialPartition->d_getLocationMessagesSwap();
     //Launch kernel
-    step_model << <gridSize, blockSize, requiredSM_stepModel(blockSize) >> >(d_lm, d_lm2);
+#ifdef _local
+	step_model <<<gridSize, blockSize>>>(d_lm, d_lm2);
+#else
+	step_model << <gridSize, blockSize, requiredSM_stepModel(blockSize) >> >(d_lm, d_lm2);//CHANGED: Don't sort particles
+#endif
+	CUDA_CHECK();
     //Swap
-    spatialPartition->swap();
+    spatialPartition->swap();//CHANGED: Don't sort particles
     //Wait for return
     CUDA_CALL(cudaDeviceSynchronize());
 }

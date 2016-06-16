@@ -25,12 +25,21 @@
 **/
 struct BinState
 {
-#ifdef _3D
+#if defined (_3D) && !defined (MORTON)
     glm::ivec2 relative;
     glm::ivec3 location;
-#else
+#endif
+#if !defined (_3D) && !defined (MORTON)
     int relative;
     glm::vec2 location;
+#endif
+#if defined (_3D) && defined (MORTON)
+	glm::ivec3 relative;
+	glm::ivec3 location;
+#endif
+#if !defined (_3D) && defined (MORTON)
+	glm::vec2 relative;
+	glm::vec2 location;
 #endif
     unsigned int binIndexMax;//Last pbm index
     unsigned int binIndex;//Current loaded message pbm index
@@ -62,13 +71,23 @@ public:
 #if defined(_GL) || defined(_DEBUG)
     float *count;
 #endif
-    __device__ LocationMessage *getFirstNeighbour(DIMENSIONS_VEC location);
-    __device__ LocationMessage *getNextNeighbour(LocationMessage *message);
+#ifdef _local
+	__device__ LocationMessage *getFirstNeighbour(DIMENSIONS_VEC location, LocationMessage *lm);
+#else
+	__device__ LocationMessage *getFirstNeighbour(DIMENSIONS_VEC location);
+#endif
+	__device__ LocationMessage *getNextNeighbour(LocationMessage *message);
 
 private:
-    __device__ bool nextBin();
+//#ifdef _local
+	__device__ bool nextBin(LocationMessage *sm_message);
     //Load the next desired message into shared memory
-    __device__ LocationMessage *loadNextMessage();
+	__device__ LocationMessage *loadNextMessage(LocationMessage *message);
+//#else
+//	__device__ bool nextBin();
+//	//Load the next desired message into shared memory
+//	__device__ LocationMessage *loadNextMessage();
+//#endif
 
 };
 class SpatialPartition
@@ -93,7 +112,7 @@ public:
 #ifdef _DEBUG
     DIMENSIONS_IVEC getGridPosition(DIMENSIONS_VEC worldPos);
     bool isValid(DIMENSIONS_IVEC bin) const;
-    int getHash(DIMENSIONS_IVEC gridPos);
+    unsigned int getHash(DIMENSIONS_IVEC gridPos);
     DIMENSIONS_IVEC getPos(unsigned int hash);
     void assertSearch();
     void launchAssertPBMIntegerity();

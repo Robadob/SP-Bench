@@ -37,11 +37,17 @@ __global__ void step_model(LocationMessages *locationMessagesIn, LocationMessage
 	newLoc = myLoc;
 	//Get first message
     float dist, separation, k;
-    LocationMessage *lm = locationMessagesIn->getFirstNeighbour(myLoc);
+#ifdef _local
+	LocationMessage lm2;
+	LocationMessage *lm = locationMessagesIn->getFirstNeighbour(myLoc, &lm2);
+#else
+	LocationMessage *lm = locationMessagesIn->getFirstNeighbour(myLoc);
+#endif
     //Always atleast 1 location message, our own location!
     do
     {
-        if ((lm->id != id))
+		assert(lm != 0);
+        if ((lm->id != id))//CHANGED: Don't sort particles
         {
 			locDiff = myLoc - lm->location;//Difference
             if (locDiff!=DIMENSIONS_VEC(0))//Ignore distance 0
@@ -56,7 +62,7 @@ __global__ void step_model(LocationMessages *locationMessagesIn, LocationMessage
 				}
             }
         }
-        lm = locationMessagesIn->getNextNeighbour(lm);//Returns a pointer to shared memory or 0
+		lm = locationMessagesIn->getNextNeighbour(lm);//Returns a pointer to shared memory or 0
     } while (lm);
     //Export newLoc
 	newLoc = glm::clamp(newLoc, d_environmentMin, d_environmentMax);

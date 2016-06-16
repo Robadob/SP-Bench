@@ -24,7 +24,38 @@ __device__ DIMENSIONS_IVEC getGridPosition(DIMENSIONS_VEC worldPos)
     //    return gridPos;
 }
 
-__device__ int getHash(DIMENSIONS_IVEC gridPos)
+#ifdef MORTON
+// Expands a 10-bit integer into 30 bits
+// by inserting 2 zeros after each bit.
+__device__ unsigned int expandBits(unsigned int v)
+{
+	v = (v * 0x00010001u) & 0xFF0000FFu;
+	v = (v * 0x00000101u) & 0x0F00F00Fu;
+	v = (v * 0x00000011u) & 0xC30C30C3u;
+	v = (v * 0x00000005u) & 0x49249249u;
+	return v;
+}
+
+// Calculates a 30-bit Morton code for the
+__device__ unsigned int morton3D(glm::ivec3 pos)
+{
+	//Pos should be clamped to 0<=x<1024
+
+#ifdef _DEBUG
+	assert(pos.x >= 0);
+	assert(pos.x < 1024);
+	assert(pos.y >= 0);
+	assert(pos.y < 1024);
+	assert(pos.z >= 0);
+	assert(pos.z < 1024);
+#endif
+	unsigned int xx = expandBits((unsigned int)pos.x);
+	unsigned int yy = expandBits((unsigned int)pos.y);
+	unsigned int zz = expandBits((unsigned int)pos.z);
+	return xx * 4 + yy * 2 + zz;
+}
+#endif
+__device__ unsigned int getHash(DIMENSIONS_IVEC gridPos)
 {
     //Bound gridPos to gridDimensions
     //Cheaper to bound without mod
@@ -37,14 +68,17 @@ __device__ int getHash(DIMENSIONS_IVEC gridPos)
 //    gridPos.z = (gridPos.z<0) ? d_gridDim.z - 1 : gridPos.z;
 //    gridPos.z = (gridPos.z >= d_gridDim.z) ? 0 : gridPos.z;
 //#endif
-
+#ifndef MORTON
     //Compute hash (effectivley an index for to a bin within the partitioning grid in this case)
-    return
+	return (unsigned int)(
 #ifdef _3D
         (gridPos.z * d_gridDim.y * d_gridDim.x) +   //z
 #endif
         (gridPos.y * d_gridDim.x) +					//y
-        gridPos.x; 	                                //x
+        gridPos.x); 	                            //x
+#else
+	return morton3D(gridPos);
+#endif
 }
 __global__ void hashLocationMessages(unsigned int* keys, unsigned int* vals, LocationMessages* messageBuffer)
 {
@@ -122,7 +156,6 @@ __global__ void reorderLocationMessages(
     __syncthreads();
     //Kill excess threads
     if (index >= d_locationMessageCount) return;
-
     //Load next key
     unsigned int next_key;
     //if thread is final thread
@@ -164,6 +197,7 @@ __global__ void reorderLocationMessages(
 #ifdef _3D
     ordered_messages->locationZ[index] = unordered_messages->locationZ[old_pos];
 #endif
+
 #if _DEBUG
     //Check these rather than ordered in hopes of memory coealesce
     if (ordered_messages->locationX[index] == NAN ||
@@ -176,12 +210,22 @@ __global__ void reorderLocationMessages(
 #endif
 }
 
-__device__ LocationMessage *LocationMessages::getNextNeighbour(LocationMessage *message)
-{
-    extern __shared__ LocationMessage sm_messages[];
-    //LocationMessage *sm_message = &(sm_messages[threadIdx.x]);
 
-    return loadNextMessage();
+__device__ LocationMessage *LocationMessages::getNextNeighbour(LocationMessage *sm_message)
+{
+	return loadNextMessage(sm_message);
+}
+__device__ bool invalidBinXYZ(glm::ivec3 bin)
+{
+	if (
+		bin.x<0 || bin.x >= d_gridDim.x ||
+		bin.y<0 || bin.y >= d_gridDim.y ||
+		bin.z<0 || bin.z >= d_gridDim.z
+		)
+	{
+		return true;
+	}
+	return false;
 }
 __device__ bool invalidBinYZ(glm::ivec3 bin)
 {
@@ -204,10 +248,11 @@ __device__ bool invalidBinX(glm::ivec3 bin)
     }
     return false;
 }
-__device__ bool LocationMessages::nextBin()
+#ifndef MORTON
+__device__ bool LocationMessages::nextBin(LocationMessage *sm_message)
 {
-    extern __shared__ LocationMessage sm_messages[];
-    LocationMessage *sm_message = &(sm_messages[threadIdx.x]);
+    //extern __shared__ LocationMessage sm_messages[];
+    //LocationMessage *sm_message = &(sm_messages[threadIdx.x]);
 
 #ifdef _3D
     if (sm_message->state.relative.x >= 1)
@@ -240,11 +285,51 @@ __device__ bool LocationMessages::nextBin()
     return true;
 #endif
 }
-//Load the next desired message into shared memory
-__device__ LocationMessage *LocationMessages::loadNextMessage()
+#else //#ifdef MORTON
+__device__ bool LocationMessages::nextBin(LocationMessage *sm_message)
 {
-    extern __shared__ LocationMessage sm_messages[];
-    LocationMessage *sm_message = &(sm_messages[threadIdx.x]);
+	//extern __shared__ LocationMessage sm_messages[];
+	//LocationMessage *sm_message = &(sm_messages[threadIdx.x]);
+
+	if (sm_message->state.relative.x >= 1)
+	{
+		sm_message->state.relative.x = -1;
+
+		if (sm_message->state.relative.y >= 1)
+		{
+
+#ifdef _3D
+			sm_message->state.relative.y = -1;
+
+			if (sm_message->state.relative.z >= 1)
+			{
+				return false;
+			}
+			else
+			{
+				sm_message->state.relative.z++;
+			}
+#else
+			return false;
+#endif
+		}
+		else
+		{
+			sm_message->state.relative.y++;
+		}
+	}
+	else
+	{
+		sm_message->state.relative.x++;
+	}
+	return true;
+}
+#endif
+//Load the next desired message into shared memory
+__device__ LocationMessage *LocationMessages::loadNextMessage(LocationMessage *sm_message)
+{
+    //extern __shared__ LocationMessage sm_messages[];
+    //LocationMessage *sm_message = &(sm_messages[threadIdx.x]);
 
     sm_message->state.binIndex++;
     
@@ -252,8 +337,9 @@ __device__ LocationMessage *LocationMessages::loadNextMessage()
 
     while (changeBin)
     {
-        if (nextBin())
+		if (nextBin(sm_message))
         {
+#ifndef MORTON
             //calculate the next strip of contiguous bins
 #ifdef _3D
             glm::ivec3 next_bin_first = sm_message->state.location + glm::ivec3(-1, sm_message->state.relative.x, sm_message->state.relative.y);
@@ -289,6 +375,31 @@ __device__ LocationMessage *LocationMessages::loadNextMessage()
             {
                 break;//Bin strip has items!
             }
+#else //ifdef MORTON
+	//During morton we read bins individual, rather than in strips
+#ifdef _3D
+			glm::ivec3 next_bin_first = sm_message->state.location + glm::ivec3(sm_message->state.relative.x, sm_message->state.relative.y, sm_message->state.relative.z);
+#else
+			glm::ivec2 next_bin_first = sm_message->state.location + glm::ivec2(sm_message->state.relative.x, sm_message->state.relative.y);
+#endif
+			if (invalidBinXYZ(next_bin_first))
+			{//Bin invalid, skip
+				continue;
+			}
+			//Get PBM bounds
+			int next_bin_first_hash = getHash(next_bin_first);
+
+			assert(next_bin_first_hash < 512);
+			assert(next_bin_first_hash >= 0);
+			//use the hash to calculate the start index (pbm stores location of 1st item)
+			sm_message->state.binIndex = tex1Dfetch<unsigned int>(d_tex_PBM, next_bin_first_hash);
+			sm_message->state.binIndexMax = tex1Dfetch<unsigned int>(d_tex_PBM, next_bin_first_hash + 1);
+
+			if (sm_message->state.binIndex < sm_message->state.binIndexMax)//(bin_index_min != 0xffffffff)
+			{
+				break;//Bin strip has items!
+			}
+#endif
         }
         else
         {
@@ -318,10 +429,16 @@ __device__ LocationMessage *LocationMessages::loadNextMessage()
 }
 
 
+#ifdef _local
+__device__ LocationMessage *LocationMessages::getFirstNeighbour(DIMENSIONS_VEC location, LocationMessage *lm)
+{
+	LocationMessage *sm_message = lm;
+#else
 __device__ LocationMessage *LocationMessages::getFirstNeighbour(DIMENSIONS_VEC location)
 {
-    extern __shared__ LocationMessage sm_messages[];
-    LocationMessage *sm_message = &(sm_messages[threadIdx.x]);
+	extern __shared__ LocationMessage sm_messages[];
+	LocationMessage *sm_message = &(sm_messages[threadIdx.x]);
+#endif
 #ifdef _DEBUG
     //If first thread and PBM isn't built, print warning
     if (!d_PBM_isBuilt && (((blockIdx.x * blockDim.x) + threadIdx.x)) == 0)
@@ -340,11 +457,23 @@ __device__ LocationMessage *LocationMessages::getFirstNeighbour(DIMENSIONS_VEC l
     sm_message->state.binIndexMax = 0;
     //Location in moore neighbourhood
     //Start out of range, so we get moved into 1st cell
+#ifndef MORTON
 #ifdef _3D
     sm_message->state.relative = glm::ivec2(-2, -1);
 #else
     sm_message->state.relative = -2;
 #endif
-    return loadNextMessage();
+#else
+#ifdef _3D
+	sm_message->state.relative = glm::ivec3(-2, -1, -1);
+#else
+	sm_message->state.relative = glm::ivec2(-2, -1);
+#endif
+#endif
+//#ifdef _local
+	return loadNextMessage(sm_message);
+//#else
+//	return loadNextMessage();
+//#endif
 
 }

@@ -88,7 +88,7 @@ DIMENSIONS_IVEC SpatialPartition::getGridPosition(DIMENSIONS_VEC worldPos)
 #endif
 }
 
-int SpatialPartition::getHash(DIMENSIONS_IVEC gridPos)
+unsigned int SpatialPartition::getHash(DIMENSIONS_IVEC gridPos)
 {
     gridPos = clamp(gridPos, DIMENSIONS_IVEC(0), gridDim - DIMENSIONS_IVEC(1));
     return
@@ -133,6 +133,7 @@ bool SpatialPartition::isValid(DIMENSIONS_IVEC bin) const
 }
 void SpatialPartition::assertSearch()
 {
+	return;//
     unsigned int outCount = getBinCount() + 1;
     unsigned int tableSize = ((outCount / 10) + 1) * 10;
 
@@ -585,7 +586,8 @@ void SpatialPartition::launchReorderLocationMessages()
     int gridSize = (locationMessageCount + blockSize - 1) / blockSize;
     //Copy messages from d_messages to d_messages_swap, in hash order
     reorderLocationMessages <<<gridSize, blockSize, requiredSM_reorderLocationMessages(blockSize) >>>(d_keys, d_vals, d_PBM, d_locationMessages, d_locationMessages_swap);
-    swap();
+	CUDA_CHECK();
+	swap();
     //Wait for return
     CUDA_CALL(cudaDeviceSynchronize());
 }

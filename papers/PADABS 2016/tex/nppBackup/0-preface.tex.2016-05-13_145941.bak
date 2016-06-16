@@ -1,0 +1,22 @@
+
+\urldef{\mailsa}\path|{r.chisholm,p.richmond,s.maddock}@sheffield.ac.uk|
+
+\title{A Standardised Benchmark for Assessing the Performance of Fixed Radius Near Neighbours}
+\titlerunning{A Standardised Benchmark for Assessing the Performance of Fixed Radius Near Neighbours}
+
+\author{Robert Chisholm \and Paul Richmond \and Steve Maddock}
+\institute{Department of Computer Science, The University of Sheffield, UK\\
+\mailsa\\
+}
+
+
+\maketitle
+
+\begin{abstract}
+Fixed radius near neighbours (FRNNs) lies at the centre of many agent based models, whereby agents require awareness of their local peers. Due to it’s central role, handling of FRNNs is often a limiting factor of performance. However without a standardised metric to assess the handling of FRNNs, contributions to the field lack the rigorous appraisal necessary to expose their relative benefits. 
+
+This paper presents a standardised specification of a multi agent based benchmark model. The benchmark model provides a means for the objective assessment of FRNNs performance, through the comparison of implementations. Results collected from implementations of the benchmark under three agent based modelling frameworks show the CPU bound performance to scale linearly with agent population, in contrast the GPU accelerated framework only became linear after maximal device utilisation around 150,000 agents. The performance of each of the assessed frameworks was also found unaffected by changes to the rate of agent movement.
+
+\keywords{Parallel Agent Based Simulation, OpenAB, Benchmarking, Fixed Radius Near Neighbours, FLAMEGPU, MASON, REPAST}
+
+\end{abstract}
