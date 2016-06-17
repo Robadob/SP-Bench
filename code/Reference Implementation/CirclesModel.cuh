@@ -140,7 +140,7 @@ const Time_Step Circles<T>::step()
     cudaEventRecord(start_overall);
 
     //Run single iteration of model
-    launchStep();
+    //launchStep();
 
     //End kernel timer/start texture reset timer
     cudaEventRecord(start_texture);

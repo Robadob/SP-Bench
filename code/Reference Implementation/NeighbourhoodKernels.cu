@@ -2,32 +2,32 @@
 //getHash already clamps.
 //#define SP_NO_CLAMP_GRID //Clamp grid coords to within grid (if it's possible for model to go out of bounds)
 
-__device__ DIMENSIONS_IVEC getGridPosition(DIMENSIONS_VEC worldPos)
+__host__ __device__ DIMENSIONS_IVEC getGridPosition(DIMENSIONS_VEC worldPos)
 {
 #ifndef SP_NO_CLAMP_GRID
     //Clamp each grid coord to 0<=x<dim
     return clamp(floor(((worldPos - d_environmentMin) / (d_environmentMax - d_environmentMin))*d_gridDim_float), glm::vec3(0), d_gridDim_float-glm::vec3(1));
 #else
-    return floor(((worldPos - d_environmentMin) / (d_environmentMax - d_environmentMin))*d_gridDim_float);
+	return floor(((worldPos - d_environmentMin) / (d_environmentMax - d_environmentMin))*d_gridDim_float);
+	//#ifdef _3D
+	//    glm::ivec3 gridPos;
+	//#else
+	//    glm::ivec2 gridPos;
+	//#endif
+	//    gridPos.x = floor(d_gridDim.x * (worldPos.x - d_environmentMin.x) / (d_environmentMax.x - d_environmentMin.x));
+	//    gridPos.y = floor(d_gridDim.y * (worldPos.y - d_environmentMin.y) / (d_environmentMax.y - d_environmentMin.y));
+	//#ifdef _3D
+	//    gridPos.z = floor(d_gridDim.z * (worldPos.z - d_environmentMin.z) / (d_environmentMax.z - d_environmentMin.z));
+	//#endif
+	//
+	//    return gridPos;
 #endif
-    //#ifdef _3D
-    //    glm::ivec3 gridPos;
-    //#else
-    //    glm::ivec2 gridPos;
-    //#endif
-    //    gridPos.x = floor(d_gridDim.x * (worldPos.x - d_environmentMin.x) / (d_environmentMax.x - d_environmentMin.x));
-    //    gridPos.y = floor(d_gridDim.y * (worldPos.y - d_environmentMin.y) / (d_environmentMax.y - d_environmentMin.y));
-    //#ifdef _3D
-    //    gridPos.z = floor(d_gridDim.z * (worldPos.z - d_environmentMin.z) / (d_environmentMax.z - d_environmentMin.z));
-    //#endif
-    //
-    //    return gridPos;
 }
 
 #ifdef MORTON
 // Expands a 10-bit integer into 30 bits
 // by inserting 2 zeros after each bit.
-__device__ unsigned int expandBits(unsigned int v)
+__host__ __device__ unsigned int expandBits(unsigned int v)
 {
 	v = (v * 0x00010001u) & 0xFF0000FFu;
 	v = (v * 0x00000101u) & 0x0F00F00Fu;
@@ -37,7 +37,7 @@ __device__ unsigned int expandBits(unsigned int v)
 }
 
 // Calculates a 30-bit Morton code for the
-__device__ unsigned int morton3D(glm::ivec3 pos)
+__host__ __device__ unsigned int morton3D(glm::ivec3 pos)
 {
 	//Pos should be clamped to 0<=x<1024
 
@@ -181,12 +181,12 @@ __global__ void reorderLocationMessages(
 #if _DEBUG
     if (next_key > d_binCount)
     {
-		printf("ERROR: PBM generated an out of range next_key.\n");
+		printf("ERROR: PBM generated an out of range next_key (%i > %i).\n", next_key, d_binCount);
 		assert(0);
     }
     if (old_pos >= d_locationMessageCount)
     {
-		printf("ERROR: PBM generated an out of range old_pos.\n");
+		printf("ERROR: PBM generated an out of range old_pos (%i >= %i).\n", old_pos, d_locationMessageCount);
 		assert(0);
     }
 #endif

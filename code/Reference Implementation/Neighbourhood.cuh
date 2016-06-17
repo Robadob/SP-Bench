@@ -90,6 +90,9 @@ private:
 //#endif
 
 };
+
+extern __host__ __device__ unsigned int morton3D(DIMENSIONS_IVEC pos);
+extern __host__ __device__ DIMENSIONS_IVEC getGridPosition(DIMENSIONS_VEC worldPos);
 class SpatialPartition
 {
 public:
@@ -110,10 +113,9 @@ public:
     DIMENSIONS_VEC getEnvironmentMax() const { return environmentMax; }
     float getCellSize() const { return interactionRad;  }
 #ifdef _DEBUG
-    DIMENSIONS_IVEC getGridPosition(DIMENSIONS_VEC worldPos);
     bool isValid(DIMENSIONS_IVEC bin) const;
-    unsigned int getHash(DIMENSIONS_IVEC gridPos);
-    DIMENSIONS_IVEC getPos(unsigned int hash);
+	DIMENSIONS_IVEC getPos(unsigned int hash);
+	int getHash(DIMENSIONS_IVEC gridPos);
     void assertSearch();
     void launchAssertPBMIntegerity();
 #endif
@@ -122,6 +124,7 @@ public:
     GLuint SpatialPartition::getCountTexName() const { return gl_tex_count; }
 #endif
 private:
+	void setBinCount();
     //Allocators
     void deviceAllocateLocationMessages(LocationMessages **d_locMessage, LocationMessages *hd_locMessage);
     void deviceAllocatePBM(unsigned int **d_PBM_t);
@@ -153,7 +156,9 @@ private:
     void fillTextures();
 
     unsigned int getBinCount() const;//(ceil((X_MAX-X_MIN)/SEARCH_RADIUS)*ceil((Y_MAX-Y_MIN)/SEARCH_RADIUS)*ceil((Z_MAX-Z_MIN)/SEARCH_RADIUS))
-    const unsigned int maxAgents;
+	unsigned int binCount;
+	unsigned int binCountMax;
+	const unsigned int maxAgents;
     float interactionRad;//Radius of agent interaction
     //Kernel launchers
     void launchHashLocationMessages();
