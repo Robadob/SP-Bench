@@ -31,15 +31,15 @@ struct BinState
 #endif
 #if !defined (_3D) && !defined (MORTON)
     int relative;
-    glm::vec2 location;
+    glm::ivec2 location;
 #endif
 #if defined (_3D) && defined (MORTON)
 	glm::ivec3 relative;
 	glm::ivec3 location;
 #endif
 #if !defined (_3D) && defined (MORTON)
-	glm::vec2 relative;
-	glm::vec2 location;
+	glm::ivec2 relative;
+	glm::ivec2 location;
 #endif
     unsigned int binIndexMax;//Last pbm index
     unsigned int binIndex;//Current loaded message pbm index
@@ -52,11 +52,7 @@ struct LocationMessage
 {
     unsigned int id;
     BinState state;
-#ifdef _3D
-    glm::vec3 location;
-#else
-    glm::vec2 location;
-#endif
+	DIMENSIONS_VEC location;
 };
 
 
@@ -64,9 +60,9 @@ struct LocationMessages
 {
 public:
     float *locationX;
-    float *locationY;
+	float *locationY;
 #ifdef _3D
-    float *locationZ;
+	float *locationZ;
 #endif
 #if defined(_GL) || defined(_DEBUG)
     float *count;

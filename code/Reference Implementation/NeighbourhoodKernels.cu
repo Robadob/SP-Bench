@@ -6,7 +6,7 @@ __host__ __device__ DIMENSIONS_IVEC getGridPosition(DIMENSIONS_VEC worldPos)
 {
 #ifndef SP_NO_CLAMP_GRID
     //Clamp each grid coord to 0<=x<dim
-    return clamp(floor(((worldPos - d_environmentMin) / (d_environmentMax - d_environmentMin))*d_gridDim_float), glm::vec3(0), d_gridDim_float-glm::vec3(1));
+	return clamp(floor(((worldPos - d_environmentMin) / (d_environmentMax - d_environmentMin))*d_gridDim_float), DIMENSIONS_VEC(0), d_gridDim_float - DIMENSIONS_VEC(1));
 #else
 	return floor(((worldPos - d_environmentMin) / (d_environmentMax - d_environmentMin))*d_gridDim_float);
 	//#ifdef _3D

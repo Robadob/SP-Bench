@@ -30,11 +30,11 @@ __global__ void step_model(LocationMessages *locationMessagesIn, LocationMessage
 
     //Get my local location
 #ifdef _3D
-    glm::vec3 myLoc(locationMessagesIn->locationX[id], locationMessagesIn->locationY[id], locationMessagesIn->locationZ[id]), locDiff, newLoc;
+	DIMENSIONS_VEC myLoc(locationMessagesIn->locationX[id], locationMessagesIn->locationY[id], locationMessagesIn->locationZ[id]), locDiff, newLoc;
 #else
-	glm::vec2 myLoc(locationMessagesIn->locationX[id], locationMessagesIn->locationY[id]), locDiff, newLoc;
+	DIMENSIONS_VEC myLoc(locationMessagesIn->locationX[id], locationMessagesIn->locationY[id]), locDiff, newLoc;
 #endif
-	newLoc = myLoc;
+	newLoc =  DIMENSIONS_VEC(0);//myLoc;//
 	//Get first message
     float dist, separation, k;
 #ifdef _local
@@ -65,6 +65,7 @@ __global__ void step_model(LocationMessages *locationMessagesIn, LocationMessage
 		lm = locationMessagesIn->getNextNeighbour(lm);//Returns a pointer to shared memory or 0
     } while (lm);
     //Export newLoc
+	newLoc += myLoc;
 	newLoc = glm::clamp(newLoc, d_environmentMin, d_environmentMax);
 	locationMessagesOut->locationX[id] = newLoc.x;
 	locationMessagesOut->locationY[id] = newLoc.y;

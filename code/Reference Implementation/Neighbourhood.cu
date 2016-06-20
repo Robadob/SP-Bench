@@ -162,7 +162,7 @@ void SpatialPartition::assertSearch()
 {
 	//return;//
     unsigned int outCount = this->binCountMax + 1;
-    unsigned int tableSize = ((outCount / 10) + 1) * 10;
+	unsigned int tableSize = ((outCount / 10) + 1) * 10;
 
     //Copy raw PBM from device to host
     unsigned int *PBM_raw = static_cast<unsigned int *>(malloc(sizeof(unsigned int)*tableSize));
@@ -194,9 +194,9 @@ void SpatialPartition::assertSearch()
 	unsigned int *PBM_coded = PBM_binSize;
 	PBM_binSize = static_cast<unsigned int *>(malloc(sizeof(unsigned int)*tableSize));
 	memset(PBM_binSize, 0, tableSize * sizeof(unsigned int));
-	for (int i = 0; i < outCount; i++)
+	for (int i = 0; i < this->binCount; i++)
 	{
-		PBM_binSize[i] = PBM_coded[getHash(glm::ivec3((i / (gridDim.y * gridDim.x)), (i % (gridDim.y * gridDim.x)) / gridDim.x, (i % (gridDim.y * gridDim.x)) % gridDim.x))];
+		PBM_binSize[i] = PBM_coded[getHash(glm::ivec3((i % (gridDim.y * gridDim.x)) % gridDim.x, (i % (gridDim.y * gridDim.x)) / gridDim.x,(i / (gridDim.y * gridDim.x))))];
 	}
 	free(PBM_coded);
 #endif
@@ -225,16 +225,16 @@ void SpatialPartition::assertSearch()
     //Copy every location and neighbour count from device to host
     float *d_bufferPtr;
     LocationMessages lm;
-    lm.locationX = (float*)malloc(sizeof(float)*locationMessageCount);
-    CUDA_CALL(cudaMemcpy(&d_bufferPtr, &d_locationMessages_swap->locationX, sizeof(float*), cudaMemcpyDeviceToHost));
-    CUDA_CALL(cudaMemcpy(lm.locationX, d_bufferPtr, sizeof(float)*locationMessageCount, cudaMemcpyDeviceToHost));
-    lm.locationY = (float*)malloc(sizeof(float)*locationMessageCount);
-    CUDA_CALL(cudaMemcpy(&d_bufferPtr, &d_locationMessages_swap->locationY, sizeof(float*), cudaMemcpyDeviceToHost));
-    CUDA_CALL(cudaMemcpy(lm.locationY, d_bufferPtr, sizeof(float)*locationMessageCount, cudaMemcpyDeviceToHost));
+	lm.locationX = (float*)malloc(sizeof(float)*locationMessageCount);
+	CUDA_CALL(cudaMemcpy(&d_bufferPtr, &d_locationMessages_swap->locationX, sizeof(float*), cudaMemcpyDeviceToHost));
+	CUDA_CALL(cudaMemcpy(lm.locationX, d_bufferPtr, sizeof(float)*locationMessageCount, cudaMemcpyDeviceToHost));
+	lm.locationY = (float*)malloc(sizeof(float)*locationMessageCount);
+	CUDA_CALL(cudaMemcpy(&d_bufferPtr, &d_locationMessages_swap->locationY, sizeof(float*), cudaMemcpyDeviceToHost));
+	CUDA_CALL(cudaMemcpy(lm.locationY, d_bufferPtr, sizeof(float)*locationMessageCount, cudaMemcpyDeviceToHost));
 #ifdef _3D
-    lm.locationZ = (float*)malloc(sizeof(float)*locationMessageCount);
-    CUDA_CALL(cudaMemcpy(&d_bufferPtr, &d_locationMessages_swap->locationZ, sizeof(float*), cudaMemcpyDeviceToHost));
-    CUDA_CALL(cudaMemcpy(lm.locationZ, d_bufferPtr, sizeof(float)*locationMessageCount, cudaMemcpyDeviceToHost));
+	lm.locationZ = (float*)malloc(sizeof(float)*locationMessageCount);
+	CUDA_CALL(cudaMemcpy(&d_bufferPtr, &d_locationMessages_swap->locationZ, sizeof(float*), cudaMemcpyDeviceToHost));
+	CUDA_CALL(cudaMemcpy(lm.locationZ, d_bufferPtr, sizeof(float)*locationMessageCount, cudaMemcpyDeviceToHost));
 #endif
     lm.count = (float*)malloc(sizeof(float)*locationMessageCount);
     CUDA_CALL(cudaMemcpy(&d_bufferPtr, &d_locationMessages_swap->count, sizeof(float*), cudaMemcpyDeviceToHost));
@@ -262,10 +262,10 @@ void SpatialPartition::assertSearch()
     }
     else
     {
-        //free(PBM_raw);
-       // free(PBM_binSize);
-       // free(PBM_neighbourhoodSize);
-        //return;
+        free(PBM_raw);
+        free(PBM_binSize);
+        free(PBM_neighbourhoodSize);
+        return;
     }
     //Output the 3 PBM_ data structures to file in a readable format
     FILE *file = fopen("../logs/PBM.txt", "w");
@@ -291,7 +291,7 @@ void SpatialPartition::assertSearch()
 	fprintf(file, "Bin Size\n");
 	fprintf(file, "|%5s¦%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|\n", "", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9");
 	fprintf(file, "|-----¦-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|\n");
-	for (unsigned int i = 0; i < (outCount / 10) - 1; i++)
+	for (unsigned int i = 0; i < ((this->binCount+1) / 10) - 1; i++)
 	{
 		fprintf(file, "|%4u0¦%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|\n", i,
 			PBM_binSize[(10 * i) + 0],
@@ -592,6 +592,7 @@ void SpatialPartition::setBinCount()
 	this->binCountMax = (unsigned int)(l2*l2*l2);
 	printf("Dim:(%i,%i,%i): Max pow2 = %i\n", gridDim.x, gridDim.y, gridDim.z, l2);
 #endif
+	this->binCount = this->binCount*this->binCount*this->binCount;
 }
 void SpatialPartition::setLocationCount(unsigned int t_locationMessageCount)
 {
