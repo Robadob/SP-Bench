@@ -1,4 +1,0 @@
-\vspace{-0.3cm}
-\section{Conclusion\label{sec:conclusion}}
-\vspace{-0.4cm}
-  The work within this paper has provided a formal and standardised specification for the circles benchmark. This benchmark is beneficial for assessing the performance of FRNNs search implementations in response to changes to problem size, neighbourhood size and entropy. The results within this paper have shown the linear performance relationships of the tested \gls{abs} frameworks in response to changing agent populations. This provides a guide for those looking to implement \gls{abs} reliant on FRNNs and a metric to improve FRNNs search implementations. The next stage is further evaluation of standalone FRNNs implementations utilising the most recent research advances.
