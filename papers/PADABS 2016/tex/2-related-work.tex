@@ -9,7 +9,7 @@
   \begin{center}
     \includegraphics[width=0.38\textwidth]{../resources/usp/usp.pdf}
   \end{center}
-  \caption{\label{fig:usp} A representation of a data structure that can be used for uniform spatial partitioning.}
+  \caption{\label{fig:usp} A representation of a data structure that can be used for uniform spatial partitioning. The Cells table denotes the index within the Agents table that data for the corresponding cell begins.}
 \end{wrapfigure}
   
   The most common technique that is used to reduce the overhead of FRNNs handling is that of uniform spatial partitioning (Figure \ref{fig:usp}), whereby the environment is partitioned into a uniform grid, whereby grid cells have dimensions equal to the interaction radius. Agents are then (sorted and) stored according to the ID of their containing cell within the grid. Serial implementations are likely to utilise linked list's to store the agents within each bin. Parallel implementations in contrast are likely to store agents within a single compact array which is sorted in a distinct step after agent locations have been updated, following which an index to provide direct access to the storage of each cell’s agents is produced. This allows the Moore neighbourhood of an agent’s cell to be accessed, ignoring agents within cells outside of the desired neighbourhood. This method is particularly suitable for parallel implementations \cite{Gre10} and several advances have been suggested to further improve their performance: Goswami et al proposed the use of Z-order curves to improve memory locality \cite{GS*10}; Hoetzlein considered the effect of changing the partition cell dimensions \cite{Hoe14}; and Sun et al proposed the use of a parallel ordered sort to improve sorting efficiency \cite{HY*15}.
