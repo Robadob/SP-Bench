@@ -31,30 +31,32 @@
       \end{equation}
       
     \subsubsection{Single Iteration}
-      For each timestep of the benchmark model, every agent's location must be updated. The position $x$ of an agent $i$ at the discrete timestep $t+1$ is given by Equation \ref{eq:timestep-global}, whereby $F_{i}$ denotes the force exerted on the agent $i$ as calculated by Equation \ref{eq:timestep-force}.\footnote{The square Iversion bracket notation $[\:]$ denotes a conditional statement; when the statement evaluates to true a value of $1$ is returned otherwise $0$} Within Equation \ref{eq:timestep-force} $F_{ij}^{rep}$ and $F_{ij}^{att}$ represent the respective attraction and repulsion forces between agents $i$ and $j$ and $d_{ij}$ represents the scalar distance between locations $x_{i}$ \& $x_{j}$. The values of $F_{ij}^{att}$ and $F_{ij}^{rep}$ are calculated using Equations \ref{eq:timestep-attraction} and \ref{eq:timestep-repulsion}, respectively.
+      For each timestep of the benchmark model, every agent's location must be updated. The position $x$ of an agent $i$ at the discrete timestep $t+1$ is given by Equation \ref{eq:timestep-global}, whereby $F_{i}$ denotes the force exerted on the agent $i$ as calculated by Equation \ref{eq:timestep-force}.\footnote{The square Iversion bracket notation $[\:]$ denotes a conditional statement; when the statement evaluates to true a value of $1$ is returned otherwise $0$} Within Equation \ref{eq:timestep-force} $F_{ij}^{rep}$ and $F_{ij}^{att}$ represent the respective attraction and repulsion forces applied to agent $i$ from agent $j$. The values of $F_{ij}^{att}$ and $F_{ij}^{rep}$ are calculated using Equations \ref{eq:timestep-attraction} and \ref{eq:timestep-repulsion} respectively, the relevant force parameter is multiplied by the distance from the force's boundary and the unit vector between $x_{i}$ \& $x_{j}$ in the direction of the respective force.
       
+      \vspace{-0.3cm}
       \begin{equation}\label{eq:timestep-global}
-        x_{i(t+1)} = x_{i(t)} + F_{i}
+        \overrightarrow{x_{i(t+1)}} = \overrightarrow{x_{i(t)}} + \overrightarrow{F_{i}}
       \end{equation}
-      
+      \vspace{-0.3cm}
       \begin{equation}\label{eq:timestep-force}
-        F_{i} = \sum\limits_{i \neq j} F_{ij}^{rep}[d_{ij} < r] + F_{ij}^{att}[r <= d_{ij} < 2r]
+        \overrightarrow{F_{i}} = \sum\limits_{i \neq j} \overrightarrow{F_{ij}^{rep}}[\lVert\overrightarrow{x_{i}x_{j}}\rVert < r] + \overrightarrow{F_{ij}^{att}}[r <= \lVert\overrightarrow{x_{i}x_{j}}\rVert < 2r]
       \end{equation}
-      
+      \vspace{-0.3cm}
       \begin{equation}\label{eq:timestep-attraction}
-        F_{ij}^{att} = \frac{k_{att}(d_{ij}-r)(x_{i} - x_{j})} {d_{ij}}
-      \end{equation}  
-      
+        \overrightarrow{F_{ij}^{att}} = k_{att}(\lVert\overrightarrow{x_{j}x_{i}}\rVert-2r)\frac{\overrightarrow{x_{j}x_{i}}}{\lVert\overrightarrow{x_{j}x_{i}}\rVert}
+      \end{equation} 
       \begin{equation}\label{eq:timestep-repulsion}
-        F_{ij}^{rep} = \frac{k_{rep}d_{ij}(x_{i} - x_{j})} {d_{ij}}
+        \overrightarrow{F_{ij}^{rep}} = k_{rep}(\lVert\overrightarrow{x_{i}x_{j}}\rVert-r)\frac{\overrightarrow{x_{i}x_{j}}}{\lVert\overrightarrow{x_{i}x_{j}}\rVert}
       \end{equation}
       
       Algorithm \ref{algo:circles} provides a pseudo-code implementation of the calculation of a single particles new location, whereby each agent only iterates their agent neighbours rather than the global agent population.
-      
+
+\vspace{0.2cm}
 \begin{algorithm}
 \lstinputlisting[]{../resources/modelPseudocode.txt}
 \caption{\label{algo:circles}Pseudo-code for the calculation of a single particle's new location.}
 \end{algorithm}
+\vspace{-0.2cm}
 
       %The benchmark is to be executed for the stated number of model iterations. This may result in multiple iterations in a steady state, however this does not diminish the validity of the measured metrics.
         

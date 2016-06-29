@@ -1,18 +1,16 @@
 vec myOldLoc;
 vec myNewLoc = myOldLoc;
+float r2 = 2*INTER_RAD;
 foreach neighbourLoc
 {
-  vec locDiff = myOldLoc-neighbourLoc;
-  float locDist = length(locDiff);
-  float separation = locDist - INTERACTION_RAD;
-  if(separation < INTERACTION_RAD)
+  vec toVec = myOldLoc-neighbourLoc;
+  float separation = length(toVec);
+  if(separation < r2)
   {
-    float k;
-    if(separation > 0)
-      k = ATTRACTION_FORCE;
-    else
-      k = -REPULSION_FORCE;
-    myNewLoc += k * separation * locDiff / INTERACTION_RAD;
+    float k = (separation<INTER_RAD)?REP_FORCE:ATT_FORCE;
+    toVec = (separation<INTER_RAD)?-toVec:toVec;
+    separation -= (separation<INTER_RAD)?INTER_RAD:r2;
+    myNewLoc += k * separation * normalize(toVec);
   }
 }
 myNewLoc = clamp(myNewLoc, envMin, envMax);
