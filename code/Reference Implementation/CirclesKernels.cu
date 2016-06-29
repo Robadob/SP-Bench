@@ -20,7 +20,23 @@ __global__ void init_particles(curandState *state, LocationMessages *locationMes
     locationMessages->locationZ[id] = (-curand_uniform(&state[id]) + 1.0f)*d_environmentMax.z;
 #endif
 }
-
+__global__ void init_particles_uniform(LocationMessages *locationMessages) {
+	int id = blockIdx.x * blockDim.x + threadIdx.x;
+	if (id >= d_locationMessageCount)
+		return;
+	int hash = id % (glm::compMul(d_gridDim));
+	int div = id / (glm::compMul(d_gridDim));
+	int max = d_locationMessageCount / (glm::compMul(d_gridDim));
+	int z = (hash / (d_gridDim.y * d_gridDim.x));
+	int y = (hash % (d_gridDim.y * d_gridDim.x)) / d_gridDim.x;
+	int x = (hash % (d_gridDim.y * d_gridDim.x)) % d_gridDim.x;
+	//In a regular manner, scatter particles evenly between bins
+	locationMessages->locationX[id] = (x * (d_environmentMax.x / (float)d_gridDim.x)) + (d_environmentMax.x / (float)d_gridDim.x)*0.5;
+	locationMessages->locationY[id] = (y * (d_environmentMax.y / (float)d_gridDim.y)) + (d_environmentMax.y / (float)d_gridDim.y)*0.5;
+#ifdef _3D
+	locationMessages->locationZ[id] = (z * (d_environmentMax.z / (float)d_gridDim.z)) + (d_environmentMax.z / (float)d_gridDim.z)*0.5;
+#endif
+}
 __global__ void step_model(LocationMessages *locationMessagesIn, LocationMessages *locationMessagesOut)
 {
 
@@ -30,9 +46,9 @@ __global__ void step_model(LocationMessages *locationMessagesIn, LocationMessage
 
     //Get my local location
 #ifdef _3D
-	DIMENSIONS_VEC myLoc(locationMessagesIn->locationX[id], locationMessagesIn->locationY[id], locationMessagesIn->locationZ[id]), locDiff, newLoc;
+	DIMENSIONS_VEC myLoc(locationMessagesIn->locationX[id], locationMessagesIn->locationY[id], locationMessagesIn->locationZ[id]), toLoc, newLoc;
 #else
-	DIMENSIONS_VEC myLoc(locationMessagesIn->locationX[id], locationMessagesIn->locationY[id]), locDiff, newLoc;
+	DIMENSIONS_VEC myLoc(locationMessagesIn->locationX[id], locationMessagesIn->locationY[id]), toLoc, newLoc;
 #endif
 	newLoc =  DIMENSIONS_VEC(0);//myLoc;//
 	//Get first message
@@ -44,21 +60,23 @@ __global__ void step_model(LocationMessages *locationMessagesIn, LocationMessage
 	LocationMessage *lm = locationMessagesIn->getFirstNeighbour(myLoc);
 #endif
     //Always atleast 1 location message, our own location!
+	const float r2 = 2 * d_interactionRad;
     do
     {
 		assert(lm != 0);
         if ((lm->id != id))//CHANGED: Don't sort particles
         {
-			locDiff = myLoc - lm->location;//Difference
-            if (locDiff!=DIMENSIONS_VEC(0))//Ignore distance 0
+			toLoc = myLoc - lm->location;//Difference
+			separation = length(toLoc);
+			if (toLoc != DIMENSIONS_VEC(0))//Ignore distance 0
 			{
-				dist = length(locDiff);//Distance (via pythagoras)
-				separation = dist - d_interactionRad;
-				if (separation < d_interactionRad)
+				if (separation < r2)
 				{
-
-					k = (separation > 0.0f) ? d_attract : -d_repulse;
-					newLoc += (k * separation * locDiff / d_interactionRad);
+					k = (separation < d_interactionRad) ? d_repulse : d_attract;
+					toLoc = (separation < d_interactionRad) ? -toLoc : toLoc;
+					toLoc /= separation;//Normalize (without recalculating seperation)
+					separation -= (separation < d_interactionRad) ? d_interactionRad : r2; 
+					newLoc += k * separation * toLoc;
 				}
             }
         }

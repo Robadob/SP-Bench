@@ -178,7 +178,7 @@ __global__ void reorderLocationMessages(
         for (int k = next_key; k > key; k--)
             pbm[k] = indexPlus1;
     }
-#if _DEBUG
+#ifdef _DEBUG
     if (next_key > d_binCount)
     {
 		printf("ERROR: PBM generated an out of range next_key (%i > %i).\n", next_key, d_binCount);
@@ -198,7 +198,7 @@ __global__ void reorderLocationMessages(
     ordered_messages->locationZ[index] = unordered_messages->locationZ[old_pos];
 #endif
 
-#if _DEBUG
+#ifdef _DEBUG
     //Check these rather than ordered in hopes of memory coealesce
     if (ordered_messages->locationX[index] == NAN ||
         ordered_messages->locationY[index] == NAN ||
@@ -248,7 +248,8 @@ __device__ bool invalidBinX(glm::ivec3 bin)
     }
     return false;
 }
-#ifndef MORTON
+//If we want to get next bin as strip
+#if defined(STRIPS) && !defined(MORTON)
 __device__ bool LocationMessages::nextBin(LocationMessage *sm_message)
 {
     //extern __shared__ LocationMessage sm_messages[];
@@ -285,7 +286,8 @@ __device__ bool LocationMessages::nextBin(LocationMessage *sm_message)
     return true;
 #endif
 }
-#else //#ifdef MORTON
+#else
+//Next bin individually
 __device__ bool LocationMessages::nextBin(LocationMessage *sm_message)
 {
 	//extern __shared__ LocationMessage sm_messages[];
@@ -339,7 +341,8 @@ __device__ LocationMessage *LocationMessages::loadNextMessage(LocationMessage *s
     {
 		if (nextBin(sm_message))
         {
-#ifndef MORTON
+#if defined(STRIPS) && !defined(MORTON)
+//Iterate bins in strips
             //calculate the next strip of contiguous bins
 #ifdef _3D
             glm::ivec3 next_bin_first = sm_message->state.location + glm::ivec3(-1, sm_message->state.relative.x, sm_message->state.relative.y);
@@ -375,8 +378,8 @@ __device__ LocationMessage *LocationMessages::loadNextMessage(LocationMessage *s
             {
                 break;//Bin strip has items!
             }
-#else //ifdef MORTON
-	//During morton we read bins individual, rather than in strips
+#else
+//Iterate bins individually
 #ifdef _3D
 			glm::ivec3 next_bin_first = sm_message->state.location + glm::ivec3(sm_message->state.relative.x, sm_message->state.relative.y, sm_message->state.relative.z);
 #else
@@ -388,16 +391,17 @@ __device__ LocationMessage *LocationMessages::loadNextMessage(LocationMessage *s
 			}
 			//Get PBM bounds
 			int next_bin_first_hash = getHash(next_bin_first);
-
-			assert(next_bin_first_hash < 512);
+#ifdef _DEBUG
+			assert(next_bin_first_hash < 100000);//arbitrary max
 			assert(next_bin_first_hash >= 0);
+#endif
 			//use the hash to calculate the start index (pbm stores location of 1st item)
 			sm_message->state.binIndex = tex1Dfetch<unsigned int>(d_tex_PBM, next_bin_first_hash);
 			sm_message->state.binIndexMax = tex1Dfetch<unsigned int>(d_tex_PBM, next_bin_first_hash + 1);
 
 			if (sm_message->state.binIndex < sm_message->state.binIndexMax)//(bin_index_min != 0xffffffff)
 			{
-				break;//Bin strip has items!
+				break;//Bin has items!
 			}
 #endif
         }
@@ -457,9 +461,9 @@ __device__ LocationMessage *LocationMessages::getFirstNeighbour(DIMENSIONS_VEC l
     sm_message->state.binIndexMax = 0;
     //Location in moore neighbourhood
     //Start out of range, so we get moved into 1st cell
-#ifndef MORTON
+#if defined(STRIPS) && !defined(MORTON)
 #ifdef _3D
-    sm_message->state.relative = glm::ivec2(-2, -1);
+	sm_message->state.relative = glm::ivec2(-2, -1);
 #else
     sm_message->state.relative = -2;
 #endif

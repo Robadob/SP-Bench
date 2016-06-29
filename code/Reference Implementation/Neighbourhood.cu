@@ -271,11 +271,11 @@ void SpatialPartition::assertSearch()
     FILE *file = fopen("../logs/PBM.txt", "w");
     fprintf(file, "ERROR: Neighbour search totals do not match (%u/%u)\n", matchFails, locationMessageCount);
     fprintf(file, "Raw PBM\n");
-    fprintf(file, "|%5s¦%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|\n", "", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9");
-    fprintf(file, "|-----¦-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|\n");
+    fprintf(file, "|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|\n", "", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9");
+    fprintf(file, "|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|\n");
     for (unsigned int i = 0; i < (outCount / 10)-1; i++)
     {
-		fprintf(file, "|%4u0¦%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|\n", i,
+		fprintf(file, "|%4u0|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|\n", i,
 			PBM_raw[(10 * i) + 0],
 			PBM_raw[(10 * i) + 1],
 			PBM_raw[(10 * i) + 2],
@@ -289,11 +289,11 @@ void SpatialPartition::assertSearch()
 			);
 	}
 	fprintf(file, "Bin Size\n");
-	fprintf(file, "|%5s¦%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|\n", "", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9");
-	fprintf(file, "|-----¦-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|\n");
+	fprintf(file, "|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|\n", "", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9");
+	fprintf(file, "|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|\n");
 	for (unsigned int i = 0; i < ((this->binCount+1) / 10) - 1; i++)
 	{
-		fprintf(file, "|%4u0¦%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|\n", i,
+		fprintf(file, "|%4u0|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|\n", i,
 			PBM_binSize[(10 * i) + 0],
 			PBM_binSize[(10 * i) + 1],
 			PBM_binSize[(10 * i) + 2],
@@ -307,11 +307,11 @@ void SpatialPartition::assertSearch()
 			);
 	}
 	fprintf(file, "Neighbour Count\n");
-	fprintf(file, "|%5s¦%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|\n", "", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9");
-	fprintf(file, "|-----¦-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|\n");
+	fprintf(file, "|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|\n", "", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9");
+	fprintf(file, "|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|\n");
 	for (unsigned int i = 0; i < (outCount / 10) - 1; i++)
 	{
-		fprintf(file, "|%4u0¦%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|\n", i,
+		fprintf(file, "|%4u0|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|\n", i,
 			PBM_neighbourhoodSize[(10 * i) + 0],
 			PBM_neighbourhoodSize[(10 * i) + 1],
 			PBM_neighbourhoodSize[(10 * i) + 2],
@@ -344,12 +344,15 @@ void SpatialPartition::deviceAllocateLocationMessages(LocationMessages **d_locMe
 #endif
 #if defined(_GL) || defined(_DEBUG)
     CUDA_CALL(cudaMalloc(&hd_locMessage->count, sizeof(float)*maxAgents));
-    CUDA_CALL(cudaMemcpy(&((*d_locMessage)->count), &(hd_locMessage->count), sizeof(float*), cudaMemcpyHostToDevice));
+	CUDA_CALL(cudaMemcpy(&((*d_locMessage)->count), &(hd_locMessage->count), sizeof(float*), cudaMemcpyHostToDevice));
+	CUDA_CALL(cudaMemset(hd_locMessage->count, 0, sizeof(float)*maxAgents));//Must be 0'd to protect assertions on k20
+
 #endif
 }
 void SpatialPartition::deviceAllocatePBM(unsigned int **d_PBM_t)
 {
-    CUDA_CALL(cudaMalloc(d_PBM_t, sizeof(unsigned int)*(this->binCountMax+1)));
+	CUDA_CALL(cudaMalloc(d_PBM_t, sizeof(unsigned int)*(this->binCountMax + 1)));
+	CUDA_CALL(cudaMemset(*d_PBM_t, 0, sizeof(unsigned int)*(this->binCountMax + 1)));//Must be 0'd to protect assertions on k20
 }
 void SpatialPartition::deviceAllocatePrimitives(unsigned int **d_keys, unsigned int **d_vals)
 {
@@ -590,7 +593,6 @@ void SpatialPartition::setBinCount()
 #else
 	int l2 = pow(2,ceil(log2f(this->binCount)));
 	this->binCountMax = (unsigned int)(l2*l2*l2);
-	printf("Dim:(%i,%i,%i): Max pow2 = %i\n", gridDim.x, gridDim.y, gridDim.z, l2);
 #endif
 	this->binCount = this->binCount*this->binCount*this->binCount;
 }

@@ -86,15 +86,32 @@ const Time_Init Circles<T>::initPopulation(const unsigned long long rngSeed)
     unsigned int initThreads = 512;
 	unsigned int initBlocks = (agentMax / initThreads) + 1;
     spatialPartition->setLocationCount(agentMax);
-    init_curand << <initBlocks, initThreads >> >(d_rng, rngSeed);
-    CUDA_CALL(cudaDeviceSynchronize());
+	if (rngSeed!=0)
+	{
+		init_curand << <initBlocks, initThreads >> >(d_rng, rngSeed);
+		CUDA_CALL(cudaDeviceSynchronize());
+	}
 
     //End curand timer/start kernel timer
     cudaEventRecord(start_kernel);
 
     //Generate initial states, and store in location messages
     LocationMessages *d_lm = spatialPartition->d_getLocationMessages();
-    init_particles << <initBlocks, initThreads >> >(d_rng, d_lm);
+	if (rngSeed != 0)
+		init_particles << <initBlocks, initThreads >> >(d_rng, d_lm);
+	else
+	{
+		init_particles_uniform << <initBlocks, initThreads >> >(d_lm);
+#ifdef _GL
+		int bins = glm::compMul(spatialPartition->getGridDim());
+		int spareP = agentMax%bins;
+		fprintf(stderr, "Bins: %i, Agents: %i\n", bins, agentMax);
+		if (spareP>0)
+		{
+			fprintf(stderr,"Warning %.1f%% of bins have an extra agent!\n", (spareP / (float)bins)*100);
+		}
+#endif
+	}
     CUDA_CALL(cudaDeviceSynchronize());
 
     //End kernel timer/start pbm timer

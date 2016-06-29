@@ -21,23 +21,39 @@ int main(int argc, char* argv[])
 	FILE *log = fopen(logPath.c_str(), "w");
 	if (!log)
 		return 1;
-	//Problem Scale
-	//Init model arg start
+	//Uniform perf
 	ModelParams start = {};
-	start.iterations = 1000;
+	start.iterations = 1;
 	start.density = 0.01f;
 	start.interactionRad = 5.0f;
-	start.width = 300;
-	start.seed = 100;
+	start.width = 100;
+	start.seed = 0;
 	//Init model arg end
 	ModelParams end = {};
-	end.iterations = 1000;
-	end.density = 0.01f;
+	end.iterations = 1;
+	end.density = 1.0f;
 	end.interactionRad = 5.0f;
-	end.width = 300;	
-	end.seed = 250;
-	//Init step count
-	const int steps = 11;
+	end.width = 100;
+	end.seed = 0;
+	const int steps = 100;
+
+	//Problem Scale
+	////Init model arg start
+	//ModelParams start = {};
+	//start.iterations = 1000;
+	//start.density = 0.01f;
+	//start.interactionRad = 5.0f;
+	//start.width = 300;
+	//start.seed = 100;
+	////Init model arg end
+	//ModelParams end = {};
+	//end.iterations = 1000;
+	//end.density = 0.01f;
+	//end.interactionRad = 5.0f;
+	//end.width = 300;	
+	//end.seed = 250;
+	////Init step count
+	//const int steps = 11;
 
 	//Neighbourhood Scale
 	////Init model arg start
@@ -65,28 +81,82 @@ int main(int argc, char* argv[])
 	unsigned int agentCount;
 	float totalTime;
 	//For each benchmark
-	for (unsigned int i = 0; i < steps;i++)
-	{
-		printf("\rExecuting run %i/%i",i,(int)stepsM1);
-		//Interpolate model
-		modelArgs.seed = start.seed + (long long)((i / stepsM1)*((long long)end.seed - (long long)start.seed));
-		modelArgs.width = start.width + (int)((i / stepsM1)*((int)end.width - (int)start.width));
-		modelArgs.density = start.density + ((i / stepsM1)*(end.density - start.density));
-		modelArgs.interactionRad = start.interactionRad + ((i / stepsM1)*(end.interactionRad - start.interactionRad));
-		modelArgs.attractionForce = start.attractionForce + ((i / stepsM1)*(end.attractionForce - start.attractionForce));
-		modelArgs.repulsionForce = start.repulsionForce + ((i / stepsM1)*(end.repulsionForce - start.repulsionForce));
-		modelArgs.iterations = start.iterations + (long long)((i / stepsM1)*((int)end.iterations - (int)start.iterations));
-		//Clear output structures
-		memset(&modelParamsOut, 0, sizeof(ModelParams));
-		memset(&stepRes, 0, sizeof(Time_Step_dbl));
-		memset(&initRes, 0, sizeof(Time_Init));
-		agentCount = 0;
-		totalTime = 0;
-		//executeBenchmark
-		if (!executeBenchmark(EXE_REFERENCE, modelArgs, &modelParamsOut, &agentCount, &initRes, &stepRes, &totalTime))
-			return 1;
-		//logResult
-		logResult(log, &modelParamsOut, agentCount, &initRes, &stepRes, totalTime);
+	//for (unsigned int i = 0; i < steps;i++)
+	//{
+	//	printf("\rExecuting run %i/%i",i,(int)stepsM1);
+	//	//Interpolate model
+	//	modelArgs.seed = start.seed + (long long)((i / stepsM1)*((long long)end.seed - (long long)start.seed));
+	//	modelArgs.width = start.width + (int)((i / stepsM1)*((int)end.width - (int)start.width));
+	//	modelArgs.density = start.density + ((i / stepsM1)*(end.density - start.density));
+	//	modelArgs.interactionRad = start.interactionRad + ((i / stepsM1)*(end.interactionRad - start.interactionRad));
+	//	modelArgs.attractionForce = start.attractionForce + ((i / stepsM1)*(end.attractionForce - start.attractionForce));
+	//	modelArgs.repulsionForce = start.repulsionForce + ((i / stepsM1)*(end.repulsionForce - start.repulsionForce));
+	//	modelArgs.iterations = start.iterations + (long long)((i / stepsM1)*((int)end.iterations - (int)start.iterations));
+	//	//Clear output structures
+	//	memset(&modelParamsOut, 0, sizeof(ModelParams));
+	//	memset(&stepRes, 0, sizeof(Time_Step_dbl));
+	//	memset(&initRes, 0, sizeof(Time_Init));
+	//	agentCount = 0;
+	//	totalTime = 0;
+	//	//executeBenchmark
+	//	if (!executeBenchmark(EXE_REFERENCE, modelArgs, &modelParamsOut, &agentCount, &initRes, &stepRes, &totalTime))
+	//		return 1;
+	//	//logResult
+	//	logResult(log, &modelParamsOut, agentCount, &initRes, &stepRes, totalTime);
+	//}
+	////Change density whilst persisting agents
+	//const unsigned int agtCt = 150000;
+	//for (unsigned int i = 250; i >=10; i-=10)
+	//{
+	//	for (int j = 0; j < 5;j++)
+	//	{
+	//		//printf("\rExecuting run i=%i, j=%i    ", i, j);
+	//		//Interpolate model
+	//		modelArgs.seed = 0;
+	//		modelArgs.width = i;
+	//		modelArgs.density = ((float)agtCt) / (i*i*i);
+	//		modelArgs.interactionRad = 2.5;
+	//		modelArgs.attractionForce = start.attractionForce;
+	//		modelArgs.repulsionForce = start.repulsionForce;
+	//		modelArgs.iterations = 1;
+	//		//Clear output structures
+	//		memset(&modelParamsOut, 0, sizeof(ModelParams));
+	//		memset(&stepRes, 0, sizeof(Time_Step_dbl));
+	//		memset(&initRes, 0, sizeof(Time_Init));
+	//		agentCount = 0;
+	//		totalTime = 0;
+	//		//executeBenchmark
+	//		if (!executeBenchmark(EXE_REFERENCE, modelArgs, &modelParamsOut, &agentCount, &initRes, &stepRes, &totalTime))
+	//			return 1;
+	//		//logResult
+	//		logResult(log, &modelParamsOut, agentCount, &initRes, &stepRes, totalTime);
+	//	}
+	//}
+	
+	for (unsigned int i = 6; i <150; i +=2)
+	{//-pipe  -device 1  -model 10 2 0.5 0.000010 0.000010 0 -seed 0
+		for (int j = 1; j < 11; j++)
+		{
+			//Interpolate model
+			modelArgs.seed = 0;
+			modelArgs.width = i;
+			modelArgs.density = j;
+			modelArgs.interactionRad = 0.5;
+			modelArgs.attractionForce = start.attractionForce;
+			modelArgs.repulsionForce = start.repulsionForce;
+			modelArgs.iterations = 1;
+			//Clear output structures
+			memset(&modelParamsOut, 0, sizeof(ModelParams));
+			memset(&stepRes, 0, sizeof(Time_Step_dbl));
+			memset(&initRes, 0, sizeof(Time_Init));
+			agentCount = 0;
+			totalTime = 0;
+			//executeBenchmark
+			if (!executeBenchmark(EXE_REFERENCE, modelArgs, &modelParamsOut, &agentCount, &initRes, &stepRes, &totalTime))
+				return 1;
+			//logResult
+			logResult(log, &modelParamsOut, agentCount, &initRes, &stepRes, totalTime);
+		}
 	}
 	//Close log
 	fclose(log);
@@ -98,6 +168,7 @@ bool executeBenchmark(const char* executable, ModelParams modelArgs, ModelParams
 	char *command;
 	bool rtn = true;
 	execString(executable, modelArgs, &command);
+	printf("%s\n", command);
 	std::shared_ptr<FILE> pipe(_popen(command, "rb"), _pclose);
 	if (!pipe.get()) return false;
 	if (fread(modelparamOut, sizeof(ModelParams), 1, pipe.get()) != 1)

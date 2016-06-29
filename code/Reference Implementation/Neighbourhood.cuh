@@ -25,21 +25,24 @@
 **/
 struct BinState
 {
-#if defined (_3D) && !defined (MORTON)
+#if defined(STRIPS) && !defined (MORTON)
+#if defined (_3D)
     glm::ivec2 relative;
-    glm::ivec3 location;
+	glm::ivec3 location;
 #endif
-#if !defined (_3D) && !defined (MORTON)
+#if !defined (_3D)
     int relative;
     glm::ivec2 location;
 #endif
-#if defined (_3D) && defined (MORTON)
+#else
+#if defined (_3D)
 	glm::ivec3 relative;
 	glm::ivec3 location;
 #endif
-#if !defined (_3D) && defined (MORTON)
+#if !defined (_3D)
 	glm::ivec2 relative;
 	glm::ivec2 location;
+#endif
 #endif
     unsigned int binIndexMax;//Last pbm index
     unsigned int binIndex;//Current loaded message pbm index
