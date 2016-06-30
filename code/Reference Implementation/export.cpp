@@ -141,3 +141,39 @@ void exportPopulation(SpatialPartition* s, ModelParams *model, char *path)
 	free(lm.locationY);
 	free(lm.locationZ);
 }
+
+void exportAgents(SpatialPartition* s, char *path)
+{
+	
+	int len = s->getLocationCount();
+	std::ofstream oFile;
+	oFile.open(path);
+	if (oFile.is_open())
+	{
+		//allocate
+		float *d_bufferPtr;
+		LocationMessages *d_lm = s->d_getLocationMessages();
+		LocationMessages lm;
+		lm.locationX = (float*)malloc(sizeof(float)*len);
+		CUDA_CALL(cudaMemcpy(&d_bufferPtr, &d_lm->locationX, sizeof(float*), cudaMemcpyDeviceToHost));
+		CUDA_CALL(cudaMemcpy(lm.locationX, d_bufferPtr, sizeof(float)*len, cudaMemcpyDeviceToHost));
+		lm.locationY = (float*)malloc(sizeof(float)* len);
+		CUDA_CALL(cudaMemcpy(&d_bufferPtr, &d_lm->locationY, sizeof(float*), cudaMemcpyDeviceToHost));
+		CUDA_CALL(cudaMemcpy(lm.locationY, d_bufferPtr, sizeof(float)*len, cudaMemcpyDeviceToHost));
+#ifdef _3D
+		lm.locationZ = (float*)malloc(sizeof(float)*len);
+		CUDA_CALL(cudaMemcpy(&d_bufferPtr, &d_lm->locationZ, sizeof(float*), cudaMemcpyDeviceToHost));
+		CUDA_CALL(cudaMemcpy(lm.locationZ, d_bufferPtr, sizeof(float)*len, cudaMemcpyDeviceToHost));
+#endif
+		oFile << len << "\n";
+		for (int i = 0; i < len; i++)
+		{
+			oFile << lm.locationX[i] << "," << lm.locationY[i] << "," << lm.locationZ[i] << "\n";
+		}
+		oFile.close();
+	}
+	else
+	{
+		printf("Failed to open file: %s\n", path);
+	}
+}

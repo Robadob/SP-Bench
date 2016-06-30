@@ -67,9 +67,9 @@ __global__ void step_model(LocationMessages *locationMessagesIn, LocationMessage
         if ((lm->id != id))//CHANGED: Don't sort particles
         {
 			toLoc = myLoc - lm->location;//Difference
-			separation = length(toLoc);
 			if (toLoc != DIMENSIONS_VEC(0))//Ignore distance 0
 			{
+				separation = length(toLoc);
 				if (separation < r2)
 				{
 					k = (separation < d_interactionRad) ? d_repulse : d_attract;
