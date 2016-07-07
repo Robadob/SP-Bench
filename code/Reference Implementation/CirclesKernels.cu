@@ -52,7 +52,7 @@ __global__ void step_model(LocationMessages *locationMessagesIn, LocationMessage
 #endif
 	newLoc =  DIMENSIONS_VEC(0);//myLoc;//
 	//Get first message
-    float dist, separation, k;
+    float separation, k;
 #ifdef _local
 	LocationMessage lm2;
 	LocationMessage *lm = locationMessagesIn->getFirstNeighbour(myLoc, &lm2);
@@ -60,30 +60,38 @@ __global__ void step_model(LocationMessages *locationMessagesIn, LocationMessage
 	LocationMessage *lm = locationMessagesIn->getFirstNeighbour(myLoc);
 #endif
     //Always atleast 1 location message, our own location!
-	const float r2 = 2 * d_interactionRad;
+	const float rHalf = d_interactionRad/2.0f;
     do
-    {
+	{
 		assert(lm != 0);
         if ((lm->id != id))//CHANGED: Don't sort particles
         {
-			toLoc = myLoc - lm->location;//Difference
+			toLoc = lm->location - myLoc;//Difference
 			if (toLoc != DIMENSIONS_VEC(0))//Ignore distance 0
 			{
 				separation = length(toLoc);
-				if (separation < r2)
+				if (separation < d_interactionRad)
 				{
-					k = (separation < d_interactionRad) ? d_repulse : d_attract;
-					toLoc = (separation < d_interactionRad) ? -toLoc : toLoc;
+					k = (separation < rHalf) ? d_repulse : d_attract;
+					toLoc = (separation < rHalf) ? -toLoc : toLoc;
 					toLoc /= separation;//Normalize (without recalculating seperation)
-					separation -= (separation < d_interactionRad) ? d_interactionRad : r2; 
+					separation = (separation < rHalf) ? separation : (d_interactionRad - separation);
 					newLoc += k * separation * toLoc;
 				}
             }
         }
 		lm = locationMessagesIn->getNextNeighbour(lm);//Returns a pointer to shared memory or 0
-    } while (lm);
+	} while (lm);
     //Export newLoc
 	newLoc += myLoc;
+#ifdef _DEBUG
+	assert(!isnan(newLoc.x));
+	assert(!isnan(newLoc.y));
+	assert(!isnan(newLoc.z));
+	assert(!isnan(myLoc.x));
+	assert(!isnan(myLoc.y));
+	assert(!isnan(myLoc.z));
+#endif
 	newLoc = glm::clamp(newLoc, d_environmentMin, d_environmentMax);
 	locationMessagesOut->locationX[id] = newLoc.x;
 	locationMessagesOut->locationY[id] = newLoc.y;

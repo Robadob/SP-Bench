@@ -140,7 +140,7 @@ int main(int argc, char* argv[])
 			//Interpolate model
 			modelArgs.seed = 0;
 			modelArgs.width = i;
-			modelArgs.density = j;
+			modelArgs.density = (float)j;
 			modelArgs.interactionRad = 0.5;
 			modelArgs.attractionForce = start.attractionForce;
 			modelArgs.repulsionForce = start.repulsionForce;
