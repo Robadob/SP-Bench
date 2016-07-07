@@ -43,10 +43,10 @@
       \end{equation}
       \vspace{-0.3cm}
       \begin{equation}\label{eq:timestep-attraction}
-        \overrightarrow{F_{ij}^{att}} = k_{att}(\lVert\overrightarrow{x_{j}x_{i}}\rVert-2r)\frac{\overrightarrow{x_{j}x_{i}}}{\lVert\overrightarrow{x_{j}x_{i}}\rVert}
+        \overrightarrow{F_{ij}^{att}} = k_{att}(2r-\lVert\overrightarrow{x_{j}x_{i}}\rVert)\frac{\overrightarrow{x_{j}x_{i}}}{\lVert\overrightarrow{x_{j}x_{i}}\rVert}
       \end{equation} 
       \begin{equation}\label{eq:timestep-repulsion}
-        \overrightarrow{F_{ij}^{rep}} = k_{rep}(\lVert\overrightarrow{x_{i}x_{j}}\rVert-r)\frac{\overrightarrow{x_{i}x_{j}}}{\lVert\overrightarrow{x_{i}x_{j}}\rVert}
+        \overrightarrow{F_{ij}^{rep}} = k_{rep}(\lVert\overrightarrow{x_{i}x_{j}}\rVert)\frac{\overrightarrow{x_{i}x_{j}}}{\lVert\overrightarrow{x_{i}x_{j}}\rVert}
       \end{equation}
       
       Algorithm \ref{algo:circles} provides a pseudo-code implementation of the calculation of a single particles new location, whereby each agent only iterates their agent neighbours rather than the global agent population.
