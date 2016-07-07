@@ -6,6 +6,7 @@
 #include <random>
 #include <chrono>
 #include <fstream>
+#include <float.h>
 
 #include "rapidxml/rapidxml.hpp"
 #include "rapidxml/rapidxml_print.hpp"
@@ -106,15 +107,15 @@ void exportPopulation(SpatialPartition* s, ModelParams *model, char *path)
 			rapidxml::xml_node<> *id_node = doc.allocate_node(rapidxml::node_element, id_node_str, doc.allocate_string(buffer));
 			xagent_node->append_node(id_node);
 
-			sprintf(buffer, "%f", lm.locationX[i]);
+			sprintf(buffer, "%.*g", 9, lm.locationX[i]);
 			rapidxml::xml_node<> *x_node = doc.allocate_node(rapidxml::node_element, x_node_str, doc.allocate_string(buffer));
 			xagent_node->append_node(x_node);
 
-			sprintf(buffer, "%f", lm.locationY[i]);
+			sprintf(buffer, "%.*g", 9, lm.locationY[i]);
 			rapidxml::xml_node<> *y_node = doc.allocate_node(rapidxml::node_element, y_node_str, doc.allocate_string(buffer));
 			xagent_node->append_node(y_node);
 
-			sprintf(buffer, "%f", lm.locationZ[i]);
+			sprintf(buffer, "%.*g", 9, lm.locationZ[i]);
 			rapidxml::xml_node<> *z_node = doc.allocate_node(rapidxml::node_element, z_node_str, doc.allocate_string(buffer));
 			xagent_node->append_node(z_node);
 
@@ -148,6 +149,7 @@ void exportAgents(SpatialPartition* s, char *path)
 	int len = s->getLocationCount();
 	std::ofstream oFile;
 	oFile.open(path);
+	char buffer[1024];
 	if (oFile.is_open())
 	{
 		//allocate
@@ -168,7 +170,8 @@ void exportAgents(SpatialPartition* s, char *path)
 		oFile << len << "\n";
 		for (int i = 0; i < len; i++)
 		{
-			oFile << lm.locationX[i] << "," << lm.locationY[i] << "," << lm.locationZ[i] << "\n";
+			sprintf(&buffer[0], "%.9g,%.9g,%.9g\n", lm.locationX[i], lm.locationY[i], lm.locationZ[i]);
+			oFile << buffer;
 		}
 		oFile.close();
 	}
