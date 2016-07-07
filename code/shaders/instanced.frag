@@ -6,7 +6,7 @@ out vec4 outColor;
 //HSV interpolation is more attractive than rgb interpolation
 //http://www.cs.rit.edu/~ncs/color/t_convert.html
 //hsv(0-360,0-1,0-1)
-vec3 hsv2rgb(vec3 hsv)
+vec3 hsv2rgb(in vec3 hsv)
 {
   if(hsv.g==0)//Grey
     return vec3(hsv.b);
@@ -34,7 +34,7 @@ vec3 hsv2rgb(vec3 hsv)
   }
 
 }
-float normalDist(float x, float mean, float variance)
+float normalDist(in float x, in float mean, in float variance)
 {
 #define M_PI 3.1415926535897932384626433832795
     float scale = sqrt(variance);
