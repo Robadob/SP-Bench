@@ -1,18 +1,18 @@
-\vspace{-0.3cm}
+%\vspace{-0.3cm}
 \section{Related Research\label{sec:related-work}}
-\vspace{-0.4cm}
+%\vspace{-0.4cm}
   FRNNs searches are most often found within agent-based models. They have also been used alongside similar algorithms within the fields of \gls{sph} and collision detection. FRNNs is the process whereby each agent considers the properties of every other agent located within a radial area about their location. This searched area can be considered the agent’s neighbourhood and must be searched every timestep of a simulation to ensure agents have live information. Whilst various spatial data-structures such as kd-trees and R-trees are capable of providing efficient access to spatial neighbourhoods, in order to achieve high performance in a problem as general as FRNNs they must sacrifice accuracy \cite{KS*14}.
-
-  The naive technique for carrying out a neighbourhood search is via a brute-force technique, individually considering whether each agent is located within the target neighbourhood. This technique may be suitable for small agent populations, however the overhead quickly becomes significant as agent populations increase, reducing the proportional volume of the neighbourhoods with respect to the volume of the environment.
   
 \begin{wrapfigure}{r}{0.4\textwidth}
 \vspace{-0.4cm}
   \begin{center}
     \includegraphics[width=0.38\textwidth]{../resources/usp/usp.pdf}
   \end{center}
-\vspace{-0.4cm}
+\vspace{-0.2cm}
   \caption{\label{fig:usp} A representation of a data structure that can be used for uniform spatial partitioning. The Cells table denotes the index within the Agents table that data for the corresponding cell begins.}
 \end{wrapfigure}
+
+  The naive approach for carrying out a neighbourhood search is via a brute-force technique, individually considering whether each agent is located within the target neighbourhood. This technique may be suitable for small agent populations, however the overhead quickly becomes significant as agent populations increase, reducing the proportional volume of the neighbourhoods with respect to the volume of the environment.
   
   The most common technique that is used to reduce the overhead of FRNNs handling is that of uniform spatial partitioning (Figure \ref{fig:usp}), whereby the environment is partitioned into a uniform grid, whereby grid cells have dimensions equal to the interaction radius. Agents are then (sorted and) stored according to the ID of their containing cell within the grid. Serial implementations are likely to utilise linked list's to store the agents within each bin. Parallel implementations in contrast are likely to store agents within a single compact array which is sorted in a distinct step after agent locations have been updated, following which an index to provide direct access to the storage of each cell’s agents is produced. This allows the Moore neighbourhood\footnote{The collection of cells inclusively bounded by the ring of adjacent cells surrounding the target cell.} of an agent’s cell to be accessed, ignoring agents within cells outside of the desired neighbourhood. This method is particularly suitable for parallel implementations \cite{Gre10} and several advances have been suggested to further improve their performance: Goswami et al proposed the use of Z-order curves to improve memory locality \cite{GS*10}; Hoetzlein considered the effect of changing the partition cell dimensions \cite{Hoe14}; and Sun et al proposed the use of a parallel ordered sort to improve sorting efficiency \cite{HY*15}.
 

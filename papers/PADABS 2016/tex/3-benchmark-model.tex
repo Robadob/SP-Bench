@@ -1,22 +1,22 @@
-\vspace{-0.3cm}
+%\vspace{-0.3cm}
 \section{Benchmark Model\label{sec:benchmark-model}}
-\vspace{-0.4cm}
-  The circles benchmark model is designed to utilise neighbourhood search in a manner analogous to a simplified particle simulation in two or three dimensions (although it could easily be extended to higher levels of dimensionality if required). Within the model each agent represents a particle whose location is clamped within the environment bounds. Each particle's motion is driven by forces applied from other particles within their local neighbourhood.
+%\vspace{-0.4cm}
+  The circles benchmark model is designed to utilise neighbourhood search in a manner analogous to a simplified particle simulation in two or three dimensions (although it could easily be extended to higher levels of dimensionality if required). Within the model each agent represents a particle whose location is clamped within between $0$ and $W-1$ in each axis.\footnote{All frameworks tested utilised an environment of $0<=x<W$, as it is not possible to cleanly clamp a floating point value within a less than bound, the nearest valid whole number was instead used to ensure the correct operation of each framework.}. Each particle's motion is driven by forces applied from other particles within their local neighbourhood, with forces applied between particles to encourage a separation of $r$.
    
   The parameters (explained below) of the circles benchmark allow it to be used to assess how the performance of FRNNs search implementations are affected by changes to factors such as problem size and neighbourhood size. This assessment can then be utilised in the research of FRNNs ensuring comparisons against existing work and to advise design decisions when requiring FRNNs during the implementation of \gls{abs}.
   
   \subsection{Model Specification}  
-\vspace{-0.3cm}
+%\vspace{-0.3cm}
     The benchmark model is configured using the parameters in Table \ref{tab:benchmark-parameters}. In addition to these parameters the dimensionality of the environment ($E_{dim}$) must be decided, which in most cases will be 2 or 3. The value of $E_{dim}$ is not considered a model parameter as changes to this value are likely to require implementation changes. The results presented later in this paper are all from 3D implementations of the benchmark model. 
-
+\vspace{0.2cm}
     \begin{table}
       \begin{tabu}{ |c|>{\raggedright}X|c|c| }
         \hline
         \textbf{Parameter} & \textbf{Description} & Fig. \ref{fig:graph-agent-pop} & Fig. \ref{fig:graph-neighbourhood-pop} \\ \hline
-        $k_{rep}$ & The repulsion dampening argument. Increasing this value encourages agents to repel. & $1\times10^{-5}$ & $1\times10^{-5}$ \\ \hline
-        $k_{att}$ & The attraction dampening argument. Increasing this value encourages agents to attract. & $1\times10^{-5}$ & $1\times10^{-5}$ \\ \hline
-        $r$ & The interaction radius. Increasing this value increases the radius of the neighbourhoods searched, thus increasing agent communication. & 5 & 1-15 \\ \hline
-        $ \rho $ & The density of agents within the environment. & 0.01 & 0.01 \\ \hline
+        $k_{rep}$ & The repulsion dampening argument. Increasing this value encourages agents to repel. & $1\times10^{-3}$ & $1\times10^{-3}$ \\ \hline
+        $k_{att}$ & The attraction dampening argument. Increasing this value encourages agents to attract. & $1\times10^{-3}$ & $1\times10^{-3}$ \\ \hline
+        $r$ & The radial distance from the particle to which other particles are attracted. Twice this value is the interaction radius & 5 & 1-15 \\ \hline
+        $ \rho $ & The density of agents within the environment. & $1\times10^{-2}$ & $1\times10^{-2}$ \\ \hline
         $W$ & The diameter of the environment. This value is shared by each dimension therefore in a two dimensional environment it represents the width and height. Increasing this value is equivalent to increasing the scale of the problem (e.g. the number of agents) assuming $ \rho $ remains unchanged. & 50-300 & 100\\ \hline
       \end{tabu}
       \caption{\label{tab:benchmark-parameters}The parameters for configuring the circles benchmark model.}
@@ -31,17 +31,17 @@
       \end{equation}
       
     \subsubsection{Single Iteration}
-      For each timestep of the benchmark model, every agent's location must be updated. The position $x$ of an agent $i$ at the discrete timestep $t+1$ is given by Equation \ref{eq:timestep-global}, whereby $F_{i}$ denotes the force exerted on the agent $i$ as calculated by Equation \ref{eq:timestep-force}.\footnote{The square Iversion bracket notation $[\:]$ denotes a conditional statement; when the statement evaluates to true a value of $1$ is returned otherwise $0$} Within Equation \ref{eq:timestep-force} $F_{ij}^{rep}$ and $F_{ij}^{att}$ represent the respective attraction and repulsion forces applied to agent $i$ from agent $j$. The values of $F_{ij}^{att}$ and $F_{ij}^{rep}$ are calculated using Equations \ref{eq:timestep-attraction} and \ref{eq:timestep-repulsion} respectively, the relevant force parameter is multiplied by the distance from the force's boundary and the unit vector between $x_{i}$ \& $x_{j}$ in the direction of the respective force.
+      For each timestep of the benchmark model, every agent's location must be updated. The position $x$ of an agent $i$ at the discrete timestep $t+1$ is given by Equation \ref{eq:timestep-global}, whereby $F_{i}$ denotes the force exerted on the agent $i$ as calculated by Equation \ref{eq:timestep-force}.\footnote{The square Iversion bracket notation $[\:]$ denotes a conditional statement; when the statement evaluates to true a value of $1$ is returned otherwise $0$} Within Equation \ref{eq:timestep-force} $F_{ij}^{rep}$ and $F_{ij}^{att}$ represent the respective attraction and repulsion forces applied to agent $i$ from agent $j$. The values of $F_{ij}^{att}$ and $F_{ij}^{rep}$ are calculated using Equations \ref{eq:timestep-attraction} and \ref{eq:timestep-repulsion} respectively, the relevant force parameter is multiplied by the distance from the force's boundary and the unit vector from $x_{i}$ to $x_{j}$ in the direction of the respective force. After calculation, the agent's location is then clamped between $0$ and $W-1$ in each axis.
       
-      \vspace{-0.3cm}
+      %\vspace{-0.3cm}
       \begin{equation}\label{eq:timestep-global}
         \overrightarrow{x_{i(t+1)}} = \overrightarrow{x_{i(t)}} + \overrightarrow{F_{i}}
       \end{equation}
-      \vspace{-0.3cm}
+      %\vspace{-0.3cm}
       \begin{equation}\label{eq:timestep-force}
         \overrightarrow{F_{i}} = \sum\limits_{i \neq j} \overrightarrow{F_{ij}^{rep}}[\lVert\overrightarrow{x_{i}x_{j}}\rVert < r] + \overrightarrow{F_{ij}^{att}}[r <= \lVert\overrightarrow{x_{i}x_{j}}\rVert < 2r]
       \end{equation}
-      \vspace{-0.3cm}
+      %\vspace{-0.3cm}
       \begin{equation}\label{eq:timestep-attraction}
         \overrightarrow{F_{ij}^{att}} = k_{att}(2r-\lVert\overrightarrow{x_{j}x_{i}}\rVert)\frac{\overrightarrow{x_{j}x_{i}}}{\lVert\overrightarrow{x_{j}x_{i}}\rVert}
       \end{equation} 
@@ -56,26 +56,31 @@
 \lstinputlisting[]{../resources/modelPseudocode.txt}
 \caption{\label{algo:circles}Pseudo-code for the calculation of a single particle's new location.}
 \end{algorithm}
-\vspace{-0.2cm}
+%\vspace{-0.2cm}
 
       %The benchmark is to be executed for the stated number of model iterations. This may result in multiple iterations in a steady state, however this does not diminish the validity of the measured metrics.
         
     \subsubsection{Validation}
-      There are several checks that can be carried out to ensure that the benchmark has been implemented correctly. Most significantly it should be confirmed that agent locations remain within the environmental bounds. The absence of this clamping under certain model parameters allows agent density to decrease, which artificially benefits performance. During execution, the majority of particles will move in a smooth path, whereby a greater difference between the forces will cause greater particle speeds. When $F_{att} >= F_{rep}$, particles will cluster to a small number of locations, and overlap tightly, with many particles aligning in multiples of $r$ distance from the environment boundaries. In contrast, scenarios where $F_{rep} > 2F_{att}$, particles will primarily separate with minimal overlap, moving significantly slower. It is intended that the benchmark model is able to reach a steady state over a number of iterations, however in some cases high-magnitude forces $F_{att}$ \& $F_{rep}$ may instead cause the agents to vibrate. 
+      There are several checks that can be carried out to ensure that the benchmark has been implemented correctly, the initial validation techniques rely on visual assessment. 
+      During execution if the forces $F_{att}$ \& $F_{rep}$ are both positive particles can be expected to form spherical clusters. Due to the force drop-off (switching from the maximal positive force, to the maximal negative force) when a particle crosses the force boundary, these clusters oscillate, this effect is amplified by agent density and force magnitude. If these forces are however both negative, particles will spread out, with some particles overlapping each other.
+      
+      More precise validation can be carried out by seeding two independent implementations\footnote{The implementations used within this paper are available within this projects repository. https://github.com/Robadob/circles-benchmark} with the same initial particle locations. With appropriate model parameters (such as those in Table \ref{tab:benchmark-parameters}), it is possible to then export agent positions after a single iteration from each implementation\footnote{It is recommended to export agents in the same order that they were loaded, as sorting diverged agents may provide inaccurate pairings.}. Comparing these exported positions should show a parity to several decimal places, whilst significant differences between the initial state and the exported states. Due to the previously mentioned force fall-off and floating point arithmetic limitations, it was found that a single particle crossing a boundary between two models, snowballs after only a few iterations, causing many other particles to differ between simulation results.
+      
+      The 3 agent framework implementations tested within this paper were all tested with shared initial particle locations states to ensure that their models were performing the same operations. 
   
   \subsection{Effective Usage\label{sec:effective-usage}}  
-\vspace{-0.3cm}
+%\vspace{-0.3cm}
     The metrics which may affect the performance of neighbourhood search implementations are agent quantity, neighbourhood size, agent speed and location uniformity. Whilst it is not possible to directly parametrise all of these metrics within the circles benchmark, a significant number can be controlled to provide understanding of how the performance of different implementations is affected.
     
     To modify the scale of the problem, the environment width $W$ can be changed. This directly adjusts the agent population size, according to the formula in Equation \ref{eq:agent_population_size}, whilst leaving the density unaffected. Modulating the scale of the population is used to benchmark how well implementations scale with increased problem sizes. In multi-core and \gls{gpu} implementations this may also allow the point of maximal hardware utilisation to be identified, whereby lesser population sizes do not fully utilise the available hardware.
     
-    Modifying either the density $\rho$ or the interaction radius $r$ can be used to affect the number of agents found within each neighbourhood. The number of agents within a neighbourhood of radius $r$ can be estimated using Equation \ref{eq:neighbourhood-size}, this value assumes that agents are uniformly distributed and will vary slightly between agents.
+    Modifying either the density $\rho$ or the radius $r$ can be used to affect the number of agents found within each neighbourhood. The number of agents within a neighbourhood of radius $r$ can be estimated using Equation \ref{eq:neighbourhood-size}, this value assumes that agents are uniformly distributed and will vary slightly between agents.
     
     \begin{equation}\label{eq:neighbourhood-size}
         N_{size} = \rho \pi (2r)^{E_{dim}}
     \end{equation}
       
-    Modifying the speed of the agent's motion affects the rate at which the data structure holding the neighbourhood data must change (referred to as changing the entropy, the energy within the system). Most implementations are unaffected by changes to this value. However optimisations such as those by Sun et al \cite{HY*15} should see performance improvements at lower speeds, due to a reduced number of agents transitioning between cells within the environment per timestep. The speed of an agent within the circles model is calculated using Equation \ref{eq:timestep-force}. There are many variables which impact this speed, but the most significant modifiers are those of attractive force ($k_{att}$) and repulsive force ($k_{rep}$). The closer these two forces are to $0$ the slower that the agents move. If these forces are particularly high, agents are likely to oscillate rather than reaching a steady state as described in the previous subsection.
+    Modifying the speed of the agent's motion affects the rate at which the data structure holding the neighbourhood data must change (referred to as changing the entropy, the energy within the system). Many implementations are unaffected by changes to this value. However optimisations such as those by Sun et al \cite{HY*15} should see performance improvements at lower speeds, due to a reduced number of agents transitioning between cells within the environment per timestep. The speed of an agent within the circles model is calculated using Equation \ref{eq:timestep-force}. There are many parameters which impact this speed within the circles model. As a particles motion is calculated as a result of the sum of vectors to neighbours it clear that the parameters affecting neighbourhood size ($\rho$ \& $r$) impact particle speed in addition to the forces $F_{att}$ \& $F_{rep}$.
     
     The final metric location uniformity, refers to how uniformly distributed the agents are within the environment. When agents are distributed non-uniformly, as may be found within many natural scenarios, the size of agent neighbourhoods are likely to vary more significantly. This can be detrimental to the performance of implementations which parallelise the neighbourhood search such that each agents search is carried out in a separate thread via single instruction multiple thread (SIMT) execution. This is caused by sparse neighbourhood threads spending large amounts of time idling whilst waiting for larger neighbourhood threads searching simultaneously within the shared thread-group to complete. It is not currently possible to suitably affect the location uniformity within the circles model.
     
