@@ -11,6 +11,8 @@
 #include "results.h"
 #include <fcntl.h>
 #include <io.h>
+#include "export.h"
+
 struct ArgData
 {
 	ArgData()
@@ -25,6 +27,8 @@ struct ArgData
 	{}
 	bool pipe = false;
 	bool profile = false;
+	bool exportAgents = false;
+	bool exportInit = false;
 	unsigned int device;
 #ifdef _GL
 	unsigned int GLwidth;
@@ -78,6 +82,14 @@ ArgData parseArgs(int argc, char * argv[])
 			data.GLheight = (unsigned int)strtoul(argv[++i], nullptr, 0);
 		}
 #endif
+		else if (arg.compare("-export")==0)
+		{
+			data.exportAgents = true;
+		}
+		else if (arg.compare("-init") == 0)
+		{
+			data.exportInit = true;
+		}
 	}
 	return data;
 }
@@ -102,6 +114,7 @@ int main(int argc, char * argv[])
 	//Init model
 	if (!args.pipe&&!args.profile)
 	{
+		printf("Agents: %d\n", model.getPartition()->getLocationCount());
 		printf("Init Complete - Times\n");
 		printf("CuRand init - %.3fs\n", initTimes.initCurand / 1000);
 		printf("Main kernel - %.3fs\n", initTimes.kernel / 1000);
@@ -109,6 +122,10 @@ int main(int argc, char * argv[])
 		printf("CuRand free - %.3fs\n", initTimes.freeCurand / 1000);
 		printf("Combined    - %.3fs\n", initTimes.overall / 1000);
 		printf("\n");
+	}
+	if (args.exportInit)
+	{
+		exportPopulation(model.getPartition(), &args.model, "init.xml");
 	}
 	//Start visualisation
 	//v.runAsync();
@@ -187,6 +204,10 @@ int main(int argc, char * argv[])
 			fprintf(stderr, "Writing total time failed.\n"); 
 			fflush(stderr);
 		};
+	}
+	if (args.exportAgents)
+	{
+		exportAgents(model.getPartition(), "agents.txt");
 	}
 #ifdef _GL
     v.run();
