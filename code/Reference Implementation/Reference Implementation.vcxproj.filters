@@ -81,6 +81,9 @@
     <ClInclude Include="visualisation\texture\TextureBuffer.h">
       <Filter>Headers\Visualisation\Textures</Filter>
     </ClInclude>
+    <ClInclude Include="export.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Headers">
@@ -139,5 +142,6 @@
     <ClCompile Include="visualisation\texture\TextureCubeMap.cpp">
       <Filter>Visualistion\Textures</Filter>
     </ClCompile>
+    <ClCompile Include="export.cpp" />
   </ItemGroup>
 </Project>

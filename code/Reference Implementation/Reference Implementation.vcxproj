@@ -406,6 +406,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
   <ItemGroup>
     <ClInclude Include="Circles.cuh" />
     <ClInclude Include="CirclesKernels.cuh" />
+    <ClInclude Include="export.h" />
     <ClInclude Include="header.cuh" />
     <ClInclude Include="CirclesModel.cuh" />
     <ClInclude Include="Neighbourhood.cuh" />
@@ -429,6 +430,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     <ClInclude Include="visualisation\Visualisation.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="export.cpp" />
     <ClCompile Include="visualisation\Axis.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
