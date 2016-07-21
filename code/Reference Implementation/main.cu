@@ -96,7 +96,25 @@ ArgData parseArgs(int argc, char * argv[])
 int main(int argc, char * argv[])
 {
 	ArgData args = parseArgs(argc, argv);
-	cudaSetDevice(args.device);
+	cudaError_t status = cudaSetDevice(args.device);
+	// If there were no errors, proceed.
+	if (status == cudaSuccess){
+		if (!args.pipe)
+		{
+			// Get properties
+			cudaDeviceProp props;
+			status = cudaGetDeviceProperties(&props, args.device);
+			// If we have properties, print the device.
+			if (status == cudaSuccess){
+				fprintf(stdout, "Device: %s\n  pci %d bus %d\n  tcc %d\n  SM %d%d\n\n", props.name, props.pciDeviceID, props.pciBusID, props.tccDriver, props.major, props.minor);
+			}
+		}
+	}
+	else {
+		fprintf(stderr, "Error setting CUDA Device %d.\n", args.device);
+		fflush(stderr);
+		exit(EXIT_FAILURE);
+	}
 	cudaEvent_t start, stop;
 	cudaEventCreate(&start);
 	cudaEventCreate(&stop);
