@@ -25,12 +25,24 @@
 **/
 struct BinState
 {
-#ifdef _3D
+#if defined(STRIPS) && !defined (MORTON)
+#if defined (_3D)
     glm::ivec2 relative;
-    glm::ivec3 location;
-#else
+	glm::ivec3 location;
+#endif
+#if !defined (_3D)
     int relative;
-    glm::vec2 location;
+    glm::ivec2 location;
+#endif
+#else
+#if defined (_3D)
+	glm::ivec3 relative;
+	glm::ivec3 location;
+#endif
+#if !defined (_3D)
+	glm::ivec2 relative;
+	glm::ivec2 location;
+#endif
 #endif
     unsigned int binIndexMax;//Last pbm index
     unsigned int binIndex;//Current loaded message pbm index
@@ -62,11 +74,14 @@ public:
     __device__ LocationMessage *getNextNeighbour(LocationMessage *message);
 
 private:
-    __device__ bool nextBin();
+	__device__ bool nextBin(LocationMessage *sm_message);
     //Load the next desired message into shared memory
-    __device__ LocationMessage *loadNextMessage();
+	__device__ LocationMessage *loadNextMessage(LocationMessage *message);
 
 };
+
+extern __host__ __device__ unsigned int morton3D(DIMENSIONS_IVEC pos);
+extern __host__ __device__ DIMENSIONS_IVEC getGridPosition(DIMENSIONS_VEC worldPos);
 class SpatialPartition
 {
 public:
@@ -87,7 +102,6 @@ public:
     DIMENSIONS_VEC getEnvironmentMax() const { return environmentMax; }
     float getCellSize() const { return interactionRad;  }
 #ifdef _DEBUG
-    DIMENSIONS_IVEC getGridPosition(DIMENSIONS_VEC worldPos);
     bool isValid(DIMENSIONS_IVEC bin) const;
 	DIMENSIONS_IVEC getPos(unsigned int hash);
 	int getHash(DIMENSIONS_IVEC gridPos);
@@ -99,6 +113,7 @@ public:
     GLuint SpatialPartition::getCountTexName() const { return gl_tex_count; }
 #endif
 private:
+	void setBinCount();
     //Allocators
     void deviceAllocateLocationMessages(LocationMessages **d_locMessage, LocationMessages *hd_locMessage);
     void deviceAllocatePBM(unsigned int **d_PBM_t);
@@ -130,7 +145,9 @@ private:
     void fillTextures();
 
     unsigned int getBinCount() const;//(ceil((X_MAX-X_MIN)/SEARCH_RADIUS)*ceil((Y_MAX-Y_MIN)/SEARCH_RADIUS)*ceil((Z_MAX-Z_MIN)/SEARCH_RADIUS))
-    const unsigned int maxAgents;
+	unsigned int binCount;
+	unsigned int binCountMax;
+	const unsigned int maxAgents;
     float interactionRad;//Radius of agent interaction
     //Kernel launchers
     void launchHashLocationMessages();

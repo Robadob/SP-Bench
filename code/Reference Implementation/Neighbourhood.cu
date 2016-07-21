@@ -24,6 +24,7 @@ SpatialPartition::SpatialPartition(DIMENSIONS_VEC  environmentMin, DIMENSIONS_VE
     , PBM_isBuilt(0)
 #endif
 {
+	setBinCount();
     //Allocate bins in GPU memory
     deviceAllocateLocationMessages(&d_locationMessages, &hd_locationMessages);
     //Allocate bins swap in GPU memory
@@ -51,7 +52,7 @@ SpatialPartition::SpatialPartition(DIMENSIONS_VEC  environmentMin, DIMENSIONS_VE
     CUDA_CALL(cudaMemcpyToSymbol(d_PBM_isBuilt, &PBM_isBuilt, sizeof(unsigned int)));
 #endif
     setLocationCount(locationMessageCount);
-    unsigned int t_binCount = getBinCount();
+    unsigned int t_binCount = this->binCountMax;
     CUDA_CALL(cudaMemcpyToSymbol(d_binCount, &t_binCount, sizeof(unsigned int)));
 
 #if defined(_GL) || defined(_DEBUG)
@@ -78,58 +79,84 @@ SpatialPartition::~SpatialPartition()
 }
 #ifdef _DEBUG
 
-DIMENSIONS_IVEC SpatialPartition::getGridPosition(DIMENSIONS_VEC worldPos)
-{
-#ifndef SP_NO_CLAMP_GRID
-    //Clamp each grid coord to 0<=x<dim
-    return clamp(floor(((worldPos - environmentMin) / (environmentMax - environmentMin))*glm::vec3(gridDim)), glm::vec3(0), glm::vec3(gridDim)-glm::vec3(1));
-#else
-    return floor(((worldPos - environmentMin) / (environmentMax - environmentMin))*glm::vec3(gridDim));
-#endif
-}
-
+//DIMENSIONS_IVEC SpatialPartition::getGridPosition(DIMENSIONS_VEC worldPos)
+//{
+//#ifndef SP_NO_CLAMP_GRID
+//    //Clamp each grid coord to 0<=x<dim
+//    return clamp(floor(((worldPos - environmentMin) / (environmentMax - environmentMin))*glm::vec3(gridDim)), glm::vec3(0), glm::vec3(gridDim)-glm::vec3(1));
+//#else
+//    return floor(((worldPos - environmentMin) / (environmentMax - environmentMin))*glm::vec3(gridDim));
+//#endif
+//}
+//
+//unsigned int SpatialPartition::getHash(DIMENSIONS_IVEC gridPos)
+//{
+//    gridPos = clamp(gridPos, DIMENSIONS_IVEC(0), gridDim - DIMENSIONS_IVEC(1));
+//    return
+//#ifdef _3D
+//        (gridPos.z * gridDim.y * gridDim.x) +   //z
+//#endif
+//        (gridPos.y * gridDim.x) +					//y
+//        gridPos.x; 	                                //x
+//}
 int SpatialPartition::getHash(DIMENSIONS_IVEC gridPos)
-{
-    gridPos = clamp(gridPos, DIMENSIONS_IVEC(0), gridDim - DIMENSIONS_IVEC(1));
-    return
+{//Host version using host copy of gridDim
+	gridPos = clamp(gridPos, DIMENSIONS_IVEC(0), gridDim - DIMENSIONS_IVEC(1));
+#ifndef MORTON
+	return
 #ifdef _3D
-        (gridPos.z * gridDim.y * gridDim.x) +   //z
+		(gridPos.z * gridDim.y * gridDim.x) +   //z
 #endif
-        (gridPos.y * gridDim.x) +					//y
-        gridPos.x; 	                                //x
+		(gridPos.y * gridDim.x) +					//y
+		gridPos.x;
+#else
+	return morton3D(gridPos);
+#endif
 }
 DIMENSIONS_IVEC SpatialPartition::getPos(unsigned int hash)
 {
-    if (hash >= getBinCount())
+#ifndef MORTON
+    if (hash >= this->binCountMax)
         return DIMENSIONS_IVEC(-1);
-    else
-    {
+	else
+	{
 #ifdef _3D
 
-        int z = (hash / (gridDim.y * gridDim.x));
-        int y = (hash % (gridDim.y * gridDim.x)) / gridDim.x;
-        int x = (hash % (gridDim.y * gridDim.x)) % gridDim.x;
-        return DIMENSIONS_IVEC(x, y, z);
+		int z = (hash / (gridDim.y * gridDim.x));
+		int y = (hash % (gridDim.y * gridDim.x)) / gridDim.x;
+		int x = (hash % (gridDim.y * gridDim.x)) % gridDim.x;
+		return DIMENSIONS_IVEC(x, y, z);
 #else
         int y = hash / gridDim.x;
         int x = hash % gridDim.x;
-        return DIMENSIONS_IVEC(x, y);
+		return DIMENSIONS_IVEC(x, y);
 #endif
-    }
+	}
+#else
+	//Convert a morton coded hash back into a grid square
+	DIMENSIONS_IVEC ret = DIMENSIONS_IVEC(0);
+	for (int i = 0; i < 30; i++)
+	{
+		int dim = (i % DIMENSIONS);//Dimension of shiftN (x,y,z)
+		int shift = i / DIMENSIONS;//Which bit position within the return val
+		ret[DIMENSIONS - 1 - dim] += (hash&(1 << i)) >> (i - shift);
+	}
+	return ret;
+#endif
 }
 bool SpatialPartition::isValid(DIMENSIONS_IVEC bin) const
 {
-    if (
+	if (
 #ifdef _3D
-        bin.z<0 || bin.z >= gridDim.z ||
+		bin.z<0 || bin.z >= gridDim.z ||
 #endif
-        bin.y<0 || bin.y >= gridDim.y ||
-        bin.x<0 || bin.x >= gridDim.x 
-        )
-    {
-        return false;
-    }
-    return true;
+		bin.y<0 || bin.y >= gridDim.y ||
+		bin.x<0 || bin.x >= gridDim.x
+		)
+	{
+		return false;
+	}
+	return true;
 }
 void SpatialPartition::assertSearch()
 {
@@ -163,6 +190,17 @@ void SpatialPartition::assertSearch()
 		printf("%i PBM records exist for %i agents.\n", agtCount, maxAgents);
 	}
 
+#ifdef MORTON
+	//In the case of morton coding, we sort PBM back into our regular order to compare
+	unsigned int *PBM_coded = PBM_binSize;
+	PBM_binSize = static_cast<unsigned int *>(malloc(sizeof(unsigned int)*tableSize));
+	memset(PBM_binSize, 0, tableSize * sizeof(unsigned int));
+	for (int i = 0; i < this->binCount; i++)
+	{
+		PBM_binSize[i] = PBM_coded[getHash(glm::ivec3((i % (gridDim.y * gridDim.x)) % gridDim.x, (i % (gridDim.y * gridDim.x)) / gridDim.x,(i / (gridDim.y * gridDim.x))))];
+	}
+	free(PBM_coded);
+#endif
     //Calculate the size of each bin's neighbourhood
     unsigned int *PBM_neighbourhoodSize = static_cast<unsigned int *>(malloc(sizeof(unsigned int)*tableSize));
     for (unsigned int i = 0; i < ((outCount / 10) + 1) * 10; i++)
@@ -296,7 +334,6 @@ void SpatialPartition::assertSearch()
 #endif
 void SpatialPartition::deviceAllocateLocationMessages(LocationMessages **d_locMessage, LocationMessages *hd_locMessage)
 {
-    unsigned int binCount = getBinCount();
     CUDA_CALL(cudaMalloc(d_locMessage, sizeof(LocationMessages)));
     CUDA_CALL(cudaMalloc(&hd_locMessage->locationX, sizeof(float)*maxAgents));
     CUDA_CALL(cudaMemcpy(&((*d_locMessage)->locationX), &(hd_locMessage->locationX), sizeof(float*), cudaMemcpyHostToDevice));
@@ -308,17 +345,18 @@ void SpatialPartition::deviceAllocateLocationMessages(LocationMessages **d_locMe
 #endif
 #if defined(_GL) || defined(_DEBUG)
     CUDA_CALL(cudaMalloc(&hd_locMessage->count, sizeof(float)*maxAgents));
-    CUDA_CALL(cudaMemcpy(&((*d_locMessage)->count), &(hd_locMessage->count), sizeof(float*), cudaMemcpyHostToDevice));
+	CUDA_CALL(cudaMemcpy(&((*d_locMessage)->count), &(hd_locMessage->count), sizeof(float*), cudaMemcpyHostToDevice));
+	CUDA_CALL(cudaMemset(hd_locMessage->count, 0, sizeof(float)*maxAgents));//Must be 0'd to protect assertions on k20
+
 #endif
 }
 void SpatialPartition::deviceAllocatePBM(unsigned int **d_PBM_t)
 {
-    unsigned int binCount = getBinCount();
-    CUDA_CALL(cudaMalloc(d_PBM_t, sizeof(unsigned int)*(binCount+1)));
+	CUDA_CALL(cudaMalloc(d_PBM_t, sizeof(unsigned int)*(this->binCountMax + 1)));
+	CUDA_CALL(cudaMemset(*d_PBM_t, 0, sizeof(unsigned int)*(this->binCountMax + 1)));//Must be 0'd to protect assertions on k20
 }
 void SpatialPartition::deviceAllocatePrimitives(unsigned int **d_keys, unsigned int **d_vals)
 {
-    unsigned int binCount = getBinCount();
     CUDA_CALL(cudaMalloc(d_keys, sizeof(unsigned int)*maxAgents));
     CUDA_CALL(cudaMalloc(d_vals, sizeof(unsigned int)*maxAgents));
 }
@@ -362,7 +400,7 @@ void SpatialPartition::fillTextures()
     CUDA_CALL(cudaMemcpy(tex_location_ptr_count, hd_locationMessages.count, locationMessageCount*sizeof(float), cudaMemcpyDeviceToDevice));
 #endif
 
-    CUDA_CALL(cudaMemcpy(tex_PBM_ptr, d_PBM, (getBinCount()+1)*sizeof(unsigned int), cudaMemcpyDeviceToDevice));
+    CUDA_CALL(cudaMemcpy(tex_PBM_ptr, d_PBM, (this->binCountMax+1)*sizeof(unsigned int), cudaMemcpyDeviceToDevice));
 }
 
 void SpatialPartition::deviceAllocateTexture_float(unsigned int i)
@@ -440,7 +478,7 @@ void SpatialPartition::deviceAllocateTexture_int()
 {
     //Define cuda array format
     //Allocate cuda array
-    unsigned int size = getBinCount() + 1;
+    unsigned int size = this->binCountMax + 1;
     CUDA_CALL(cudaMalloc(&tex_PBM_ptr, size*sizeof(unsigned int)));//Number of elements, not bytes
     //Define cuda resource from array
     cudaResourceDesc resDesc;
@@ -543,7 +581,21 @@ void SpatialPartition::deviceDeallocateTextures()
 
 unsigned int SpatialPartition::getBinCount() const
 {
-    return (unsigned int)glm::compMul(gridDim);
+	return binCountMax;
+}
+
+void SpatialPartition::setBinCount()
+{
+	//Get max grid dimension
+	this->binCount = glm::compMax(gridDim);
+	//Find the next biggest power of two
+#ifndef MORTON
+	this->binCountMax = (unsigned int)(this->binCount*this->binCount*this->binCount);
+#else
+	int l2 = pow(2,ceil(log2f(this->binCount)));
+	this->binCountMax = (unsigned int)(l2*l2*l2);
+#endif
+	this->binCount = this->binCount*this->binCount*this->binCount;
 }
 void SpatialPartition::setLocationCount(unsigned int t_locationMessageCount)
 {
@@ -572,7 +624,7 @@ void SpatialPartition::launchAssertPBMIntegerity()
     int blockSize;   // The launch configurator returned block size 
     CUDA_CALL(cudaOccupancyMaxActiveBlocksPerMultiprocessor(&blockSize, hashLocationMessages, 32, 0));//Randomly 32
     // Round up according to array size
-    int gridSize = (getBinCount() + blockSize - 1) / blockSize;
+    int gridSize = (this->binCountMax + blockSize - 1) / blockSize;
     //Copy messages from d_messages to d_messages_swap, in hash order
     assertPBMIntegrity<<<gridSize, blockSize>>>();
     //No sync, called directly after textures have been updated
@@ -586,7 +638,8 @@ void SpatialPartition::launchReorderLocationMessages()
     int gridSize = (locationMessageCount + blockSize - 1) / blockSize;
     //Copy messages from d_messages to d_messages_swap, in hash order
     reorderLocationMessages <<<gridSize, blockSize, requiredSM_reorderLocationMessages(blockSize) >>>(d_keys, d_vals, d_PBM, d_locationMessages, d_locationMessages_swap);
-    swap();
+	CUDA_CHECK();
+	swap();
     //Wait for return
     CUDA_CALL(cudaDeviceSynchronize());
 }
@@ -650,7 +703,7 @@ void SpatialPartition::buildPBM()
     //Fill pbm start coords with known value 0xffffffff
     //CUDA_CALL(cudaMemset(d_PBM, 0xffffffff, PARTITION_GRID_BIN_COUNT * sizeof(int)));
     //Fill pbm end coords with known value 0x00000000 (this should mean if the mysterious bug does occur, the cell is just dropped, not large loop created)
-    unsigned int binCount = getBinCount(); 
+    unsigned int binCount = this->binCountMax; 
     CUDA_CALL(cudaMemset(d_PBM, 0x00000000, (binCount + 1) * sizeof(unsigned int)));
     launchReorderLocationMessages();
     //Clone data to textures ready for neighbourhood search
