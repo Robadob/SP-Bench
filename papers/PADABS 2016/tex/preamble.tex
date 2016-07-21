@@ -1,4 +1,5 @@
 \usepackage{amssymb}
+\usepackage{amsmath} 
 \setcounter{tocdepth}{3}
 \usepackage{wrapfig}
 \usepackage{graphicx}
@@ -23,8 +24,9 @@
     urlcolor=black
 }
 %Glossaries
-\usepackage[automake,acronym,section=chapter,hyperfirst=true]{glossaries}
+\usepackage[automake,acronym,section=chapter,hyperfirst=false]{glossaries}
 \makeglossaries
 
 
 \setlength{\intextsep}{0pt}%reduces gap under wrapped figures
+\lstset{basicstyle=\scriptsize\ttfamily,breaklines=true}

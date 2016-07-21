@@ -13,9 +13,11 @@
 \maketitle
 
 \begin{abstract}
-Fixed radius near neighbours (FRNNs) lies at the centre of many agent based models, whereby agents require awareness of their local peers. Due to it’s central role, handling of FRNNs is often a limiting factor of performance. However without a standardised metric to assess the handling of FRNNs, contributions to the field lack the rigorous appraisal necessary to expose their relative benefits. 
+Many agent based models require agents to have an awareness of their local peers. The handling of these fixed radius near neighbours (FRNNs) is often a limiting factor of performance. However without a standardised metric to assess the handling of FRNNs, contributions to the field lack the rigorous appraisal necessary to expose their relative benefits. 
 
-This paper presents a standardised specification of a multi agent based benchmark model. The benchmark model provides a means for the objective assessment of FRNNs performance, through the comparison of implementations. Results collected from implementations of the benchmark model under three agent based modelling frameworks show the CPU bound performance to scale linearly with agent population, in contrast the GPU accelerated framework only became linear after maximal device utilisation around 150,000 agents. The performance of each of the assessed frameworks was also found unaffected by changes to the rate of agent movement.
+This paper presents a standardised specification of a multi agent based benchmark model. The benchmark model provides a means for the objective assessment of FRNNs performance, through the comparison of implementations. Results collected from implementations of the benchmark model under three agent based modelling frameworks show the 64-bit floating point performance of each framework to scale linearly with agent population, in contrast the GPU accelerated framework's 32-bit floating point performance only became linear after maximal device utilisation around 100,000 agents.
+
+%The performance of each of the assessed frameworks was also found unaffected by changes to the rate of agent movement.
 
 \keywords{Parallel Agent Based Simulation, OpenAB, Benchmarking, Fixed Radius Near Neighbours, FLAMEGPU, MASON, Repast Simphony}
 
