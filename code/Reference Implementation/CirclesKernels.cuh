@@ -10,5 +10,6 @@
 
 __global__ void init_curand(curandState *state, unsigned long long seed = 12);
 __global__ void init_particles(curandState *state, LocationMessages *locationMessages);
+__global__ void init_particles_uniform(LocationMessages *locationMessages);
 __global__ void step_model(LocationMessages *locationMessagesIn, LocationMessages *locationMessagesOut);
 #endif
