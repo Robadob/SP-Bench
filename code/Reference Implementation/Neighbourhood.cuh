@@ -43,11 +43,7 @@ struct LocationMessage
 {
     unsigned int id;
     BinState state;
-#ifdef _3D
-    glm::vec3 location;
-#else
-    glm::vec2 location;
-#endif
+	DIMENSIONS_VEC location;
 };
 
 
@@ -55,9 +51,9 @@ struct LocationMessages
 {
 public:
     float *locationX;
-    float *locationY;
+	float *locationY;
 #ifdef _3D
-    float *locationZ;
+	float *locationZ;
 #endif
 #if defined(_GL) || defined(_DEBUG)
     float *count;
@@ -93,8 +89,8 @@ public:
 #ifdef _DEBUG
     DIMENSIONS_IVEC getGridPosition(DIMENSIONS_VEC worldPos);
     bool isValid(DIMENSIONS_IVEC bin) const;
-    int getHash(DIMENSIONS_IVEC gridPos);
-    DIMENSIONS_IVEC getPos(unsigned int hash);
+	DIMENSIONS_IVEC getPos(unsigned int hash);
+	int getHash(DIMENSIONS_IVEC gridPos);
     void assertSearch();
     void launchAssertPBMIntegerity();
 #endif

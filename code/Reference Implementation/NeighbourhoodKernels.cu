@@ -2,26 +2,26 @@
 //getHash already clamps.
 //#define SP_NO_CLAMP_GRID //Clamp grid coords to within grid (if it's possible for model to go out of bounds)
 
-__device__ DIMENSIONS_IVEC getGridPosition(DIMENSIONS_VEC worldPos)
+__host__ __device__ DIMENSIONS_IVEC getGridPosition(DIMENSIONS_VEC worldPos)
 {
 #ifndef SP_NO_CLAMP_GRID
     //Clamp each grid coord to 0<=x<dim
-    return clamp(floor(((worldPos - d_environmentMin) / (d_environmentMax - d_environmentMin))*d_gridDim_float), glm::vec3(0), d_gridDim_float-glm::vec3(1));
+	return clamp(floor(((worldPos - d_environmentMin) / (d_environmentMax - d_environmentMin))*d_gridDim_float), DIMENSIONS_VEC(0), d_gridDim_float - DIMENSIONS_VEC(1));
 #else
-    return floor(((worldPos - d_environmentMin) / (d_environmentMax - d_environmentMin))*d_gridDim_float);
+	return floor(((worldPos - d_environmentMin) / (d_environmentMax - d_environmentMin))*d_gridDim_float);
+	//#ifdef _3D
+	//    glm::ivec3 gridPos;
+	//#else
+	//    glm::ivec2 gridPos;
+	//#endif
+	//    gridPos.x = floor(d_gridDim.x * (worldPos.x - d_environmentMin.x) / (d_environmentMax.x - d_environmentMin.x));
+	//    gridPos.y = floor(d_gridDim.y * (worldPos.y - d_environmentMin.y) / (d_environmentMax.y - d_environmentMin.y));
+	//#ifdef _3D
+	//    gridPos.z = floor(d_gridDim.z * (worldPos.z - d_environmentMin.z) / (d_environmentMax.z - d_environmentMin.z));
+	//#endif
+	//
+	//    return gridPos;
 #endif
-    //#ifdef _3D
-    //    glm::ivec3 gridPos;
-    //#else
-    //    glm::ivec2 gridPos;
-    //#endif
-    //    gridPos.x = floor(d_gridDim.x * (worldPos.x - d_environmentMin.x) / (d_environmentMax.x - d_environmentMin.x));
-    //    gridPos.y = floor(d_gridDim.y * (worldPos.y - d_environmentMin.y) / (d_environmentMax.y - d_environmentMin.y));
-    //#ifdef _3D
-    //    gridPos.z = floor(d_gridDim.z * (worldPos.z - d_environmentMin.z) / (d_environmentMax.z - d_environmentMin.z));
-    //#endif
-    //
-    //    return gridPos;
 }
 
 __device__ int getHash(DIMENSIONS_IVEC gridPos)
@@ -145,15 +145,15 @@ __global__ void reorderLocationMessages(
         for (int k = next_key; k > key; k--)
             pbm[k] = indexPlus1;
     }
-#if _DEBUG
+#ifdef _DEBUG
     if (next_key > d_binCount)
     {
-		printf("ERROR: PBM generated an out of range next_key.\n");
+		printf("ERROR: PBM generated an out of range next_key (%i > %i).\n", next_key, d_binCount);
 		assert(0);
     }
     if (old_pos >= d_locationMessageCount)
     {
-		printf("ERROR: PBM generated an out of range old_pos.\n");
+		printf("ERROR: PBM generated an out of range old_pos (%i >= %i).\n", old_pos, d_locationMessageCount);
 		assert(0);
     }
 #endif
@@ -164,7 +164,8 @@ __global__ void reorderLocationMessages(
 #ifdef _3D
     ordered_messages->locationZ[index] = unordered_messages->locationZ[old_pos];
 #endif
-#if _DEBUG
+
+#ifdef _DEBUG
     //Check these rather than ordered in hopes of memory coealesce
     if (ordered_messages->locationX[index] == NAN ||
         ordered_messages->locationY[index] == NAN ||
