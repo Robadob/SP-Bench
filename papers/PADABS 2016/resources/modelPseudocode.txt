@@ -1,15 +1,15 @@
 vec myOldLoc;
 vec myNewLoc = myOldLoc;
-float r2 = 2*INTER_RAD;
+float r2 = 2*RADIUS;
 foreach neighbourLoc
 {
   vec toVec = neighbourLoc-myOldLoc;
   float separation = length(toVec);
   if(separation < r2)
   {
-    float k = (separation<INTER_RAD)?REP_FORCE:ATT_FORCE;
-    toVec = (separation<INTER_RAD)?-toVec:toVec;
-    separation = (separation<INTER_RAD)?separation:(r2-separation);
+    float k = (separation<RADIUS)?REP_FORCE:ATT_FORCE;
+    toVec = (separation<RADIUS)?-toVec:toVec;
+    separation = (separation<RADIUS)?separation:(r2-separation);
     myNewLoc += k * separation * normalize(toVec);
   }
 }
