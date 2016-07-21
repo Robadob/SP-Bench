@@ -133,8 +133,9 @@ bool SpatialPartition::isValid(DIMENSIONS_IVEC bin) const
 }
 void SpatialPartition::assertSearch()
 {
-    unsigned int outCount = getBinCount() + 1;
-    unsigned int tableSize = ((outCount / 10) + 1) * 10;
+	//return;//
+    unsigned int outCount = this->binCountMax + 1;
+	unsigned int tableSize = ((outCount / 10) + 1) * 10;
 
     //Copy raw PBM from device to host
     unsigned int *PBM_raw = static_cast<unsigned int *>(malloc(sizeof(unsigned int)*tableSize));
@@ -187,16 +188,16 @@ void SpatialPartition::assertSearch()
     //Copy every location and neighbour count from device to host
     float *d_bufferPtr;
     LocationMessages lm;
-    lm.locationX = (float*)malloc(sizeof(float)*locationMessageCount);
-    CUDA_CALL(cudaMemcpy(&d_bufferPtr, &d_locationMessages_swap->locationX, sizeof(float*), cudaMemcpyDeviceToHost));
-    CUDA_CALL(cudaMemcpy(lm.locationX, d_bufferPtr, sizeof(float)*locationMessageCount, cudaMemcpyDeviceToHost));
-    lm.locationY = (float*)malloc(sizeof(float)*locationMessageCount);
-    CUDA_CALL(cudaMemcpy(&d_bufferPtr, &d_locationMessages_swap->locationY, sizeof(float*), cudaMemcpyDeviceToHost));
-    CUDA_CALL(cudaMemcpy(lm.locationY, d_bufferPtr, sizeof(float)*locationMessageCount, cudaMemcpyDeviceToHost));
+	lm.locationX = (float*)malloc(sizeof(float)*locationMessageCount);
+	CUDA_CALL(cudaMemcpy(&d_bufferPtr, &d_locationMessages_swap->locationX, sizeof(float*), cudaMemcpyDeviceToHost));
+	CUDA_CALL(cudaMemcpy(lm.locationX, d_bufferPtr, sizeof(float)*locationMessageCount, cudaMemcpyDeviceToHost));
+	lm.locationY = (float*)malloc(sizeof(float)*locationMessageCount);
+	CUDA_CALL(cudaMemcpy(&d_bufferPtr, &d_locationMessages_swap->locationY, sizeof(float*), cudaMemcpyDeviceToHost));
+	CUDA_CALL(cudaMemcpy(lm.locationY, d_bufferPtr, sizeof(float)*locationMessageCount, cudaMemcpyDeviceToHost));
 #ifdef _3D
-    lm.locationZ = (float*)malloc(sizeof(float)*locationMessageCount);
-    CUDA_CALL(cudaMemcpy(&d_bufferPtr, &d_locationMessages_swap->locationZ, sizeof(float*), cudaMemcpyDeviceToHost));
-    CUDA_CALL(cudaMemcpy(lm.locationZ, d_bufferPtr, sizeof(float)*locationMessageCount, cudaMemcpyDeviceToHost));
+	lm.locationZ = (float*)malloc(sizeof(float)*locationMessageCount);
+	CUDA_CALL(cudaMemcpy(&d_bufferPtr, &d_locationMessages_swap->locationZ, sizeof(float*), cudaMemcpyDeviceToHost));
+	CUDA_CALL(cudaMemcpy(lm.locationZ, d_bufferPtr, sizeof(float)*locationMessageCount, cudaMemcpyDeviceToHost));
 #endif
     lm.count = (float*)malloc(sizeof(float)*locationMessageCount);
     CUDA_CALL(cudaMemcpy(&d_bufferPtr, &d_locationMessages_swap->count, sizeof(float*), cudaMemcpyDeviceToHost));
@@ -233,11 +234,11 @@ void SpatialPartition::assertSearch()
     FILE *file = fopen("../logs/PBM.txt", "w");
     fprintf(file, "ERROR: Neighbour search totals do not match (%u/%u)\n", matchFails, locationMessageCount);
     fprintf(file, "Raw PBM\n");
-    fprintf(file, "|%5s¦%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|\n", "", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9");
-    fprintf(file, "|-----¦-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|\n");
+    fprintf(file, "|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|\n", "", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9");
+    fprintf(file, "|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|\n");
     for (unsigned int i = 0; i < (outCount / 10)-1; i++)
     {
-		fprintf(file, "|%4u0¦%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|\n", i,
+		fprintf(file, "|%4u0|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|\n", i,
 			PBM_raw[(10 * i) + 0],
 			PBM_raw[(10 * i) + 1],
 			PBM_raw[(10 * i) + 2],
@@ -251,11 +252,11 @@ void SpatialPartition::assertSearch()
 			);
 	}
 	fprintf(file, "Bin Size\n");
-	fprintf(file, "|%5s¦%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|\n", "", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9");
-	fprintf(file, "|-----¦-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|\n");
-	for (unsigned int i = 0; i < (outCount / 10) - 1; i++)
+	fprintf(file, "|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|\n", "", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9");
+	fprintf(file, "|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|\n");
+	for (unsigned int i = 0; i < ((this->binCount+1) / 10) - 1; i++)
 	{
-		fprintf(file, "|%4u0¦%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|\n", i,
+		fprintf(file, "|%4u0|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|\n", i,
 			PBM_binSize[(10 * i) + 0],
 			PBM_binSize[(10 * i) + 1],
 			PBM_binSize[(10 * i) + 2],
@@ -269,11 +270,11 @@ void SpatialPartition::assertSearch()
 			);
 	}
 	fprintf(file, "Neighbour Count\n");
-	fprintf(file, "|%5s¦%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|\n", "", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9");
-	fprintf(file, "|-----¦-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|\n");
+	fprintf(file, "|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|\n", "", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9");
+	fprintf(file, "|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|\n");
 	for (unsigned int i = 0; i < (outCount / 10) - 1; i++)
 	{
-		fprintf(file, "|%4u0¦%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|\n", i,
+		fprintf(file, "|%4u0|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|\n", i,
 			PBM_neighbourhoodSize[(10 * i) + 0],
 			PBM_neighbourhoodSize[(10 * i) + 1],
 			PBM_neighbourhoodSize[(10 * i) + 2],
