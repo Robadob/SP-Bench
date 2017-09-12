@@ -168,6 +168,7 @@ void SpatialPartition::assertSearch()
     unsigned int *PBM_raw = static_cast<unsigned int *>(malloc(sizeof(unsigned int)*tableSize));
     memset(PBM_raw, 0, tableSize * sizeof(unsigned int));
     CUDA_CALL(cudaMemcpy(PBM_raw, d_PBM, sizeof(unsigned int)*outCount, cudaMemcpyDeviceToHost));
+
     //Calculate the size of every bin
 	unsigned int agtCount = 0;
     unsigned int *PBM_binSize = static_cast<unsigned int *>(malloc(sizeof(unsigned int)*tableSize));

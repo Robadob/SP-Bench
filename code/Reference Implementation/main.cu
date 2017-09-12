@@ -128,6 +128,7 @@ int main(int argc, char * argv[])
 #ifdef _GL
 	ParticleScene<SpatialPartition> *scene = new ParticleScene<SpatialPartition>(v, model);
 #endif
+
 	//Init model
 	if (!args.pipe&&!args.profile)
 	{

@@ -61,6 +61,7 @@ __global__ void step_model(LocationMessages *locationMessagesIn, LocationMessage
 #endif
     //Always atleast 1 location message, our own location!
 	const float rHalf = d_interactionRad/2.0f;
+	int ct = 0;
     do
 	{
 		assert(lm != 0);
@@ -72,17 +73,20 @@ __global__ void step_model(LocationMessages *locationMessagesIn, LocationMessage
 				separation = length(toLoc);
 				if (separation < d_interactionRad)
 				{
-					k = (separation < rHalf) ? d_repulse : d_attract;
-					toLoc = (separation < rHalf) ? -toLoc : toLoc;
+					k = sinf((separation / d_interactionRad)*3.141*-2)*d_repulse;
+					//k = (separation < rHalf) ? d_repulse : d_attract;
+					//toLoc = (separation < rHalf) ? -toLoc : toLoc;
 					toLoc /= separation;//Normalize (without recalculating seperation)
-					separation = (separation < rHalf) ? separation : (d_interactionRad - separation);
-					newLoc += k * separation * toLoc;
+					//separation = (separation < rHalf) ? separation : (d_interactionRad - separation);
+					newLoc += k * toLoc;
+					ct++;
 				}
             }
         }
 		lm = locationMessagesIn->getNextNeighbour(lm);//Returns a pointer to shared memory or 0
 	} while (lm);
     //Export newLoc
+	newLoc /= ct;
 	newLoc += myLoc;
 #ifdef _DEBUG
 	assert(!isnan(newLoc.x));

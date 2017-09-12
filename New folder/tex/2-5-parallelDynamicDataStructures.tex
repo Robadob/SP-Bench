@@ -1,0 +1,63 @@
+\section{Parallel Dynamic Spatial Data-Structures\label{sec:parallel-dynamic-spatial}}
+    
+    Having seen static data-structures capable of handling spatial data, it becomes necessary to explore the small quantity of dynamic solutions capable of handling spatial data.
+        
+    \subsection{\glsentryshort{cuda} Cuckoo Hash Table}
+      This hash-table was developed as part of Alcantara's PhD thesis in 2011 \cite{Alc11,AS*09}, which was concerned with creating a hash table capable of working in parallel on GPUs. The final implementation has been included in the \gls{cuda} primitives library CUDPP.
+      
+      Alcantara used the technique of parallel Cuckoo hashing, whereby to handle conflicts during parallel insertions \lstinline[language={C++}]!AtomixExch()! is used. This method efficiently performs an \gls{atomic} insert, returning the value replaced, allowing the threads to all reinsert in parallel until the empty record value is returned. 
+      
+      In earlier versions they had attempted cuckoo hashing into separate smaller sub-tables, streamlining the reconstruction process. It was found that this had a negative effect on the query time of the table. To remedy this in the final implementation, a single large table was used, and the small number of items that could not be placed were stored in a smaller stash. If the stash size is correctly estimated, this can effectively remove the need for rebuilds, however this comes at the overhead of having to check both the main table and the stash during queries.
+      
+      With the default configuration, the hash-table consumed $1.25N$ space, whereby $N$ is the number of items. At insertion, each item is allowed four probes, each with a maximum of 7 evictions. If these fail to place the item, it is placed into the stash. They noted that smaller tables incurred more stash usage.
+      
+      %How high is high, check the citation: Citation just says probablistic arguments show... without citing numbers.
+      To reduce the number of memory accesses when interacting with the stash, they utilised a smaller secondary hash table, whereby each item may only be located in one specific location. According to the research of Fredman et al, a hash table of size $k^{2}$ has a high chance of storing $k$ items before collision \cite{FKS84}.
+      
+      Alcantara's results found that their hash table is capable of outperforming a binary search across sorted data for random accesses in most cases.    
+      
+    \subsection{Coherent Parallel Hashing}
+      \glsadd{coherence}
+      Later in 2011 Garc{\'\i}a et al developed a new coherent hash-table for \gls{gpu} computation \cite{GL*11}, this time utilising Robin Hood hashing (See Section \ref{sec:hash-collision}), primarily evaluating their implementation against that of Alcantara's earlier GPU hash-table as available in CUDPP.
+      
+      Their experiments showed that their new technique outperformed Alcantara's implementation when constructing the table for a coherent dataset and when handling unconstrained queries (queries whereby keys outside of those present in the table are requested). Their table was able to handle 32 million keys at a \gls{load_factor} of 0.99 without exceeding a maximum age of 15, outperforming Alcantara which degrades past \glspl{load_factor} of 0.7 (although it is possible to remedy this, at the cost of slower queries).
+      
+      They noted the reason for slower construction under other circumstances is due to the need to update the maximum age table. The performance difference for unconstrained queries is also to be expected, due to the difference between the implementation's maximum probes during queries.
+      
+      %\note{They state: 'Note that this (the slowdown caused by the max age table) is only problematic if empty keys are queried: In case of constrained access the max age table is not used and does not have to be built.'.\\ However it is necessary to store max age table during construction, otherwise you are unable to track the age of inserted elements (unless you rehash them to detect age, which is probably slower than a memory read at high \glspl{load_factor}), a key factor of Robin Hood hashing.}
+      
+    \subsection{Dynamic Bounding Volume Hierarchies}
+      Whilst not intended for spatial point data as with the previously covered data-structures, Larson and M\"oller utilised a dynamic data-structure for use in collision detection \cite{LA06}. Their data-structure is a hierarchy of axis-aligned bounding boxes which enclose polygonal meshes. 
+      
+      Initially a single root node exists enclosing each dynamic object. Then as the simulation progresses, these trees are incrementally rebuilt to represent changes to the spatial configurations of the represented objects.
+      
+      During the collision detection stage of execution, all nodes within the hierarchy which are accessed are marked as active. This allows updates to the hierarchy to explicitly target reconstructions (referred to as refits) to the subtrees containing active nodes. This refit process begins from the active leaf nodes, and works it's way upwards.
+      
+      During the process of refitting, the difference between the volume of a parent node and the sum of its children's volumes is used to determine whether a subtree has become invalid. Invalid subtrees are then later repartitioned to reduce bounding overlap during the collision detection query stage.
+      
+      They stated among their results that their data-structure's lazy refits would be challenged by unnatural motions whereby initially neighbouring primitives moved in opposite directions. They also found that it's primary bottleneck was when an object was colliding with itself, it was not stated why this creates a bottle-neck however such a state would likely cause all of the nodes within the hierarchy to be marked as active.
+      
+\begin{landscape}
+\newpage
+    \subsection{Summary}
+      In contrast to both static \gls{gpgpu} and serial data-structures, there is a dearth of dynamic data-structures for use with spatial data. High performance trees require expensive constructions in order to optimise data accesses reducing their suitability for highly dynamic data. Collision detection is able to utilise trees due to them representing the hierarchy of scenes, which aides the traversal necessary to many graphics algorithms. Whereas in contrast mobile agents within complex simulations are very often independent not moving in cohesive groups, which increases the significance of necessary updates leading to the bottleneck found by Larson and M\"oller \cite{LA06}. 
+      
+      The only other \gls{gpgpu} capable dynamic spatial capable data-structures available are hash tables intended for arbitrary key-value pairs. This however means that they are unsuitable for performing neighbourhood searches, as they store no locality information.
+    
+      Table \ref{tab:parallel-structures-2} provides a brief overview of the data-structures covered in this chapter. 
+
+\begin{table}[bp]
+\begin{tabu}{|X[m,c]|c|c|c|c|c|c|}
+\hline 
+Data-Structure & Ordered & Insertion Avg & Insertion Worst & Search Avg & Search Worst & Worst Space Complexity\\
+\hline 
+CUDA Cuckoo Hash \linebreak Alcantara \cite{Alc11} & No & $$O(1)$$ & $$O(n)$$ & $$O(1)$$ & $$O(1)$$ & $$O(n)$$\\
+\hline 
+Coherent Parallel Hash \linebreak Garcia et al \cite{GL*11} & Coherent & $$O(1)$$ & $$O(n)$$ & $$O(1)$$ & $$O(1)$$ & $$O(n)$$\\
+\hline 
+Dynamic Bounding Volume Hierarchy \linebreak Larson \& M\"oller \cite{LA06} & Yes & $$n/a*$$ & $$n/a*$$ & $$O(log(n))$$ & $$O(log(n))$$ & $$O(n)$$\\
+\hline 
+\end{tabu}
+\protect\caption[Overview of the dynamic spatial data-structures discussed in section \ref{sec:parallel-dynamic-spatial}.]{Overview of the data-structures discussed in section \ref{sec:parallel-dynamic-spatial}. \\ * Items within the dynamic bounding volume hierarchy are created by splitting existing nodes, it is not designed for external insertions.\label{tab:parallel-structures-2}}
+\end{table}
+\end{landscape}

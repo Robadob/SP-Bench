@@ -1,0 +1,149 @@
+\section{Parallel Static Spatial Data-Structures\label{sec:parallel-static-spatial}}
+  With an understanding of how \gls{hpc} utilises parallel algorithms, it is possible to discuss the techniques used to apply spatial data to parallel specific nuances.
+  
+  The most obvious of these nuances is that of arbitration when concurrent threads wish to access the same resource. In multi-threaded \gls{cpu} systems this is usually synchronised via locking protocols such as MUTEX, whereby a thread must wait to acquire a lock to a resource before accessing it. Other solutions make use of \gls{atomic} operations, whereby a limited set of thread-safe operations are  serialised to avoid potential \glspl{race_condition}.
+  
+  Rendering and animation make use of parallel data-structures on \gls{gpu} hardware for handling collision and decomposing scenes. Further afield \gls{gis} software makes use of large databases of spatial data.
+  
+  The following subsections discuss some of these existing spatial data-structures which have been implemented for parallel architectures. Whilst these data-structures are not all suitable for providing neighbourhood searches that this thesis is concerned with, it is important to provide an awareness of the techniques that have been used.
+  
+  \subsection{Hashing\label{subsec:parallel-hash}}
+    Hashing structures are a powerful data-structure for memory-bounded algorithms, their almost direct access to elements can provide an advantage over many ordered structures. There hasn't been a huge amount of work around the use of parallel hashing systems outside of small-scale thread-safe \gls{cpu} targeted code (e.g. Java's synchronised \lstinline[language={Java}]!Hashtable! type), however below are details of techniques that have been used and how they handle arbitration.
+    
+    \subsubsection*{Perfect Spatial Hashing}
+
+\begin{wrapfigure}{O}{0.6\columnwidth}
+  \begin{centering}
+    \includegraphics[width=0.6\columnwidth,keepaspectratio]{\string"../resources/hash-perfect\string".pdf}
+  \par\end{centering}
+  \protect\caption[A visual representation of a perfect hash table that utilises a secondary offset table.]{\label{fig:hash-perfect}A visual representation of a perfect hash table that utilises linear probing and a secondary offset table.}
+\end{wrapfigure}
+      \glsadd{perfect_hash}
+      In 2006 Lefebvre \& Hoppe presented a scheme for generating perfect spatial hashes of point-data, capable of maintaining spatial \gls{coherence} \cite{LH06}. Their technique combines two imperfect hash functions and an offset table to provide queries in exactly two memory accesses. The offset table is compacted by the need to only store a single byte for 15-25\% of the number of elements to be stored.
+      
+      The use of a perfect hash however makes the construction of the table significantly more computationally expensive. The algorithm for constructing the table first calculates how many of the items hash to the same location within the offset table. The 8-bit offsets are then generated, starting from the offset with the most inputs, placing elements into the hash-table. They found this to work appropriately with suitably sized offset tables, however noted that backtracking could be used were the algorithm to reach a stalemate state.
+      
+      In order to maintain \gls{coherence} within the main hash-table, when selecting offset values, the most coherent offset is chosen. To accomplish this, the inputs which share the same offset table hash are temporarily mapped into the main hash-table to identify how many of their spatial neighbours would be their neighbours within memory at each offset. This algorithm is simplified with two heuristic rules: The offset values of neighbouring entries in the offset-table are first attempted (due to the \gls{coherence} of the offset-table); following this free neighbouring slots to spatial neighbours that have already been placed into the hash-table are attempted.
+      
+      Their data-structure is compact and utilises a low number of memory accesses when performing queries. However the construction times for their hash-tables are costly. Using hardware from 2006, their algorithm was capable of constructing a fast table of ~11,000 elements in 0.2 seconds, however the optimised table takes 0.9 seconds. Whilst this performance is likely to have improved in the decade since this research, it is unlikely to provide fast enough constructions for real-time motion at an interactive frame-rate as is required for complex simulations. This is highlighted by their note that future work could involve extending the hashing to support efficient dynamic updates.
+   
+    \subsubsection*{Uniform Spatial Partitioning\label{sub:spatial-partitioning}}
+\begin{wrapfigure}{O}{0.5\columnwidth}%
+  \begin{centering}
+  \includegraphics[width=0.5\columnwidth]{\string"../resources/spatial-partition\string".pdf}
+  \par\end{centering}
+  \protect\caption[A visual representation of uniform spatial partitioning.]{\label{fig:spatial-partitioning}A visual representation of uniform spatial partitioning. The four points A-D are allocated bins (\#0-3) based on their spatial location. The data attached to these points is stored in an an array which has been sorted according to their bin id. The bin index provides the starting index in the data array for the point data for each bin.}
+\end{wrapfigure}%
+      As seen in Sections \ref{sec:complex-sph} \& \ref{sec:complex-general} the use of spatial subdivision into a uniform grid of bins is a common technique used for managing spatial data.
+      \glsadd{coherence}
+      Each time-step the data-structure is reconstructed. The first stage generates a coherent hash for each item, this maps their spatial positions to a bin such that items sharing a bin share the same hash. The data is next sorted according to this hash. Once sorted the boundaries between bins are detected and stored in a secondary array which provides an index to accessing the bins.
+      
+      This technique uses minimal memory, as there is no buffer space required, and the only additional memory used is to store the index. The index requires a single integer per bin (including empty bins), that stores the start index for records mapped to that bin (the end index can be found by reading the start index of the following bin). It does however require a full rebuild each time-step as positions change, whilst this is clearly sub-optimal, \glspl{gpu} have been shown to provide excellent performance when sorting.
+      
+      The use of uniformly sized bins does however mean that data of uneven densities could lead to many empty bins with a small number of densely populated bins. This does however allow neighbours to be searched using 1-2 reads per bin (as searching neighbouring bins would permit reuse of boundaries), something which would require significantly more reads for a non-uniform bins.
+              
+\begin{wrapfigure}{O}{0.31\columnwidth}%
+  \begin{centering}
+  \includegraphics[width=0.31\columnwidth]{\string"../resources/morton-4\string".pdf}
+  \par\end{centering}
+  \protect\caption{\label{fig:morton}A level 4 Z-order curve (Morton code) in 2 dimensions.}
+\end{wrapfigure}%
+
+      Goswami et al were able to improve the performance of uniform spatial partitioning neighbour searches during \gls{sph} \cite{GS*10}. Bins within their partitioning are sorted according to a Z-order space-filling curve (also known as a Morton code, shown in Figure \ref{fig:morton}), this ensures that all particles lying within any power of two aligned block have contiguous Z-indices. This additional locality ensures that more neighbourhoods consist of contiguous blocks of memory, therefore neighbourhood searches are more likely to benefit from contiguous data becoming cached. They utilised a look-up table for Z-indices to ensure efficient construction.
+  
+      Hongyu et al attempted to speed up uniform spatial partitioning by optimising the reconstructions, so they sorted from the result of the previous sort \cite{HY*15}. They found this to provide a 2.3x performance improvement to a small \gls{sph} simulation of 8192 particles assigned to a 16x16x16 grid, however when applied to larger simulations the performance was at parity with a full sort.
+      
+    \subsubsection*{Neighbourhood Grid}
+      Joselli et al have described a data-structure, neighbourhood grid. This data-structure has been designed to optimise \gls{sph} by assigning each particle to its own bin, rather than the uniformly sized bins found in uniform spatial partitioning \cite{JR*15}. This binning system instead creates an approximate spatial neighbourhood, which has permitted performance improvements of upto 9 times when compared to uniform spatial partitioning methods.
+      
+      By storing particles to unique bins within a regular grid, neighbourhood searches can be carried out surveying a constant radius of directly adjacent bins. With a radius of 1 cell in 3 dimensions this reduces all neighbourhood searches to checking 26 bins, and in 2 dimensions only 8 bins. This provides constant time queries, rather than queries that increase with the density of particles.
+
+      As particles move, the data-structure must be sorted such that spatial neighbours remain close within the grid. A bi-tonic sort was used in their development and testing, which sorted each dimension in a separate pass, however the focus was on their data-structure and the sorting algorithm used is independent of that. It was clarified that they do not repeat earlier sorts, if the 2nd or 3rd passes also make changes. They found that this would impact the performance, whilst only correcting around a single percentage of particles.
+    
+    %\subsubsection*{Some \gls{opencl} Hash Table}
+      %In 2014, Neele implemented Laarman et al' \cite{LPW10} multi-threaded lockless hash-table using \gls{OpenCL} \cite{Nee14}. This table takes advantage of the \gls{atomic} compare and swap operation, similar to that of Alcantaras hash-table.
+      
+      %Their testing was limited to less than 4000 items and only compared against the \gls{cpu} counterpart, so it is unlikely any significant innovation or improvements were developed.
+      
+  \subsection{Parallel Trees}
+    The advantage that trees have over hashing data-structures is their provision of links for traversing between data--the order of this data is dictated by the particular tree. This comes at the cost of multiple memory accesses to locate nodes by following the tree structure, whereas hashing structures are often able to provide direct access. The below sections provide a discussion of the implementations behind these data-structures.
+
+    \subsubsection*{Parallel kd-Trees}
+      As kd-trees are primarily applied to the ray tracing process of rendering, they have been implemented many times over to utilise parallel computation as researchers strive for real-time ray-tracing of complex scenes. 
+      
+      Shevtsov et al have described how kd-tree construction is easily made parallel by  partitioning the the input geometry between available threads and only synchronising between each stage of construction \cite{SSK07}. The alternative technique is that of constructing multiple sub-trees, however this requires an initial decomposition to prevent the sub-trees from overlapping. Calculating a balanced decomposition of the input geometry is computational intensive, whereas the alternative of partitioning space is likely to lead to poor load balancing. Their implementation was configured to utilise a quad-core processor and only calculate approximate bounding boxes. This allowed it to outperform an existing optimised single threaded accurate kd-tree construction by over 100x, constructing a kd-tree of over 1 million triangles in 0.45 seconds.
+      
+      Popov et al utilised a kd-tree with 'ropes' between adjacent nodes to perform efficient \gls{gpu} ray tracing \cite{PG*07}. By having each node maintain a link to a neighbouring node from each face, the necessity of the stack as is traditionally used during ray-tracing kd-tree traversal is removed. This makes the technique more suitable for \gls{gpu} computation. Once the initial node of entry has been identified, the ray tracing algorithm is now able to compare a ray trajectory against a node. If it does not intersect with any of contained geometry, the face of the kd-tree which the ray exits via is identified and the rope to the neighbouring node attached to that face is utilised till the ray collides or exits the scene. Further speedup is achieved by grouping similar rays into packets, such that rays passing through the same node can share computation. This however requires the use of a heuristic, such as surface area heuristic (SAH), to select the best node when rays exit via different faces. They compared their single and packet ray techniques against the OpenRT ray tracing library and found they were able to trace at 60\% and 550\% higher FPS respectively.
+      
+    \subsubsection*{Parallel Matrix Tree}
+      In 2011, Andrysco \& Trioche developed a dynamic tree implementation, capable of parallel construction and representing any tree with a constant branching factor and regular structure \cite{AT11}. 
+      Their research was concerned with improving matrix trees \cite{AT10}, whereby each layer of a tree is represented as a matrix, such that their structure is regular, removing the need for scattered allocations, allowing them to better take advantage of parallel hardware when used for ray-tracing. In essence, the bottom layer of the tree is assembled as an array, containing each of the non-empty nodes in a known order. The tree structure above is then easily computed in parallel.
+      
+      The results show that it was able to construct KD-Trees for 17,000 triangles in 0.002 seconds, with 174k triangles only taking 0.008 seconds. Similarly testing showed that the implementation significantly reduced the nodes traversed during multiple ray-tracing samples, compared to the existing state of the art.%(Surface Area Heuristic)
+    \subsubsection*{Parallel R-Trees}
+      R-trees are primarily used with large databases of spatial data, as such early work targeted the primary bottle neck I/O. This research consisted of multiplexing the R-tree across multiple disks, by using a branching factor equal to the number of available disks, and each child node of the same parent maps to a unique disk \cite{KF92}.
+      
+      Luo et al implemented the first comprehensive \gls{gpgpu} r-tree \cite{LWL12}. Their experiments found the \gls{gpgpu} implementation to perform constructions 20 times faster, and queries upto 30 times faster than existing sequential algorithms when working with \gls{on-chip} data.
+      
+      Their technique for construction was to only parallelise the two operations of sorting and packing, which are heavily used in sequential construction algorithms, whilst utilising the \gls{cpu} for the remaining sequential operations. This enabled their construction to produce r-trees of identical quality to existing algorithms, avoiding a concern levied at earlier parallel techniques that worked by merging smaller trees.
+      
+      Their technique for parallel queries was to represent the r-tree as two linear arrays, one providing an index mapping the nodes to their parents and the other to storing rectangle information for each node. They then utilise a two tiered parallel approach to queries. Each block of threads performs a different query, and multiple blocks can be launched to perform multiple queries concurrently. Their threads within each block are able to work together performing a breadth first search, using a frontier queue to communicate \cite{LWH10}. However in order to take advantage of memory coalescing, each thread is responsible for an entry, rather than a node. This includes threads responsible for empty entries. Further performance was gained by storing the top levels of the r-tree within the constant cache, which reduced the execution time of queries by 10\%.
+      
+      Whilst their parallel query technique has high utilisation of threads when query rectangles have significant overlaps, they found it unable to fully utilise resources when queries did not have many overlaps. To remedy this they were able to encode their queues such that each block could handle multiple queries.
+
+    \subsubsection*{Parallel Quadtrees \& Octrees}
+      Burtscher and Pingali described a \gls{gpgpu} implementation of the Barnes Hunt n-body algorithm \cite{BP11}, which uses a parallel octree that holds a single body within each leaf node. The tree nodes and leaves are both stored in the same array, whereby leaves index from 0, and internal nodes index in reverse from the end of the array. They also have a single array per field (Struct of Arrays), to take advantage of memory coalescing.
+      
+      %The below mentioned \gls{atomic} is probably atomicExch(), whoever returns not -2 on insert of -2 wins.
+      They construct their octree via an iterative insert algorithm. Each thread inserting a different body attempts to lock the appropriate child pointer via an \gls{atomic} operation. If the lock is gained and child pointer is empty, the body is simply added. Otherwise the node is partitioned and both the existing and new bodies are inserted. A \gls{memory_fence} operation is then executed to ensure other threads are made aware of the new tree structure before the lock is released. Other threads that fail to gain a lock, continue to retry until success is gained. The SIMT paradigm, heavily reduces the retries that must occur, as the thread divergence causes threads which failed to gain a lock to wait for any successful threads within a warp to complete, reducing the number of failed memory accesses. The \lstinline[language={C++}]!__synchthreads()! operation is used, to ensure that warps whereby no locks are gained do not utilise the GPU with unnecessary memory accesses. This then iterates until all bodies have been inserted.
+      
+      They also detail the techniques they then use for traversing and sorting the tree, where the sorting is necessary to speed-up the neighbourhood searches when calculating the forces applied to each body. However they do note that some of their techniques are constrained by the lack of global memory caching in earlier \glspl{gpu}. 
+      
+      In summary their complete algorithm provided around 10x speed-up over an existing \gls{cpu} algorithm. As would be expected the tree construction and neighbour search kernels both consumed the most \gls{gpu} time.
+      
+      Jian et al extended this to produce a faster \gls{gpgpu} quadtree implementation (CUDA-quadtrees) whereby the tree was contained within \gls{on-chip} shared memory rather than global memory \cite{JYL12}. In order to construct quadtrees, each block of threads builds a quadtree for a different region, with each thread performing a different insertion. Notably they used a similar locking technique to that of Burtscher and Pingali, with the key difference that each block constructs a different quadtree in shared memory, which is copied to global memory after construction. Similarly, searching the quadtrees involves loading the related trees back into shared memory, and performing a parallel depth first search. When comparing their quadtrees against the official implementation of Burtscher and Pingali's octree, they found their implementation to perform significantly faster (100x) in their  construction experiments which extended to 1,000,000 items and around 10x faster in searches.
+  
+  \subsection{Primitives}
+    There are several parallel primitive libraries available for use with \gls{cuda}. These each provide \gls{gpu} optimised implementations of algorithms common to most \gls{gpgpu} tasks (e.g. sort, reduce, partition, scan) in a templated fashion. These allow developers to utilise highly optimised algorithms, without needing to spend their own time profiling.
+    Thrust \cite{Thrust} and \gls{cudpp}\ \cite{CUDPP} both consist of C++ template libraries. Their algorithms overlap in many cases and provide similar performance (this may vary per algorithm). However Thrust is primarily targeted at \gls{cuda} programmers, providing container classes to abstract the sharing of data between host and device, whereas \gls{cudpp} is capable of being used by non-\gls{gpu} code.
+    
+    CUB \cite{CUB} instead targets every layer of \gls{cuda} programming, allowing primitives to be applied at warp, block and device-wide scopes. This lower-level architecture allows the algorithms to be used inside kernels, removing any overhead of additional kernel launches. CUB's documentation details the performance of it's device level algorithms against those available in Thrust across several \gls{cuda}-capable devices. CUB is shown to range from matching Thrust's performance to handling twice as many inputs per second across the tested devices.    
+    
+    %More recently Paul Richmond has presented benchmarks of an implementation of counting sort, which utilises \gls{atomic} operations, allowing it to out-perform the radix sort present in Thrust under most architectures and data diversities(?)...
+  \subsection{Summary}
+    This section has shown that there are a number of parallel (\gls{gpu}) data-structures for use with spatial data and they are often maximally performant under limited circumstances, leaving space for improvements in many areas. 
+    
+    Table \ref{tab:parallel-structures} provides a brief overview of the data-structures covered in this chapter. It clearly shows the divide between the access complexity of hashing and tree data-structures, whilst they all share similar space complexities. However due to the diverse applications of these data-structures, not all are suitable for providing neighbourhood searches. Uniform spatial partitioning and the parallel r-tree are most suitable for this task, however the nature of tree search search suggests that the r-tree would be less performant.
+    
+     In order to achieve performant parallel algorithms, we have seen that existing implementations make use of \gls{atomic} operations, shared memory and memory fencing. Where it is infeasible to re-implement common general algorithms, there are highly optimised \gls{cuda} libraries providing templated implementations at device, block and warp-wide scopes.
+     
+\tabulinesep=1.2mm
+\begin{landscape}
+\newpage
+\note{include build cost in table?}
+\begin{table}
+\begin{tabu}{|X[m,c]|c|c|c|c|c|c|}
+\hline 
+Data-Structure & Ordered & Insertion Avg & Insertion Worst & Search Avg & Search Worst & Worst Space Complexity\\
+\hline 
+Perfect Spatial Hash \linebreak Lefebre \& Hoppe \cite{LH06} & Coherent & n/a & n/a & $$O(1)$$ & $$O(1)$$ & $$O(n)$$\\
+\hline
+Uniform Spatial Partitioning (b=bins) \linebreak Goswami et al \cite{GS*10} & Yes & n/a & n/a & $$O(n/b)$$ & $$O(n)$$ & $$O(n+b)$$\\
+\hline 
+Neighbourhood Grid \linebreak Joselli et al \cite{JR*15} & Partial* & n/a & n/a & $$O(n)$$ & $$O(n)$$ & $$O(n)$$\\
+\hline 
+Parallel kd-tree \linebreak Popov et al \cite{PG*07} & Yes & n/a & n/a & $$O(log(n))$$ & $$O(log(n))$$ & $$O(n)$$\\
+\hline 
+Parallel Matrix Tree \linebreak Andrysco \& Trioche \cite{AT10} & Yes & n/a & n/a & $$O(log(n))$$ & $$O(log(n))$$ & $$O(n)$$\\
+\hline 
+Parallel R-tree \linebreak Luo et al \cite{LWL12} & Yes & n/a & n/a & $$O(log(n))$$ & $$O(log(n))$$ & $$O(n)$$\\
+\hline 
+Parallel Octree \linebreak Burtscher \& Pingali \cite{BP11} & Yes & n/a & n/a & $$O(log(n))$$ & $$O(log(n))$$ & $$O(n)$$\\
+\hline 
+\end{tabu}
+
+\protect\caption[Overview of the static spatial data-structures discussed in section \ref{sec:parallel-static-spatial}.]{Overview of the data-structures discussed in section \ref{sec:parallel-static-spatial}. Insertions are n/a as these data structures are treated as static structures, whereby all elements are inserted simultaneously prior to use. \\ * Data within the neighbourhood grid is sorted in a separate pass for each spatial dimension, this can cause some (stated as ~1\%) of the data to be out of order in the earlier dimensions.\label{tab:parallel-structures}}
+
+
+\end{table}
+\end{landscape}

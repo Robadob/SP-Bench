@@ -1,3 +1,0 @@
-java FLAMEGPUBuilder -w 100 -d 0.01 -rad 5 -attract 0.01 -repel 0.01 -in . -out "FLAME_VALIDATION.exe"
-
--device 1 -model 100 0.01 5 0.01 0.01 100 -seed 1 -export -init

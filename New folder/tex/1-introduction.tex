@@ -1,0 +1,100 @@
+\chapter{Introduction}
+  %Microscopic systems such as the network of neurons within a brain, the interaction of molecules that constitute an immune system, macroscopic systems like the organisational behaviour of ants, also the cooperation of vehicles on a motorway and even abstract systems such as networks of social relationships and the global economy. These complex systems are something that surround us in our daily lives, enabling both life and our modern society today.
+  
+  %These systems are made complex by their large number of constituent actors arranged in organisational hierarchies, interacting to produce high-level emergent behaviour which feeds back into the system. These features create a system whereby a small amount of spontaneity produces robust order. It is this order produced from apparent chaos that fascinates researchers in fields from Astronomy to Social Science.
+  
+  %Overview of complex systems
+  Complex systems can be identified by their large number of constituent actors arranged in organisational hierarchies. It is the interaction of these many agents, that combines to produce high-level emergent behaviour. This high-level behaviour then feeds back into the system. This process allows many small spontaneous actions to produce a visible and robust order.
+  
+  %Examples of complex systems
+  These complex systems are found everywhere in daily life, both in our surrounding environment and among the processes that permit our bodies to continue functioning. These systems may be: microscopic, such as the network of neurons within a brain; macroscopic, like the organisational behaviour of ants; or abstract, such as the global economy.
+  
+  %Justification of why to research complex systems
+  It is impractical to directly study most complex systems: whether the system is too large to control, too expensive to measure or simply too harmful to modify. Understanding how a systems chaotic low-level interactions affect it's high-level behaviour is of interest to many researchers in fields from Astronomy to Social Science.
+\begin{wrapfigure}{O}{0.5\columnwidth}
+  \begin{centering}
+    \includegraphics[width=0.5\columnwidth,keepaspectratio]{\string"../resources/Moniac[flickr-kevandotorg]\string".jpg}
+  \par\end{centering}
+  \protect\caption[The MONIAC on display at the London School of Economics.]{\label{fig:MONIAC}The MONIAC on display at the London School of Economics.\\ \em{CC by-nc 2.0, flickr:kevandotorg}}
+\end{wrapfigure}
+
+  %Early complex simulations overview
+  This desire to decode the chaos and identify shortcuts for manipulating the systems to produce more desirable outputs has led to demand for the capability to simulate complex systems. Initially in the late 1940s, due to the size and expense of digital computers, analogue computers were developed for modelling these systems. In the case of the Monetary National Income Analogue Computer (MONIAC), a combination of transparent pipes and tanks were filled with coloured water (Figure \ref{fig:MONIAC}), representing the UK economy and the flow of money \cite{Pik54}.
+  
+  %Increase in demand due to better feasibility, yet still constrained
+  As digital computers became more accessible to researchers, simulation development transitioned to target them, allowing the representation of complex behaviours that were otherwise challenging to model within a physical machine. By the early 1980s various groups were using digital computer models, many of which have derivative versions that are still in use today \cite{Van82,GM85}. Despite the improvements brought to complex system modelling by digital computers, the size and speed of simulations has always been constrained primarily by the advances in processor clock speeds.
+  
+  %GPGPU has removed some of these constraints by providing highly parallel
+  The introduction of general purpose programming of \glspl{gpu} in 2001 provided a new boost to the modelling of complex systems. This enhanced the intuitive serial operations of traditional processors (\glspl{cpu}) by allowing parallel operations to be off-loaded to highly scalable \glspl{gpu}. The hierarchical structure of actors within complex systems is ideal for parallel computation, and, as such, the performance of most complex system models can be improved when rewritten to target GPUs.
+  
+  \note{(above sentence) What makes a system suitable for a parallel architecture, and how does this also apply to GPUs. (e.g. data-parallel etc).}
+  %GPGPU does however introduce further challenges
+  Developing parallel algorithms for use with GPUs is however more challenging than simply dividing the algorithm between the available threads. Similarly, when working with multi-dimensional data, this can be further complicated. Furthermore the hardware architecture of GPUs must be accounted for when designing algorithms, as many performance critical features differ from those present in \glspl{cpu}.
+  
+  %Luckily there have also been tools created, these can help development of simple models
+  There are now many frameworks that reduce the skills required to implement models of complex systems, although these primarily target \glspl{cpu} with a minority capable of utilising GPUs (e.g. FLAMEGPU \cite{RR11}). The simpler a model and the targeted architecture, the easier it is to decompose into a format suitable for these frameworks. However with this simplification there comes a loss of efficiency, as generalisation is prioritised over precise solutions. This is particularly apparent when we consider the spatial data-structures required by many complex simulations, which is the focus of this PhD.
+  \note{Provide more detail in the above paragraph, re:generalisation often loses efficiency.}
+  
+  %Many complex systems however contains mobile spatial agents, these are complex so have remained overlooked (by the above tools)
+  Many complex systems contain mobile spatial actors that are influenced by their neighbours whether they are particles, people, vehicles or planets. The performance of the data-structures used to manage this dynamic spatial data often remains overlooked.
+  
+  %These techniques exist for handling static spatial data, which isn't suitable for dynamic use
+  Applications utilising static spatial data, have many options covering a wide range of use-cases available to them \cite{FB74,Mea80,FKN80,Gut84,SRF87} (discussed in section \ref{sec:serial-spatial}), with research as recent as JiTTree providing \gls{gpu} alternatives \cite{LB*16} (discussed in section \ref{sec:parallel-static-spatial}). These static techniques however utilise costly optimisation strategies to ensure searches are performant, making them undesirable for highly dynamic data. 
+  
+  %On the other hand
+  On the other hand there are few data-structures capable of handing dynamic spatial data on \glspl{gpu} (discussed in section \ref{sec:parallel-dynamic-spatial}). This has lead most complex simulations handling dynamic spatial data to rely on uniform spatial partitioning to provide neighbourhood searches \cite{GS*10}. This technique utilises a static data-structure which must be reconstructed when any data moves, irrespective of the degree to which the data has changed.
+  
+  There have been several attempts to improve the performance of this suboptimal technique \cite{GS*10,HY*15,JR*15}. However there remain many avenues to be investigated to further advance the performance of dynamic spatial data on \glspl{gpu}.
+  
+  The reconstruction process of this static data-structure currently reorganises all agents, despite only a minority having moved enough to justify relocation. Relocating only necessary the minority, would reduce the number of costly memory accesses significantly. Furthermore, reducing the number of agents unnecessarily accessed during neighbourhood search can further benefit performance.
+  
+  These are but two of the challenges when handling dynamic spatial data on \glspl{gpu} which this thesis sets out to address. By investigating existing techniques used for handling spatial data, and optimising \gls{gpu} algorithms, a basis has been formed from which it is believed that advances to the handling of dynamic spatial data on \glspl{gpu} can be produced. Such advances would be beneficial to a wide range of research disciplines by facilitating the production of larger and faster complex system simulations.
+ 
+%\clearpage%Save having half a sentence on the bottom of 1 page
+  \section{Research Objectives}
+    The question this research aims to answer is: What techniques can be used for improving the performance of neighbourhood searches of spatial data in a data-parallel paradigm and during \gls{gpgpu} computation? 
+
+    The primary objective of this research is to provide a general implementation of a data structure capable of handling dynamic spatial data requiring neighbourhood accesses. This implementation should allow others to more easily and more significantly improve the performance of any \gls{gpgpu} applications working with dynamic spatial data. Following a general implementation, domain specific implementations should be produced, to further increase performance in select use-cases.
+
+    Secondary objectives that will assist in the completion of the primary objective are:
+    \begin{itemize}
+      \item To produce \gls{gpgpu} capable data structures that improve:
+      \begin{itemize}
+        \item Accesses to dynamic spatial data.
+        \item Accesses to irregularly distributed dynamic spatial data. 
+      \end{itemize}
+      \item To evaluate produced data structures using:
+      \begin{itemize}
+        \item Theoretical analysis to identify expected performance under various usage scenarios.
+        \item Benchmarks to compare performance against existing techniques using real-world scenarios that cover both typical and edge-cases.
+      \end{itemize}
+    \end{itemize}
+
+\begin{comment}
+  \section{Contribution to Knowledge}
+    %Breakdown of the novel points of thesis
+    \begin{itemize}
+      \item Several optimistic paragraphs regarding the motivation for the research and it's potential..
+    \end{itemize}
+\end{comment}
+
+\begin{comment}
+  \section{Publications}
+    %List of publications produced during PhD
+    \begin{itemize}
+      \item 
+    \end{itemize}
+\end{comment}
+
+  \section{Summary of Chapters}
+    \begin{itemize}
+      \item Chapter \ref{chap:literature} (Existing Work) details a high level overview of existing work in the fields of parallel and spatial data structures.
+    
+      \item Chapter \ref{chap:work2date} (Work to Date) explains the fields explored and how they lead to identification of dynamic spatial data structures that is being investigated within this thesis.
+      
+      \item Chapter \ref{chap:proposal} (Proposal) provides a justification for the novelty and appeal of the research to be carried out in conjunction with the proposed plan of work.
+      
+      \item Appendix \ref{appendix:a} contains a paper on pedestrian modelling techniques which was submitted to AAMAS 2015.
+      
+      \item Appendix \ref{appendix:b} outlines actions that have been taken which have benefited myself as a research to fulfil the requirements of the doctoral development program (DDP).
+    \end{itemize}

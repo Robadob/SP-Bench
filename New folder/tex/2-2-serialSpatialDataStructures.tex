@@ -1,0 +1,136 @@
+\section{Spatial Data-Structures\label{sec:serial-spatial}}
+  %\todo{Tie in voronoi diagrams and MaNG? to this section \cite{SA*08}.}
+  There are existing techniques used when working with dynamic spatial data. However these often rely on static data-structures which must be completely reconstructed to accommodate movement of even a small number of elements. The section below will discuss existing data-structures, examining the underlying algorithms used and the functionality they provide. Whilst not all of these data-structures provide the neighbourhood search functionality required of complex simulations, it is valuable to understand their strengths and weaknesses as their algorithms may, in part, be applicable to a more suitable solution.
+  
+  The following subsections discuss some of the techniques used by hashing and tree data-structures. These two families of data-structure are both highly suitable for storing spatial data.
+  
+  \subsection{Hashing Schemes\label{subsec:hashing-schemes}}
+    Hash-Tables, Hash-Maps \& Hash-Sets are a family of data-structures that fundamentally rely on hashing to provide an index, used in the storage and retrieval of data from an array. Hashes are good for working with any data whereby random access is required and keys do not form a regular pattern. This makes them suitable for storing spatial data. Some hashes used with spatial data allow data to be stored coherently in bins of their local neighbourhood. Whilst this locality benefits memory accesses, many hashing data-structures rely on data being uniformly distributed, as such the requirement of spatial coherence makes most traditional hashing techniques unsuitable. There are many different methods for implementing hashing data-structures and each implementation has slightly different properties that effect the performance of insert and delete operations.
+    
+    Hashing structures are inherently statically sized. Items are placed into an array according to how their hash indexes into the array. This does however mean that once the ratio of items to maximum items (\gls{load_factor}) becomes too high, collisions are increasingly likely and the data-structure must be rebuilt with larger storage (some implementations may also rebuild if probing fails x times during insertion). This process can be time consuming when working with unknown or variable quantities of data, as every item must be re-hashed. The action of growing a hash-table requires memory for both the old and new hash-tables simultaneously, which can easily lead to exceeding memory bounds when working with large tables or tight memory constraints. Similarly, as items are deleted, it may be necessary to rebuild the data-structure to reduce its memory footprint.
+    
+    \subsubsection*{Good Hash Functions}
+      Ideally a good hash function will be used that reduces collisions, which involves finding a function capable of approximate uniform hashing. This is the action of spreading elements throughout the possible range, in as uniform and random process as possible.
+      
+      It is most common for hash functions to accept keys as an integer. When this is not the case it is usually simple to coerce keys into an integer. It is necessary to analyse the keys, before developing the function for coercing them. For example if the keys were strings and many shared a prefix, it would be a poor choice to purely depend on the prefix, as this would lead to many duplicate hashes. A more suitable alternative would be to select four scattered characters, reorder them to further randomise them and then pack them into a 4 byte integer. Whatever approach is used, it is imperative to remember that the keys must be scattered in a uniform manner if collisions are to be reduced.
+      
+      The simplest way to then map an integer key is to simply perform the modulus operation, to keep it's value within the available range. When choosing the table size under this technique, it becomes important to avoid a size close to a power of 2. If a power of 2 size is chosen, the hash is simply going to be the least significant bits of the integer key. A common choice is to select a prime located central to it's two neighbouring power of 2s (e.g. 1699 sits between $2^{10}$ \& $2^{11}$).
+      
+      An alternative approach is to  multiply the integer key by a constant k, where $0<k<1$. Then extract the decimal part, multiply this by the size and floor the result to produce the mapping. A typical value for the constant $k$ is 0.618 ($(\sqrt{5}-1)/2$). This technique provides more freedom when deciding the table size and maximum \gls{load_factor} \cite{MASTERING_ALGORITHMS}.
+
+    \subsubsection*{Collision Resolution\label{sec:hash-collision}}        
+      Ideally each hash will be unique, however in reality hash collisions occur and must be handled.\footnote{When working with known data there are techniques for creating \gls{perfect_hash} functions, whereby all hashes are unique.} There are varying schemes for handling these collisions, referred to as separate chaining and open-addressing.
+
+\begin{wrapfigure}{O}{0.5\columnwidth}
+  \begin{centering}
+    \includegraphics[width=0.5\columnwidth,keepaspectratio]{\string"../resources/hash-chaining\string".pdf}
+  \par\end{centering}
+  \protect\caption[A visual representation of a hash table that utilises separate chaining.]{\label{fig:hash-chaining}A visual representation of a hash table that utilises separate chaining.}
+\end{wrapfigure}
+      Separate chaining is a technique whereby items with the same hash are stored in a list at that address (Figure \ref{fig:hash-chaining}). This technique requires the \gls{load_factor} of a table to be maintained at a level such that chains do not become long. Which typically can lead to memory occupancy twice the size of the total expected items.
+      
+      In contrast, open-addressing techniques seek to place all items within the same address space. This can lead to primary and secondary clustering, whereby many items collide before a suitable location is found. It also becomes necessary within open-addressing schemes, to replace deletions with a special delete value. If deleted items were instead marked as empty, searches would fail to find items that had previously collided with the now empty location. As such this can cause deletions to slow down searches under open-addressing.
+      
+\begin{wrapfigure}{O}{0.5\columnwidth}
+  \begin{centering}
+    \includegraphics[width=0.5\columnwidth,keepaspectratio]{\string"../resources/hash-linear-probe\string".pdf}
+  \par\end{centering}
+  \protect\caption[A visual representation of a hash table that utilises linear probing.]{\label{fig:hash-linear-probe}A visual representation of a hash table that utilises linear probing using the hash function $h(k,i)=((k+i)\:mod\:11)$.}
+\end{wrapfigure}
+      To place items under open-addressing, probing is used whereby the value of the hash is incremented with a fixed counter (linear probing, Figure \ref{fig:hash-linear-probe}), the second power of a counter (quadratic probing) or a hash of a counter (double hashing). This occurs until a unique index is found. Quadratic probing using \gls{triangular_numbers} rather than a counter avoids secondary clumping issues, assuming a good initial hash function, leading to improved insertion at a high \gls{load_factor} \cite{Knu98}.
+      
+      An alternate is that of cuckoo hashing, whereby multiple hash functions are used \cite{PR04}. When a new item is to be inserted, it is inserted into one of the two hashes, replacing any existing item residing at the same hash. If a replacement does occur, the replaced item will be rehashed with an alternate hash and this will be repeated till no items are displaced. This technique reduces the maximum search time by locating items closer to their initial hash and scale by introducing more hashes.
+      
+      Combining the techniques of linear probing and cuckoo hashing, hopscotch hashing attempts to locate an item within $n$ hops of it's original hashed entry \cite{HST08}. If the first empty entry is outside of this range, a previously probed entry is found which can be moved to that entry whilst within it's range, such that all items are placed within the neighbourhood of their original entry.
+\begin{wrapfigure}{O}{0.5\columnwidth}
+  \begin{centering}
+    \includegraphics[width=0.5\columnwidth,keepaspectratio]{\string"../resources/hash-robin-hood\string".pdf}
+  \par\end{centering}
+  \protect\caption[A visual representation of a Robin Hood hash table that utilises linear probing.]{\label{fig:hash-robin-hood}A visual representation of a Robin Hood hash table that utilises linear probing hash from Figure \ref{fig:hash-linear-probe}.}
+\end{wrapfigure}
+      A further technique is that of Robin Hood hashing \cite{Cel86}. Like the cuckoo and hopscotch techniques, Robin Hood hashing may swap items during insertion. Unique to Robin Hood, however, is that when probing, if a collision occurs, the colliding item with the greatest age (the most probes) wins that location and the younger item must continue to probe (Figure \ref{fig:hash-robin-hood}). This technique can heavily reduce the maximum age at high \glspl{load_factor}, at the cost of increasing the average number of memory accesses per query. Additionally, by tracking the maximum age within the table, deleted items can be marked as empty. This allows the fail condition for a search to be the maximum number of probes, rather than the first empty location, this benefits unconstrained searches in high occupancy tables.
+      
+      Combining separate chaining and open addressing is the technique of coalesced hashing, whereby instead of appending collisions to a chain, collisions are instead linearly allocated to a separate collisions bucket and a pointer to link the collision is created \cite{Vit82}. This technique avoids the effects of primary and secondary clustering, however it maintains expensive resizing and deletion limitations similar to those found in open addressing.
+%Include thorough implementation details at a later chapter
+%\todo{Include some light detail on Google's Sparse-hash \& Dense-hash techniques, Concurrency Kit(?).}
+%There are varying schemes for reducing the memory footprint of hashing structures and their need for rebuilding, often at the cost of performance....sparse-hash, dense-hash, multiple tables via cuckoo hashing...\textit{This paragraph might be worth breaking into several to cover other techniques}
+    \subsubsection{Summary}
+      As a result of this subsection, it should be clear that hashing schemes are suitable for storage of spatial data. However in order to maintain spatial coherence, open-addressing schemes must be avoided due to their reliance on uniformly distributed keys and chaining schemes are unlikely to remain performant if chains become lengthy. It is worth considering the performance benefits of spatial coherence, both in the sense of how it facilitates neighbour access and improves performance via coalesced memory operations.
+      This is before implementation of a hashing scheme in parallel is considered. The challenges introduced by this are explained in section \ref{subsec:parallel-hash}, including greater detail on spatial techniques.
+    
+  \subsection{Trees}
+    %Would benefit from mentioning general implementation strategies for trees (pointer to leaf, pointer to layer?)
+    Trees are data-structures which are an abstract representation of the hierarchical structure found in a tree's roots and branches. A tree in computing consists of a root node, which is the parent of one or more child nodes. Subsequently each of these child nodes may have one or more children of their own, and so on. A node with no children is referred to as a leaf node.
+
+    The maximum number of children a node may have is referred to as a tree's branching factor. This value controls how the tree will branch out as nodes are inserted. Different types of tree have different branching factors.
+
+    There are many classes of tree; search trees (2-3, 2-3-4, AVL, B, B+, Binary Search, Red-Black, etc), heaps (Binary, Binomial, etc), tries (C-trie, Hash, Radix), spatial partitioning trees (BSP, k-d, Octree, Quad, R, R+, etc) and several other miscellaneous types. \begin{comment}B trees and their descendants are optimised for sequential data accesses, often used in databases.\end{comment}
+    
+    \subsubsection*{Spatial Trees}
+      There are several forms of spatial tree, and their purposes vary from rendering, to providing access to large databases of spatial data.
+      
+      BSP trees are the data-structure used in binary spatial partitioning, an algorithm for the recursive subdivision of space by \glspl{hyperplane} into convex subspaces. First published in 1980 by Fuchs et al \cite{FKN80}, BSP trees provide rapid access to the front-to-back ordering of objects within a scene from the perspective of an arbitrary direction. This makes them ideal for rendering, whereby the visibility of faces within a scene must be computed regularly. The binary spatial partitioning algorithm splits entities that cross the partitioning \glspl{hyperplane}, which can cause a BSP tree to have far more nodes than entities present in the original input.
+    
+      K-D trees are a binary tree that form a special case of BSP tree. Published by Bentley in 1975 \cite{Ben75}, they are used for organising points in a k-dimensional space. Every non-leaf node acts as an axis-aligned \gls{hyperplane}, splitting all points below the node on the chosen axis from those above the node. The layers of a k-d tree must cycle through the axis in a continuous order (e.g. x-axis, y-axis, z-axis, x-axis..), such that all nodes at a specific height partition the same axis. Depending on the implementation, points may be stored in all nodes or only leaf nodes.
+      
+      The structure of k-d trees makes them efficient for performing nearest-neighbour searches in low dimensional spaces, such as collision calculations. In high dimensional spaces ($n < 2^{k}$ where $n$ is the number of points \& $k$ the number of dimensions) most points will be evaluated during a search.
+\begin{wrapfigure}{O}{0.3\columnwidth}
+  \begin{centering}
+    \includegraphics[width=0.3\columnwidth,keepaspectratio]{\string"../resources/Quadtree\string".pdf}
+  \par\end{centering}
+  \protect\caption[A visual representation of region quadtree.]{\label{fig:quadtree}A visual representation of region quadtree. The black outline shows the root node, whose child nodes have a red outline, this continues through orange, green and blue.}
+\end{wrapfigure}
+
+      Quadtrees are a tree data-structure in which every parent node has 4 children, most often used for partitioning 2 dimensional space. They were first defined in 1974 by Finkel \& Bentley, as a means for storing information to be retrieved using a composite key \cite{FB74}. Each leaf node holds a bucket, when a bucket reaches capacity it splits, creating 4 children. Quadtrees are capable of storing line, curve and polygonal data, however similarly to BSP trees, this can cause the data to require subdivision.
+      
+      The most recognisable form of quadtree is that of a region quadtree (Figure \ref{fig:quadtree}), whereby partitioning creates 4 nodes of equal volume. Region quadtrees are often used for representing variable resolution data. The point quadtree is used to represent 2 dimensional point data and requires that a point lie at the center of each subdivision.
+      
+      Octrees are a 3 dimensional analogue of quadtrees, first described by Meagher in 1980 \cite{Mea80}, although the initial quadtree paper \cite{FB74} had stated the ease in which quadtrees could be scaled to higher dimensions. Every parent node within an octree has 8 children, allowing them to be used for partitioning 3 dimensional space. Octrees are different from k-d trees, in that an octree splits about a point, whereas a k-d tree splits about a dimension. Octrees are used for volume rendering and ray tracing.
+      
+      R trees are a balanced tree data-structure used in the storage of multi-dimensional data. They were first proposed by Guttman in 1984, as a dynamic structure for spatial searches \cite{Gut84}. They have since been applied to a variety of problems, such as storing geographic information. 
+
+      The strategy behind R trees is to group nearby objects under their minimum bounding rectangle (hence the R, in R tree). As all objects are contained within bounding rectangles, any query that does not intersect the rectangle cannot intersect any of the contained objects.
+      
+      R trees are implemented such that all leaf-nodes reside at the same height (similar to B trees used in databases), which allows data to be organised into pages, allowing easy storage to disk and fast sequential access. Additional guarantees are provided as to the occupancy of leaf nodes, which improves query performance by guaranteeing leaves are at least 30-40\% occupied. However challenges are introduced in trying to maintain balance, whilst reducing the empty space covered by rectangles and inter-rectangle overlap.
+      
+      There are several variants of the R tree which are designed to improve certain qualities at the cost of others. R+ trees \cite{SRF87} are a variant that permit elements to be stored in multiple leaf nodes, whilst preventing none leaf nodes from overlapping and providing no guarantees to the occupancy of leaf nodes. R* trees \cite{BK*90} use an insertion algorithm that attempts to reinsert certain items when an insertion causes a node to overflow and an alternate node split algorithm, which improves queries at the cost of slower construction. Priority R trees \cite{AB*04} are a hybrid between the R tree and k-d tree, providing a guarantee of worst case performance, however this comes at the cost of stricter rules that must be enforced during construction. M trees \cite{PCZ97}, whilst not directly related to R trees, can be visualised as an R tree whereby rectangles have been replaced with circles.
+
+    \subsubsection*{Techniques for Balancing}
+      Balanced trees are trees whereby all leaf nodes are at the same height. When data is only stored in leaf nodes, this enables queries to occur in constant time. A tree in it's most unbalanced state is effectively a linked-list, requiring a worst case of every node being considered during queries. As such it is important to ensure that trees are created and remain balanced, or as quasi-balanced as feasible.
+      
+      \paragraph*{Self-Balancing Trees (Balancing Trees at Insertion/Deletion)}
+        \gls{avl} trees are a form of binary tree, which store an extra value at each node \cite{AVL63}. This value holds the node's balance factor, this is calculated by subtracting the height of the node's right subtree from the height of the node's left subtree. As nodes are inserted into or deleted from the tree, the balance factor of the nodes along the parental lineage are updated. If one of these updated node's balance factor becomes $\pm 2$, the tree must be rotated from that point down to preserve balance.
+        
+        There are four possible rotations used within an \gls{avl} tree: left-left (LL), left-right (LR), right-right (RR) \& right-left (RL). The correct rotation is chosen by following the two directions that must be traced from the unbalanced node to reach the subtree of the newly inserted node. Each rotation performs a different static transformation upon the connectivity of the subtree, changing the subtree from the relevant unbalanced state into a specific balanced state.
+        
+        Red-black trees are a form of binary tree, that store an extra bit at each node in order to maintain an approximate balance \cite{GS78}. The two states of this bit are often referred to as the relevant node being red or black, as the name may suggest. Whilst the balancing of the tree is only approximate, it does guarantee that insertion, deletion, search, rearrange \& recolour maintenance operations will each be performed in $O(log n)$ time, where $n$ is the number of nodes.
+        
+        On insertion the new node is added as normal and coloured red. It is also given 2 empty black child nodes (in a red-black tree, leaf nodes are always empty). There are then several cases that are checked in the following order (exiting as soon as a case is handled, unless otherwise stated):
+        \begin{itemize}
+          \item{Case 1: If the current node is the root node, it is repainted black.}
+          \item{Case 2: If the current node's parent is black, no further action is required.}
+          \item{Case 3: If the current node's parent and uncle\footnote{In this context \textit{uncle} refers to the sibling of the parent.} are red, the parent and uncle are repainted black and the grandparent is repainted red. The grandparent node must now be tested against the same insertion cases.}
+          \item{Case 4: If the current node's parent is red, but the uncle is black and the current node is not the same side child as the parent (e.g. parent is left child, node is right child), the parent is rotated to correct this, making the parent the new child of node. Then case 5 is tested.}
+          \item{Case 5: If the parent is red, but the uncle is black, the grandparent is repainted red, the parent repainted black and the grandparent is rotated in the direction of the uncle (if the uncle is the right child, rotate right). }
+        \end{itemize}
+        This process of insertion is performed in-place via recursion. A similar algorithm is used when deleting nodes.
+      
+      \paragraph*{Balancing Trees at Construction}
+        Spatial trees often use algorithms to ensure balance at their initial construction. Whilst this may not be in the case when region quadtrees and octrees are used to represent variable resolution data, it can provide significant performance improvements when handling static data.
+        
+        To produce a balanced k-d tree, the parents are chosen as the median point of all points to be inserted along the current axis. To reduce the number of points to be surveyed when calculating medians, it is not uncommon to sample a random subset of points to generate the splitting plane, this often results in quasi-balanced trees.
+        
+        \gls{str} is an algorithm used for building efficient R trees when the data is known before construction. It was first developed in 1997 by Leutenegger et al, as a means for reducing disk accesses when constructing large R trees, in a response to their survey of existing algorithms \cite{LL*97}.
+        
+        To execute the algorithm of \gls{str}, the elements are first sorted according to the center of their bounding rectangles x coordinate. This sorted list of elements should then be partitioned into leafs of size $sqrt{r/n}$ (whereby $r$ is the number of elements, and $n$ is the maximum elements per leaf). This should then continue recursively for each partition, such that they are partitioned according to the next axis. Once the final axis is reached, they should instead be partitioned into leaves of $n$ elements each.
+        
+        There are two other algorithms used for packing R trees, Nearest-X and Hilbert sort \cite{KF93}. Nearest-X no longer provides a benefit over the alternatives. When comparing Hilbert sort to \gls{str} it has been found that, \gls{str} generates better rectangles on uniformly distributed and mildly skewed data whereas Hilbert Sort performs best on highly skewed data. The difference between them reduces as the size of the region being queried increases.
+  %\subsection{Performance}
+  %  In order to compare and contrast existing techniques for handling spatial data, the Table (?) provides a comparison of O-notations that denote the complexity of some of the discussed techniques.
+  %Not done because they don't compare cleanly, do a more detailed parallel one at a later stage.
+    
+  \subsection{Summary}
+    This section has shown that trees make up a wide array of data-structures, many of which are useful for handling different forms of spatial data. There are techniques used by binary trees that permit the maintenance of balance during inserts, however when the branching factor increases due to multi-dimensional data this becomes infeasible.
+    
+    R-trees possess an architecture whereby data is stored within pages that can be loaded in and out of memory, providing a source of spatial coherence at the cost of buffer space. Whilst designed for large spatial databases that are too large for the available memory, this is analogous to working with smaller datasets across multiple \glspl{gpu}, whereby it becomes necessary to page data into and out of \gls{gpu} memory.
+    

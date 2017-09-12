@@ -112,6 +112,7 @@ public:
     DIMENSIONS_VEC getEnvironmentMax() const { return environmentMax; }
     float getCellSize() const { return interactionRad;  }
 #ifdef _DEBUG
+    DIMENSIONS_IVEC getGridPosition(DIMENSIONS_VEC worldPos);
     bool isValid(DIMENSIONS_IVEC bin) const;
 	DIMENSIONS_IVEC getPos(unsigned int hash);
 	int getHash(DIMENSIONS_IVEC gridPos);

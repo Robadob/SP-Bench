@@ -1,8 +1,0 @@
-<width>50</width>
-<interaction-radius>5.000000</interaction-radius>
-<density>0.010000</density>
-<seed>1</seed>
-<attraction-force>0.005000</attraction-force>
-<repulsion-force>0.005000</repulsion-force>
-
-java FLAMEGPUBuilder -w 50 -d 0.01 -rad 5 -attract 0.005 -repel 0.005 -in . -out "FLAME_VALIDATION.exe"

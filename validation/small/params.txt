@@ -1,2 +1,0 @@
-java FLAMEGPUBuilder -w 18 -d 0.0025 -rad 3 -attract 1 -repel 1 -in . -out "FLAME_VALIDATION.exe"
-java sim.Circles3D -width 18 -density 0.0025 -radius 3 -attract 1 -repel 1 -load "agents.txt" -agents -for 1 -quiet
