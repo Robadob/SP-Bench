@@ -6,7 +6,7 @@ copy tex\%TEX_MAIN%.tex build
 cd build
 pdflatex %TEX_MAIN%.tex
 bibtex %TEX_MAIN%
-makeglossaries %TEX_MAIN%.tex
+::makeglossaries %TEX_MAIN%
 pdflatex %TEX_MAIN%.tex
 pdflatex %TEX_MAIN%.tex
 copy paper.pdf ..
