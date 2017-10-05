@@ -37,48 +37,133 @@ __global__ void init_particles_uniform(LocationMessages *locationMessages) {
 	locationMessages->locationZ[id] = (z * (d_environmentMax.z / (float)d_gridDim.z)) + (d_environmentMax.z / (float)d_gridDim.z)*0.5;
 #endif
 }
+//Padabs model
+/*
 __global__ void step_model(LocationMessages *locationMessagesIn, LocationMessages *locationMessagesOut)
 {
-
     int id = blockIdx.x * blockDim.x + threadIdx.x;
     if (id >= d_locationMessageCount)
         return;
 
     //Get my local location
 #ifdef _3D
-    glm::vec3 myLoc(locationMessagesIn->locationX[id], locationMessagesIn->locationY[id], locationMessagesIn->locationZ[id]), locDiff, newLoc;
+	DIMENSIONS_VEC myLoc(locationMessagesIn->locationX[id], locationMessagesIn->locationY[id], locationMessagesIn->locationZ[id]), toLoc, newLoc;
 #else
-	glm::vec2 myLoc(locationMessagesIn->locationX[id], locationMessagesIn->locationY[id]), locDiff, newLoc;
+	DIMENSIONS_VEC myLoc(locationMessagesIn->locationX[id], locationMessagesIn->locationY[id]), toLoc, newLoc;
 #endif
-	newLoc = myLoc;
+	newLoc =  DIMENSIONS_VEC(0);//myLoc;//
 	//Get first message
-    float dist, separation, k;
-    LocationMessage *lm = locationMessagesIn->getFirstNeighbour(myLoc);
+    float separation, k;
+#ifdef _local
+	LocationMessage lm2;
+	LocationMessage *lm = locationMessagesIn->getFirstNeighbour(myLoc, &lm2);
+#else
+	LocationMessage *lm = locationMessagesIn->getFirstNeighbour(myLoc);
+#endif
     //Always atleast 1 location message, our own location!
+	const float rHalf = d_interactionRad/2.0f;
     do
-    {
-        if ((lm->id != id))
+	{
+		assert(lm != 0);
+        if ((lm->id != id))//CHANGED: Don't sort particles
         {
-			locDiff = myLoc - lm->location;//Difference
-            if (locDiff!=DIMENSIONS_VEC(0))//Ignore distance 0
+			toLoc = lm->location - myLoc;//Difference
+			if (toLoc != DIMENSIONS_VEC(0))//Ignore distance 0
 			{
-				dist = length(locDiff);//Distance (via pythagoras)
-				separation = dist - d_interactionRad;
+				separation = length(toLoc);
 				if (separation < d_interactionRad)
 				{
-
-					k = (separation > 0.0f) ? d_attract : -d_repulse;
-					newLoc += (k * separation * locDiff / d_interactionRad);
+					k = (separation < rHalf) ? d_repulse : d_attract;
+					toLoc = (separation < rHalf) ? -toLoc : toLoc;
+					toLoc /= separation;//Normalize (without recalculating seperation)
+					separation = (separation < rHalf) ? separation : (d_interactionRad - separation);
+					newLoc += k * separation * toLoc;
 				}
             }
         }
-        lm = locationMessagesIn->getNextNeighbour(lm);//Returns a pointer to shared memory or 0
-    } while (lm);
+		lm = locationMessagesIn->getNextNeighbour(lm);//Returns a pointer to shared memory or 0
+	} while (lm);
     //Export newLoc
+	newLoc += myLoc;
+#ifdef _DEBUG
+	assert(!isnan(newLoc.x));
+	assert(!isnan(newLoc.y));
+	assert(!isnan(newLoc.z));
+	assert(!isnan(myLoc.x));
+	assert(!isnan(myLoc.y));
+	assert(!isnan(myLoc.z));
+#endif
 	newLoc = glm::clamp(newLoc, d_environmentMin, d_environmentMax);
 	locationMessagesOut->locationX[id] = newLoc.x;
 	locationMessagesOut->locationY[id] = newLoc.y;
 #ifdef _3D
 	locationMessagesOut->locationZ[id] = newLoc.z;
+#endif
+}
+*/
+//Improved Sin Model
+__global__ void step_model(LocationMessages *locationMessagesIn, LocationMessages *locationMessagesOut)
+{
+    int id = blockIdx.x * blockDim.x + threadIdx.x;
+    if (id >= d_locationMessageCount)
+        return;
+
+    //Get my local location
+#ifdef _3D
+    DIMENSIONS_VEC myLoc(locationMessagesIn->locationX[id], locationMessagesIn->locationY[id], locationMessagesIn->locationZ[id]), toLoc, newLoc;
+#else
+    DIMENSIONS_VEC myLoc(locationMessagesIn->locationX[id], locationMessagesIn->locationY[id]), toLoc, newLoc;
+#endif
+    newLoc = DIMENSIONS_VEC(0);//myLoc;//
+    //Get first message
+    float separation, k;
+#ifdef _local
+    LocationMessage lm2;
+    LocationMessage *lm = locationMessagesIn->getFirstNeighbour(myLoc, &lm2);
+#else
+    LocationMessage *lm = locationMessagesIn->getFirstNeighbour(myLoc);
+#endif
+    //Always atleast 1 location message, our own location!
+    //const float rHalf = d_interactionRad / 2.0f;
+    int ct = 0;
+    do
+    {
+        assert(lm != 0);
+        if ((lm->id != id))//CHANGED: Don't sort particles
+        {
+            toLoc = lm->location - myLoc;//Difference
+            if (toLoc != DIMENSIONS_VEC(0))//Ignore distance 0
+            {
+                separation = length(toLoc);
+                if (separation < d_interactionRad)
+                {
+                    k = sinf((separation / d_interactionRad)*3.141*-2)*d_repulse;
+                    //k = (separation < rHalf) ? d_repulse : d_attract;
+                    //toLoc = (separation < rHalf) ? -toLoc : toLoc;
+                    toLoc /= separation;//Normalize (without recalculating seperation)
+                    //separation = (separation < rHalf) ? separation : (d_interactionRad - separation);
+                    newLoc += k * toLoc;
+                    ct++;
+                }
+            }
+        }
+        lm = locationMessagesIn->getNextNeighbour(lm);//Returns a pointer to shared memory or 0
+    } while (lm);
+    //Export newLoc
+    newLoc /= ct;
+    newLoc += myLoc;
+#ifdef _DEBUG
+    assert(!isnan(newLoc.x));
+    assert(!isnan(newLoc.y));
+    assert(!isnan(newLoc.z));
+    assert(!isnan(myLoc.x));
+    assert(!isnan(myLoc.y));
+    assert(!isnan(myLoc.z));
+#endif
+    newLoc = glm::clamp(newLoc, d_environmentMin, d_environmentMax);
+    locationMessagesOut->locationX[id] = newLoc.x;
+    locationMessagesOut->locationY[id] = newLoc.y;
+#ifdef _3D
+    locationMessagesOut->locationZ[id] = newLoc.z;
 #endif
 }
