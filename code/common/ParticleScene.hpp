@@ -2,25 +2,27 @@
 
 #include "visualisation/GLcheck.h"
 
-template<class T>
-ParticleScene<T>::ParticleScene(Visualisation &visualisation, Circles<T> &model)
+ParticleScene::ParticleScene(Visualisation &visualisation, std::shared_ptr<Model> model)
     : Scene(visualisation)
-    , icosphere(new Entity(Stock::Models::ICOSPHERE, 1.0f, std::make_shared<Shaders>("../shaders/instanced.vert","../shaders/instanced.frag")))
-    , count(model.agentMax)
+    , icosphere(std::make_shared<Entity>(Stock::Models::ICOSPHERE, 1.0f, std::make_shared<Shaders>("../shaders/instanced.vert","../shaders/instanced.frag")))
+    , count(model->agentMax)
     , model(model)
     , drawPBM(true)
 {
     registerEntity(icosphere);
     this->visualisation.setWindowTitle("Circles Benchmark");
     this->visualisation.setRenderAxis(true);
-    setTex(model.getPartition()->getLocationTexNames());
+    setTex(model->getPartition()->getLocationTexNames());
+}
+ParticleScene::~ParticleScene()
+{
+
 }
 /*
 Sets the texture buffers that the shaders should use
 @param Pointer to array of DIMENSIONS texture names
 */
-template<class T>
-void ParticleScene<T>::setTex(const GLuint* tex)
+void ParticleScene::setTex(const GLuint* tex)
 {
     memcpy(this->tex, tex, DIMENSIONS*sizeof(GLuint));
     this->icosphere->getShaders()->addTextureUniform(tex[0], "tex_locX");
@@ -28,15 +30,12 @@ void ParticleScene<T>::setTex(const GLuint* tex)
 #ifdef _3D
     this->icosphere->getShaders()->addTextureUniform(tex[2], "tex_locZ");
 #endif
-#ifdef _GL
-    this->icosphere->getShaders()->addTextureUniform(model.getPartition()->getCountTexName(), "tex_count");
-#endif
+    this->icosphere->getShaders()->addTextureUniform(model->getPartition()->getCountTexName(), "tex_count");
 }
 /*
 Sets the number of instances to be rendered
 */
-template<class T>
-void ParticleScene<T>::setCount(unsigned int count)
+void ParticleScene::setCount(unsigned int count)
 {
     this->count = count;
 }
@@ -44,18 +43,16 @@ void ParticleScene<T>::setCount(unsigned int count)
 Steps the model
 @note This is currently done externally
 */
-template<class T>
-void ParticleScene<T>::update(unsigned int frameTime)
+void ParticleScene::update(unsigned int frameTime)
 {
     //Update agent count
-    setCount(this->model.getPartition()->getLocationCount());
+    setCount(this->model->getPartition()->getLocationCount());
 }
 /*
 Steps the model
 @note This is currently done externally
 */
-template<class T>
-bool ParticleScene<T>::keypress(SDL_Keycode keycode, int x, int y)
+bool ParticleScene::keypress(SDL_Keycode keycode, int x, int y)
 {
     switch (keycode)
     {
@@ -71,16 +68,14 @@ bool ParticleScene<T>::keypress(SDL_Keycode keycode, int x, int y)
 /*
 Refreshes shaders
 */
-template<class T>
-void ParticleScene<T>::reload()
+void ParticleScene::reload()
 {
 //Restart model?
 }
 /*
 Renders a frame
 */
-template<class T>
-void ParticleScene<T>::render()
+void ParticleScene::render()
 {
     if (this->count <= 0)
         return;
@@ -91,13 +86,12 @@ void ParticleScene<T>::render()
 /*
 Renders a frame
 */
-template<class T>
-void ParticleScene<T>::renderPBM()
+void ParticleScene::renderPBM()
 {
-    DIMENSIONS_IVEC dim = this->model.getPartition()->getGridDim();
-    DIMENSIONS_VEC envMin = this->model.getPartition()->getEnvironmentMin();
-    DIMENSIONS_VEC envMax = this->model.getPartition()->getEnvironmentMax();
-    float cellSize = this->model.getPartition()->getCellSize();
+    DIMENSIONS_IVEC dim = this->model->getPartition()->getGridDim();
+    DIMENSIONS_VEC envMin = this->model->getPartition()->getEnvironmentMin();
+    DIMENSIONS_VEC envMax = this->model->getPartition()->getEnvironmentMax();
+    float cellSize = this->model->getPartition()->getCellSize();
     glUseProgram(0); //Use default shader
     GL_CALL(glPolygonMode(GL_FRONT_AND_BACK, GL_LINE));
     glPushMatrix();

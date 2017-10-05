@@ -12,7 +12,93 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Reference Implementation", 
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Common", "Common", "{7AA820A0-4AC8-4BB8-ADD0-67AA101A94BE}"
 	ProjectSection(SolutionItems) = preProject
+		common\export.cpp = common\export.cpp
+		common\export.h = common\export.h
+		common\header.cuh = common\header.cuh
+		common\main.cu = common\main.cu
+		common\ParticleScene.h = common\ParticleScene.h
+		common\ParticleScene.hpp = common\ParticleScene.hpp
 		common\results.h = common\results.h
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Benchmark Models", "Benchmark Models", "{9494D73E-A497-4F3E-A9D3-608D6176B493}"
+	ProjectSection(SolutionItems) = preProject
+		common\export.h = common\export.h
+		common\benchmarks\Readme.md = common\benchmarks\Readme.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Circles", "Circles", "{E487ECF3-316E-4D6E-8370-18A278AE0DBB}"
+	ProjectSection(SolutionItems) = preProject
+		common\benchmarks\circles\Circles.cuh = common\benchmarks\circles\Circles.cuh
+		common\benchmarks\circles\CirclesKernels.cu = common\benchmarks\circles\CirclesKernels.cu
+		common\benchmarks\circles\CirclesKernels.cuh = common\benchmarks\circles\CirclesKernels.cuh
+		common\benchmarks\circles\CirclesModel.cuh = common\benchmarks\circles\CirclesModel.cuh
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Null", "Null", "{14B9264F-70BF-4879-8F71-40DC080EDE8E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Density", "Density", "{CB6FBEFF-29A2-431A-BD21-EC6F1BA4B118}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Near Neighbours", "Near Neighbours", "{F3652955-ABEA-4049-86F4-EF7CA128BC7F}"
+	ProjectSection(SolutionItems) = preProject
+		common\near_neighbours\Neighbourhood.cu = common\near_neighbours\Neighbourhood.cu
+		common\near_neighbours\Neighbourhood.cuh = common\near_neighbours\Neighbourhood.cuh
+		common\near_neighbours\NeighbourhoodConstants.cuh = common\near_neighbours\NeighbourhoodConstants.cuh
+		common\near_neighbours\NeighbourhoodKernels.cu = common\near_neighbours\NeighbourhoodKernels.cu
+		common\near_neighbours\NeighbourhoodKernels.cuh = common\near_neighbours\NeighbourhoodKernels.cuh
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Visualisation", "Visualisation", "{084B650D-F893-4F09-B1A3-CC524C1B6DE7}"
+	ProjectSection(SolutionItems) = preProject
+		common\BuildVisualisation.h = common\BuildVisualisation.h
+		common\ParticleScene.h = common\ParticleScene.h
+		common\ParticleScene.hpp = common\ParticleScene.hpp
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Headers", "Headers", "{E69A3BDD-4328-4D94-A7B4-6C86109F0A7F}"
+	ProjectSection(SolutionItems) = preProject
+		common\visualisation\Axis.h = common\visualisation\Axis.h
+		common\visualisation\Camera.h = common\visualisation\Camera.h
+		common\visualisation\Entity.h = common\visualisation\Entity.h
+		common\visualisation\GLcheck.h = common\visualisation\GLcheck.h
+		common\visualisation\Material.h = common\visualisation\Material.h
+		common\visualisation\Scene.h = common\visualisation\Scene.h
+		common\visualisation\Shaders.h = common\visualisation\Shaders.h
+		common\visualisation\Skybox.h = common\visualisation\Skybox.h
+		common\visualisation\Visualisation.h = common\visualisation\Visualisation.h
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Source", "Source", "{11C5BA7E-CF8F-4350-AC48-B7206C3E5C48}"
+	ProjectSection(SolutionItems) = preProject
+		common\visualisation\Axis.cpp = common\visualisation\Axis.cpp
+		common\visualisation\Camera.cpp = common\visualisation\Camera.cpp
+		common\visualisation\Entity.cpp = common\visualisation\Entity.cpp
+		common\visualisation\Material.cpp = common\visualisation\Material.cpp
+		common\visualisation\Scene.cpp = common\visualisation\Scene.cpp
+		common\visualisation\Shaders.cpp = common\visualisation\Shaders.cpp
+		common\visualisation\Skybox.cpp = common\visualisation\Skybox.cpp
+		common\visualisation\Visualisation.cpp = common\visualisation\Visualisation.cpp
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "util", "util", "{1BBD461F-C2FA-4539-B274-3B473E92E3C0}"
+	ProjectSection(SolutionItems) = preProject
+		common\visualisation\util\cuda.cuh = common\visualisation\util\cuda.cuh
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Texture", "Texture", "{7DD650D1-B115-4F73-916F-2F5EEE0F5129}"
+	ProjectSection(SolutionItems) = preProject
+		common\visualisation\texture\Texture.h = common\visualisation\texture\Texture.h
+		common\visualisation\texture\Texture2D.h = common\visualisation\texture\Texture2D.h
+		common\visualisation\texture\TextureBuffer.h = common\visualisation\texture\TextureBuffer.h
+		common\visualisation\texture\TextureCubeMap.h = common\visualisation\texture\TextureCubeMap.h
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Texture", "Texture", "{F8A8D9A7-ACF8-444D-8D13-EC9526111673}"
+	ProjectSection(SolutionItems) = preProject
+		common\visualisation\texture\Texture.cpp = common\visualisation\texture\Texture.cpp
+		common\visualisation\texture\Texture2D.cpp = common\visualisation\texture\Texture2D.cpp
+		common\visualisation\texture\TextureBuffer.cu = common\visualisation\texture\TextureBuffer.cu
+		common\visualisation\texture\TextureCubeMap.cpp = common\visualisation\texture\TextureCubeMap.cpp
 	EndProjectSection
 EndProject
 Global
@@ -63,5 +149,18 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{9494D73E-A497-4F3E-A9D3-608D6176B493} = {7AA820A0-4AC8-4BB8-ADD0-67AA101A94BE}
+		{E487ECF3-316E-4D6E-8370-18A278AE0DBB} = {9494D73E-A497-4F3E-A9D3-608D6176B493}
+		{14B9264F-70BF-4879-8F71-40DC080EDE8E} = {9494D73E-A497-4F3E-A9D3-608D6176B493}
+		{CB6FBEFF-29A2-431A-BD21-EC6F1BA4B118} = {9494D73E-A497-4F3E-A9D3-608D6176B493}
+		{F3652955-ABEA-4049-86F4-EF7CA128BC7F} = {7AA820A0-4AC8-4BB8-ADD0-67AA101A94BE}
+		{084B650D-F893-4F09-B1A3-CC524C1B6DE7} = {7AA820A0-4AC8-4BB8-ADD0-67AA101A94BE}
+		{E69A3BDD-4328-4D94-A7B4-6C86109F0A7F} = {084B650D-F893-4F09-B1A3-CC524C1B6DE7}
+		{11C5BA7E-CF8F-4350-AC48-B7206C3E5C48} = {084B650D-F893-4F09-B1A3-CC524C1B6DE7}
+		{1BBD461F-C2FA-4539-B274-3B473E92E3C0} = {E69A3BDD-4328-4D94-A7B4-6C86109F0A7F}
+		{7DD650D1-B115-4F73-916F-2F5EEE0F5129} = {E69A3BDD-4328-4D94-A7B4-6C86109F0A7F}
+		{F8A8D9A7-ACF8-444D-8D13-EC9526111673} = {11C5BA7E-CF8F-4350-AC48-B7206C3E5C48}
 	EndGlobalSection
 EndGlobal

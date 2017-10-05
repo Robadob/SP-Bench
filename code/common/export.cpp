@@ -7,11 +7,13 @@
 #include <chrono>
 #include <fstream>
 #include <float.h>
-
+//When building rapid xml headers with CUDA, we get this warning (doesn't occur with regular compiler)
+//http://www.ssl.berkeley.edu/~jimm/grizzly_docs/SSL/opt/intel/cc/9.0/lib/locale/en_US/mcpcom.msg
+//-Xcudafe "--diag_suppress=expr_not_integral_constant"
 #include "rapidxml/rapidxml.hpp"
 #include "rapidxml/rapidxml_print.hpp"
 
-void exportPopulation(SpatialPartition* s, ModelParams *model, char *path)
+void exportPopulation(std::shared_ptr<SpatialPartition> s, const ArgData &args, char *path)
 {
 	unsigned int count = s->getLocationCount();
 	std::string outFile = std::string(path);
@@ -67,31 +69,52 @@ void exportPopulation(SpatialPartition* s, ModelParams *model, char *path)
 	states_node->append_node(itno_node);
 	//model params
 	rapidxml::xml_node<> *params_node = doc.allocate_node(rapidxml::node_element, params_node_str);
-	{
-		//width
-		sprintf(buffer, "%d", model->width);
-		rapidxml::xml_node<> *width_node = doc.allocate_node(rapidxml::node_element, width_node_str, doc.allocate_string(buffer));
-		params_node->append_node(width_node);
-		//seed
-		sprintf(buffer, "%f", model->interactionRad);
-		rapidxml::xml_node<> *rad_node = doc.allocate_node(rapidxml::node_element, rad_node_str, doc.allocate_string(buffer));
-		params_node->append_node(rad_node);
-		//density
-		sprintf(buffer, "%f", model->density);
-		rapidxml::xml_node<> *density_node = doc.allocate_node(rapidxml::node_element, density_node_str, doc.allocate_string(buffer));
-		params_node->append_node(density_node);
-		//seed
-		sprintf(buffer, "%llu", model->seed);
-		rapidxml::xml_node<> *seed_node = doc.allocate_node(rapidxml::node_element, seed_node_str, doc.allocate_string(buffer));
-		params_node->append_node(seed_node);
-		//att force
-		sprintf(buffer, "%f", model->attractionForce);
-		rapidxml::xml_node<> *attract_node = doc.allocate_node(rapidxml::node_element, attract_node_str, doc.allocate_string(buffer));
-		params_node->append_node(attract_node);
-		//rep force
-		sprintf(buffer, "%f", model->repulsionForce);
-		rapidxml::xml_node<> *repel_node = doc.allocate_node(rapidxml::node_element, repel_node_str, doc.allocate_string(buffer));
-		params_node->append_node(repel_node);
+    {
+        //Model name
+        sprintf(buffer, "%s", args.model->modelName());
+        rapidxml::xml_node<> *name_node = doc.allocate_node(rapidxml::node_element, name_node_str, doc.allocate_string(buffer));
+        params_node->append_node(name_node);
+        //seed
+        sprintf(buffer, "%llu", args.seed);
+        rapidxml::xml_node<> *seed_node = doc.allocate_node(rapidxml::node_element, seed_node_str, doc.allocate_string(buffer));
+        params_node->append_node(seed_node);
+        //Model specific params
+        if (args.model->enumerator() == ModelEnum::Null)
+        {
+            assert(false);//Not yet implemented
+        }
+        else if (args.model->enumerator() == ModelEnum::Circles)
+        {
+            std::shared_ptr<CirclesParams> _model = std::dynamic_pointer_cast<CirclesParams>(args.model);
+		    //width
+            sprintf(buffer, "%d", _model->width);
+		    rapidxml::xml_node<> *width_node = doc.allocate_node(rapidxml::node_element, width_node_str, doc.allocate_string(buffer));
+		    params_node->append_node(width_node);
+		    //seed
+            sprintf(buffer, "%f", _model->interactionRad);
+		    rapidxml::xml_node<> *rad_node = doc.allocate_node(rapidxml::node_element, rad_node_str, doc.allocate_string(buffer));
+		    params_node->append_node(rad_node);
+		    //density
+            sprintf(buffer, "%f", _model->density);
+		    rapidxml::xml_node<> *density_node = doc.allocate_node(rapidxml::node_element, density_node_str, doc.allocate_string(buffer));
+		    params_node->append_node(density_node);
+		    //att force
+            sprintf(buffer, "%f", _model->attractionForce);
+		    rapidxml::xml_node<> *attract_node = doc.allocate_node(rapidxml::node_element, attract_node_str, doc.allocate_string(buffer));
+		    params_node->append_node(attract_node);
+		    //rep force
+            sprintf(buffer, "%f", _model->repulsionForce);
+		    rapidxml::xml_node<> *repel_node = doc.allocate_node(rapidxml::node_element, repel_node_str, doc.allocate_string(buffer));
+            params_node->append_node(repel_node);
+        }
+        else if (args.model->enumerator() == ModelEnum::Density)
+        {
+            assert(false);//Not yet implemented
+        }
+        else
+        {
+            assert(false);
+        }
 	}
 	states_node->append_node(params_node);
 
@@ -119,14 +142,15 @@ void exportPopulation(SpatialPartition* s, ModelParams *model, char *path)
 			rapidxml::xml_node<> *z_node = doc.allocate_node(rapidxml::node_element, z_node_str, doc.allocate_string(buffer));
 			xagent_node->append_node(z_node);
 
-			rapidxml::xml_node<> *fx_node = doc.allocate_node(rapidxml::node_element, fx_node_str, zero_pt_zero_str);
-			xagent_node->append_node(fx_node);
+            //Skip printing velocity defaults
+			//rapidxml::xml_node<> *fx_node = doc.allocate_node(rapidxml::node_element, fx_node_str, zero_pt_zero_str);
+			//xagent_node->append_node(fx_node);
 
-			rapidxml::xml_node<> *fy_node = doc.allocate_node(rapidxml::node_element, fy_node_str, zero_pt_zero_str);
-			xagent_node->append_node(fy_node);
+			//rapidxml::xml_node<> *fy_node = doc.allocate_node(rapidxml::node_element, fy_node_str, zero_pt_zero_str);
+			//xagent_node->append_node(fy_node);
 
-			rapidxml::xml_node<> *fz_node = doc.allocate_node(rapidxml::node_element, fz_node_str, zero_pt_zero_str);
-			xagent_node->append_node(fz_node);
+			//rapidxml::xml_node<> *fz_node = doc.allocate_node(rapidxml::node_element, fz_node_str, zero_pt_zero_str);
+			//xagent_node->append_node(fz_node);
 		}
 		states_node->append_node(xagent_node);
 	}
@@ -143,7 +167,7 @@ void exportPopulation(SpatialPartition* s, ModelParams *model, char *path)
 	free(lm.locationZ);
 }
 
-void exportAgents(SpatialPartition* s, char *path)
+void exportAgents(std::shared_ptr<SpatialPartition> s, char *path)
 {
 	
 	int len = s->getLocationCount();

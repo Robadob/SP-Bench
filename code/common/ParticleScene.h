@@ -3,7 +3,8 @@
 
 #include "visualisation/Scene.h"
 #include "visualisation/Entity.h"
-#include "Circles.cuh"
+#include "benchmarks/circles/Circles.cuh"
+#include <memory>
 
 #ifdef _3D
 #define DIMENSIONS 3
@@ -11,13 +12,12 @@
 #define DIMENSIONS 2
 #endif
 
-template<class T>
 class ParticleScene : protected Scene
 {
 public:
 
-    ParticleScene(Visualisation &visualisation, Circles<T> &model);
-
+    ParticleScene(Visualisation &visualisation, std::shared_ptr<Model> model);
+    ~ParticleScene() override;
     void render() override;
     void reload() override;
     void update(unsigned int frameTime) override;
@@ -33,9 +33,7 @@ private:
     unsigned int count;// Number of agents within the texture buffer
     GLuint tex[DIMENSIONS];//Array of texture arrays containing our instance data to be rendered
 
-    Circles<T> &model;
+    std::shared_ptr<Model> model;
 };
-
-#include "ParticleScene.hpp"
 
 #endif __ParticleScene_h__

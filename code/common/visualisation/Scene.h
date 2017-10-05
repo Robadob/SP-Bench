@@ -23,10 +23,6 @@ public:
     */
     virtual void render() = 0;
     /*
-    Manual destructor because the Scene MUST be destroyed prior to the Visualisation destroying the GL context
-    */
-    virtual void kill();
-    /*
     Called when the user requests a reload
     @note You should call functions such as shaders->reload() here
     */
@@ -44,7 +40,7 @@ protected:
     Visualisation &visualisation;
     Shaders *shaders;
     void registerEntity(std::shared_ptr<Entity> ent);
-    ~Scene(){};//Protected destructor prevents this object being created on the stack (you must create via new)
+    virtual ~Scene(){};//Protected destructor prevents this object being created on the stack (you must create via new)
 private:
     std::vector<std::shared_ptr<Entity>> entities;
     void _reload();

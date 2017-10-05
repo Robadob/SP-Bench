@@ -14,11 +14,11 @@
 #include <glm/gtc/epsilon.hpp>
 #endif
 SpatialPartition::SpatialPartition(DIMENSIONS_VEC  environmentMin, DIMENSIONS_VEC environmentMax, unsigned int maxAgents, float interactionRad)
-    : environmentMin(environmentMin)
-    , environmentMax(environmentMax)
-    , maxAgents(maxAgents)
+    : maxAgents(maxAgents)
     , interactionRad(interactionRad)
     , locationMessageCount(0)
+    , environmentMin(environmentMin)
+    , environmentMax(environmentMax)
     , gridDim((environmentMax - environmentMin) / interactionRad)
 #ifdef _DEBUG
     , PBM_isBuilt(0)

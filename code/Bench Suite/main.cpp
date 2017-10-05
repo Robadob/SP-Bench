@@ -6,9 +6,9 @@
 #include "results.h"
 #include <ctime>
 
-void execString(const char* executable, ModelParams model, char **rtn);
-bool executeBenchmark(const char* executable, ModelParams modelArgs, ModelParams *modelparamOut, unsigned int *agentCount, Time_Init *initRes, Time_Step_dbl *stepRes, float *totalTime);
-void logResult(FILE *out, const ModelParams* modelArgs, const unsigned int agentCount, const Time_Init *initRes, const Time_Step_dbl *stepRes, const float totalTime);
+void execString(const char* executable, CirclesParams model, char **rtn);
+bool executeBenchmark(const char* executable, CirclesParams modelArgs, CirclesParams *modelparamOut, unsigned int *agentCount, Time_Init *initRes, Time_Step_dbl *stepRes, float *totalTime);
+void logResult(FILE *out, const CirclesParams* modelArgs, const unsigned int agentCount, const Time_Init *initRes, const Time_Step_dbl *stepRes, const float totalTime);
 void logHeader(FILE *out);
 const char *EXE_REFERENCE = "Release-Reference Implementation.exe";
 const char *DIR_X64 = "..\\bin\\x64\\";
@@ -23,14 +23,14 @@ int main(int argc, char* argv[])
 		return 1;
 	//Problem Scale
 	//Init model arg start
-	ModelParams start = {};
+    CirclesParams start = {};
 	start.iterations = 1000;
 	start.density = 0.01f;
 	start.interactionRad = 5.0f;
 	start.width = 300;
 	start.seed = 100;
 	//Init model arg end
-	ModelParams end = {};
+    CirclesParams end = {};
 	end.iterations = 1000;
 	end.density = 0.01f;
 	end.interactionRad = 5.0f;
@@ -60,8 +60,8 @@ int main(int argc, char* argv[])
 	//Create objects for use within the loop
 	Time_Init initRes;
 	Time_Step_dbl stepRes;
-	ModelParams modelArgs;
-	ModelParams modelParamsOut;
+    CirclesParams modelArgs;
+    CirclesParams modelParamsOut;
 	unsigned int agentCount;
 	float totalTime;
 	//For each benchmark
@@ -77,7 +77,7 @@ int main(int argc, char* argv[])
 		modelArgs.repulsionForce = start.repulsionForce + ((i / stepsM1)*(end.repulsionForce - start.repulsionForce));
 		modelArgs.iterations = start.iterations + (long long)((i / stepsM1)*((int)end.iterations - (int)start.iterations));
 		//Clear output structures
-		memset(&modelParamsOut, 0, sizeof(ModelParams));
+        memset(&modelParamsOut, 0, sizeof(CirclesParams));
 		memset(&stepRes, 0, sizeof(Time_Step_dbl));
 		memset(&initRes, 0, sizeof(Time_Init));
 		agentCount = 0;
@@ -93,16 +93,16 @@ int main(int argc, char* argv[])
 	printf("\nComplete\n");
 }
 
-bool executeBenchmark(const char* executable, ModelParams modelArgs, ModelParams *modelparamOut, unsigned int *agentCount, Time_Init *initRes, Time_Step_dbl *stepRes, float *totalTime)
+bool executeBenchmark(const char* executable, CirclesParams modelArgs, CirclesParams *modelparamOut, unsigned int *agentCount, Time_Init *initRes, Time_Step_dbl *stepRes, float *totalTime)
 {
 	char *command;
 	bool rtn = true;
 	execString(executable, modelArgs, &command);
 	std::shared_ptr<FILE> pipe(_popen(command, "rb"), _pclose);
 	if (!pipe.get()) return false;
-	if (fread(modelparamOut, sizeof(ModelParams), 1, pipe.get()) != 1)
+    if (fread(modelparamOut, sizeof(CirclesParams), 1, pipe.get()) != 1)
 	{
-		rtn = false; printf("\nReading model params failed.\n");
+		rtn = false; printf("\nReading model-circles params failed.\n");
 	}
 	if (fread(agentCount, sizeof(unsigned int), 1, pipe.get()) != 1)
 	{
@@ -123,7 +123,7 @@ bool executeBenchmark(const char* executable, ModelParams modelArgs, ModelParams
 	return rtn;
 }
 
-void execString(const char* executable, ModelParams modelArgs, char **rtn)
+void execString(const char* executable, CirclesParams modelArgs, char **rtn)
 {
 	std::string buffer("\"");
 	buffer = buffer.append(DIR_X64);
@@ -135,7 +135,7 @@ void execString(const char* executable, ModelParams modelArgs, char **rtn)
 	buffer = buffer.append(" ");
 	buffer = buffer.append(std::to_string(0));
 	buffer = buffer.append(" ");
-	buffer = buffer.append(" -model");
+	buffer = buffer.append(" -circles");
 	buffer = buffer.append(" ");
 	buffer = buffer.append(std::to_string(modelArgs.width));
 	buffer = buffer.append(" ");
@@ -210,7 +210,7 @@ void logHeader(FILE *out)
 	//ln
 	fputs("\n", out);
 }
-void logResult(FILE *out, const ModelParams* modelArgs, const unsigned int agentCount, const Time_Init *initRes, const Time_Step_dbl *stepRes, const float totalTime)
+void logResult(FILE *out, const CirclesParams* modelArgs, const unsigned int agentCount, const Time_Init *initRes, const Time_Step_dbl *stepRes, const float totalTime)
 {	//ModelArgs
 	fprintf(out, "%i,%f,%f,%f,%f,%llu,",
 		modelArgs->width,

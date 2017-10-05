@@ -9,6 +9,7 @@ class Skybox : public Entity
 public:
     Skybox(const char *texturePath = TextureCubeMap::SKYBOX_PATH, float yOffset = 0.0f);
     void render() override;
+    using Entity::setModelViewMatPtr;
     void setModelViewMatPtr(const Camera *camera) override;
     void setYOffset(float yOffset);
 };

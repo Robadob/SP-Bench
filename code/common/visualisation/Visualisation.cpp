@@ -2,7 +2,7 @@
 
 #include <sstream>
 #include <glm/gtc/type_ptr.hpp>
-#include <glm/gtc/matrix_transform.inl>
+#include <glm/gtc/matrix_transform.hpp>
 
 #include "GLcheck.h"
 #include "Scene.h"
@@ -183,7 +183,7 @@ void Visualisation::close(){
     //Delete objects before we delete the GL context!
     if (this->scene)
     {
-        this->scene->kill();
+        delete this->scene;
         this->scene = 0;
     }
     if (this->skybox)

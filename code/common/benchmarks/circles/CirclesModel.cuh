@@ -3,11 +3,10 @@
 
 #include <math.h>
 #include "results.h"
-template <class T>
-class Circles
+class CirclesModel : public Model
 {
 public:
-    Circles(
+    CirclesModel(
         const unsigned int width = 250,
         const float density = 1.0,
         const float interactionRad = 10.0,
@@ -15,40 +14,38 @@ public:
         const float repulse = 5.0
         );
     //Returns the time taken
-    const Time_Init initPopulation(const unsigned long long rngSeed = 12);
-    const Time_Step step();
+    const Time_Init initPopulation(const unsigned long long rngSeed = 12) override;
+    const Time_Step step() override;
 private:
     void launchStep();//Launches step_model kernel
-    T *spatialPartition;
+    std::shared_ptr<SpatialPartition> spatialPartition;
     //If values are constant, might aswell make them public, save writing accessor methods
 public:
-    T *getPartition(){ return spatialPartition; }
+    std::shared_ptr<SpatialPartition> getPartition() override { return spatialPartition; }
     const unsigned int width;
     const float density;
     const float interactionRad;
     const float attract;
     const float repulse;
-    const unsigned int agentMax;
 };
 
 extern __device__ __constant__ float d_attract;
 extern __device__ __constant__ float d_repulse;
 
-template <class T>
-Circles<T>::Circles(
+CirclesModel::CirclesModel(
     const unsigned int width,
     const float density,
     const float interactionRad,
     const float attract,
     const float repulse
     )
-    : width(width)
+    : Model((int)(round(pow(width, DIMENSIONS) * (double)density)))
+    , spatialPartition(std::make_shared<SpatialPartition>(DIMENSIONS_VEC(0.0f, 0.0f, 0.0f), DIMENSIONS_VEC(width, width, width), (int)round(pow(width, DIMENSIONS) * (double)density), interactionRad))
+    , width(width)
     , density(density)
     , interactionRad(interactionRad)
     , attract(attract)
     , repulse(repulse)
-    , agentMax((int)(round(pow(width, DIMENSIONS) * (double)density)))
-	, spatialPartition(new SpatialPartition(DIMENSIONS_VEC(0.0f, 0.0f, 0.0f), DIMENSIONS_VEC(width, width, width), (int)round(pow(width, DIMENSIONS) * (double)density), interactionRad))
 {
     //Copy relevant parameters to constants
     CUDA_CALL(cudaMemcpyToSymbol(d_attract, &attract, sizeof(float)));
@@ -61,8 +58,7 @@ Circles<T>::Circles(
 
 }
 
-template <class T>
-const Time_Init Circles<T>::initPopulation(const unsigned long long rngSeed)
+const Time_Init CirclesModel::initPopulation(const unsigned long long rngSeed)
 {
     cudaEvent_t start_overall, start_kernel, start_pbm, start_free, stop_overall;
     cudaEventCreate(&start_overall);
@@ -141,8 +137,7 @@ const Time_Init Circles<T>::initPopulation(const unsigned long long rngSeed)
 
     return rtn;
 }
-template <class T>
-const Time_Step Circles<T>::step()
+const Time_Step CirclesModel::step()
 {
     cudaEvent_t start_overall, start_texture, stop_overall;
     cudaEventCreate(&start_overall);
@@ -180,8 +175,7 @@ int requiredSM_stepModel(int blockSize)
 {
     return sizeof(LocationMessage)*blockSize;
 }
-template <class T>
-void Circles<T>::launchStep()
+void CirclesModel::launchStep()
 {
     int minGridSize, blockSize;   // The launch configurator returned block size 
     cudaOccupancyMaxPotentialBlockSizeVariableSMem(&minGridSize, &blockSize, step_model, requiredSM_stepModel, 0);//random 128
@@ -190,7 +184,7 @@ void Circles<T>::launchStep()
     LocationMessages *d_lm = spatialPartition->d_getLocationMessages();
     LocationMessages *d_lm2 = spatialPartition->d_getLocationMessagesSwap();
     //Launch kernel
-    step_model << <gridSize, blockSize, requiredSM_stepModel(blockSize) >> >(d_lm, d_lm2);
+    step_model<<<gridSize, blockSize, requiredSM_stepModel(blockSize) >> >(d_lm, d_lm2);
     //Swap
     spatialPartition->swap();
     //Wait for return

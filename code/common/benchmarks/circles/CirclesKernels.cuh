@@ -1,7 +1,7 @@
 #ifndef __CirclesKernels_cuh__
 #define __CirclesKernels_cuh__
 
-#include "Neighbourhood.cuh"//Remove with templating if possible
+#include "near_neighbours/Neighbourhood.cuh"//Remove with templating if possible
 //#pragma warning(disable:4244)
 //#pragma warning(disable:4305)
 #include <curand_kernel.h>

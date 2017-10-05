@@ -1,6 +1,7 @@
 #ifndef __Neighbourhood_cuh__
 #define __Neighbourhood_cuh__
 
+#include "results.h"
 #include "header.cuh"
 #include "glm/gtx/component_wise.hpp"
 
@@ -91,7 +92,7 @@ public:
     unsigned int *d_getPBM() { return d_PBM; }
     LocationMessages *d_getLocationMessages() { return d_locationMessages; }
     LocationMessages *d_getLocationMessagesSwap() { return d_locationMessages_swap; }
-    unsigned int getLocationCount(){ return locationMessageCount; }
+    unsigned int getLocationCount() { return locationMessageCount; }
     //Setters
     void SpatialPartition::setLocationCount(unsigned int);
     //Util
@@ -168,9 +169,9 @@ private:
     //Local copies of device constants
     unsigned int locationMessageCount;
 
-    const DIMENSIONS_IVEC gridDim;
     const DIMENSIONS_VEC  environmentMin;
     const DIMENSIONS_VEC  environmentMax;
+    const DIMENSIONS_IVEC gridDim;
 #ifdef _DEBUG
     unsigned int PBM_isBuilt;
 #endif

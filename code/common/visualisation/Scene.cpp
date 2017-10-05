@@ -10,12 +10,6 @@ Scene::Scene(Visualisation &visualisation)
     this->visualisation.setScene(this);
 }
 /*
-Calls the destructor
-*/
-void Scene::kill(){
-    delete this;
-}
-/*
 Registers an entity, so the scene can manage it's modelview and projection matrices and reloads
 */
 void Scene::registerEntity(std::shared_ptr<Entity> ent)

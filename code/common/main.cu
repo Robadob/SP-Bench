@@ -1,5 +1,4 @@
-#include "Neighbourhood.cuh"
-#include "Circles.cuh"
+#include "near_neighbours/Neighbourhood.cuh"
 #include <algorithm>
 #include <string>
 #ifdef _GL
@@ -12,35 +11,13 @@
 #include <fcntl.h>
 #include <io.h>
 #include "export.h"
+#include <memory>
 
-struct ArgData
-{
-	ArgData()
-		: pipe(false)
-		, profile(false)
-		, device(0)
-#ifdef _GL
-		, GLwidth(1280)
-		, GLheight(720)
-#endif
-		, model()
-	{}
-	bool pipe = false;
-	bool profile = false;
-	bool exportAgents = false;
-	bool exportInit = false;
-	unsigned int device;
-#ifdef _GL
-	unsigned int GLwidth;
-	unsigned int GLheight;
-#endif
-	ModelParams model;
-};
 ArgData parseArgs(int argc, char * argv[])
 {
 	//Init so defaults are used
-	ArgData data = { };
-	for (int i = 0; i < argc; i++)
+	ArgData data = { };	
+    for (int i = 0; i < argc; i++)
 	{
 		std::string arg(argv[i]);
 		std::transform(arg.begin(), arg.end(), arg.begin(), ::tolower);
@@ -57,23 +34,54 @@ ArgData parseArgs(int argc, char * argv[])
 		//-seed <ulong>, Uses the specified rng seed, defaults to 12
 		else if (arg.compare("-seed") == 0)
 		{
-			data.model.seed = (unsigned int)strtoul(argv[++i], nullptr, 0);
+			data.seed = (unsigned int)strtoul(argv[++i], nullptr, 0);
 		}
 		//-device <uint>, Uses the specified cuda device, defaults to 0
 		else if (arg.compare("-device") == 0)
 		{
 			data.device = (unsigned int)strtoul(argv[++i], nullptr, 0);
 		}
-		//-model <uint> <float> <float> <float> <float> <ulong>, Sets the width, density, interaction rad, attractionForce, repulsionForce and iterations to be executed
-		else if (arg.compare("-model") == 0)
+#ifdef CIRCLES_MODEL
+		//-circles <uint> <float> <float> <float> <float> <ulong>
+        //Enables circles model
+	    //Sets the width, density, interaction rad, attractionForce, repulsionForce and iterations to be executed
+		else if (arg.compare("-circles") == 0)
 		{
-			data.model.width = (unsigned int)strtoul(argv[++i],nullptr,0);
-			data.model.density = (float)atof(argv[++i]);
-			data.model.interactionRad = (float)atof(argv[++i]);
-			data.model.attractionForce = (float)atof(argv[++i]);
-			data.model.repulsionForce = (float)atof(argv[++i]);
-			data.model.iterations = strtoul(argv[++i], nullptr, 0);
-		}
+            assert(!data.model);//Two model params passed at runtime?
+            std::shared_ptr<CirclesParams> mdl = std::make_shared<CirclesParams>();
+            mdl->width = (unsigned int)strtoul(argv[++i], nullptr, 0);
+            mdl->density = (float)atof(argv[++i]);
+            mdl->interactionRad = (float)atof(argv[++i]);
+            mdl->attractionForce = (float)atof(argv[++i]);
+            mdl->repulsionForce = (float)atof(argv[++i]);
+            mdl->iterations = strtoul(argv[++i], nullptr, 0);
+            data.model = mdl;
+        }
+#endif
+#ifdef NULL_MODEL
+        ////-null <uint> <float> <float> <float> <float> <ulong>
+        ////Enables null model
+        ////Sets the width, density, interaction rad, attractionForce, repulsionForce and iterations to be executed
+        else if (arg.compare("-null") == 0)
+        {
+            assert(false);//TODO
+        //    assert(!data.model);//Two model params passed at runtime?
+        //    std::shared_ptr<NullParams> mdl = std::make_shared<NullParams>();
+        //    mdl->width = (unsigned int)strtoul(argv[++i], nullptr, 0);
+        //    mdl->density = (float)atof(argv[++i]);
+        //    mdl->interactionRad = (float)atof(argv[++i]);
+        //    mdl->attractionForce = (float)atof(argv[++i]);
+        //    mdl->repulsionForce = (float)atof(argv[++i]);
+        //    mdl->iterations = strtoul(argv[++i], nullptr, 0);
+        //    data.model = mdl;
+        }
+#endif
+#ifdef DENSITY_MODEL
+        else if (arg.compare("-density") == 0)
+        {
+            assert(false);//TODO
+        }
+#endif
 #ifdef _GL
 		//-resolution <uint> <uint>, Sets the width and height of the GL window
 		else if (arg.compare("-resolution") == 0 || arg.compare("-res") == 0)
@@ -96,6 +104,7 @@ ArgData parseArgs(int argc, char * argv[])
 int main(int argc, char * argv[])
 {
 	ArgData args = parseArgs(argc, argv);
+    assert(args.model);//No model selected!
 	cudaError_t status = cudaSetDevice(args.device);
 	// If there were no errors, proceed.
 	if (status == cudaSuccess){
@@ -115,6 +124,8 @@ int main(int argc, char * argv[])
 		fflush(stderr);
 		exit(EXIT_FAILURE);
 	}
+
+    //Begin instrumentation
 	cudaEvent_t start, stop;
 	cudaEventCreate(&start);
 	cudaEventCreate(&stop);
@@ -123,16 +134,44 @@ int main(int argc, char * argv[])
 #ifdef _GL
 	Visualisation v("Visulisation Example", args.GLwidth, args.GLheight);//Need to init GL before creating CUDA textures
 #endif
-	Circles<SpatialPartition> model(args.model.width, args.model.density, args.model.interactionRad*2, args.model.attractionForce, args.model.repulsionForce);
-	const Time_Init initTimes = model.initPopulation(args.model.seed);//Need to init textures before creating the scene
+    std::shared_ptr<Model> model;
+    
+    switch (args.model->enumerator())
+    {
+#ifdef CIRCLES_MODEL
+        case Circles:
+        {
+            std::shared_ptr<CirclesParams> _model = std::dynamic_pointer_cast<CirclesParams>(args.model);
+            model = std::make_shared<CirclesModel>(_model->width, _model->density, _model->interactionRad * 2, _model->attractionForce, _model->repulsionForce);
+            break;
+        }
+#endif
+#ifdef NULL_MODEL
+        case Null:
+        {
+            assert(false);//TODO
+            break;
+        }
+#endif
+#ifdef DENSITY_MODEL
+        case Density:
+        {
+            assert(false);//TODO
+            break;
+        }
+#endif
+        default:
+            assert(false);//Model not configured
+    } 
+    const Time_Init initTimes = model->initPopulation(args.seed);//Need to init textures before creating the scene
 #ifdef _GL
-	ParticleScene<SpatialPartition> *scene = new ParticleScene<SpatialPartition>(v, model);
+	std::shared_ptr<ParticleScene> scene = std::make_shared<ParticleScene>(v, model);
 #endif
 
 	//Init model
 	if (!args.pipe&&!args.profile)
 	{
-		printf("Agents: %d\n", model.getPartition()->getLocationCount());
+		printf("Agents: %d\n", model->getPartition()->getLocationCount());
 		printf("Init Complete - Times\n");
 		printf("CuRand init - %.3fs\n", initTimes.initCurand / 1000);
 		printf("Main kernel - %.3fs\n", initTimes.kernel / 1000);
@@ -143,28 +182,28 @@ int main(int argc, char * argv[])
 	}
 	if (args.exportInit)
 	{
-		exportPopulation(model.getPartition(), &args.model, "init.xml");
+		exportPopulation(model->getPartition(), args, "init.xml");
 	}
 	//Start visualisation
 	//v.runAsync();
 	//v.run();
 	//Do iterations
 	Time_Step_dbl average = {};//init
-	for (unsigned long long i = 1; i <= args.model.iterations; i++)
+    for (unsigned long long i = 1; i <= args.model->iterations; i++)
 	{
-		const Time_Step iterTime = model.step();
+		const Time_Step iterTime = model->step();
 		//Calculate averages
-		average.overall += iterTime.overall / args.model.iterations;
-		average.kernel += iterTime.kernel / args.model.iterations;
-		average.texture += iterTime.texture / args.model.iterations;
+        average.overall += iterTime.overall / args.model->iterations;
+        average.kernel += iterTime.kernel / args.model->iterations;
+        average.texture += iterTime.texture / args.model->iterations;
 #ifdef _GL
 		//Pass count to visualisation
-		scene->setCount(model.getPartition()->getLocationCount());
+		scene->setCount(model->getPartition()->getLocationCount());
 		v.render();
 #endif
 		if (!args.pipe&&!args.profile)
 		{
-			printf("\r%6llu/%llu", i, args.model.iterations);
+			printf("\r%6llu/%llu", i, args.model->iterations);
 		}
 	}
 	if (!args.pipe&&!args.profile)
@@ -191,13 +230,13 @@ int main(int argc, char * argv[])
 	{
 		//FILE *pipe = fopen("CON", "wb+");// _popen("", "wb");
 		setmode(fileno(stdout), O_BINARY);
-		if (fwrite(&args.model, sizeof(ModelParams), 1, stdout) != 1)
+        if (fwrite(&args.model, sizeof(CirclesParams), 1, stdout) != 1)
 		{
 			freopen("error.log", "a", stderr);
 			fprintf(stderr, "Writing model params failed.\n"); 
 			fflush(stderr);
 		};
-		if (fwrite(&model.agentMax, sizeof(unsigned int), 1, stdout) != 1)
+		if (fwrite(&model->agentMax, sizeof(unsigned int), 1, stdout) != 1)
 		{
 
 			freopen("error.log", "a", stderr);
@@ -225,7 +264,7 @@ int main(int argc, char * argv[])
 	}
 	if (args.exportAgents)
 	{
-		exportAgents(model.getPartition(), "agents.txt");
+		exportAgents(model->getPartition(), "agents.txt");
 	}
 #ifdef _GL
     v.run();
