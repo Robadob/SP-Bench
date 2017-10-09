@@ -59,7 +59,6 @@ struct LocationMessage
 	DIMENSIONS_VEC location;
 };
 
-
 struct LocationMessages
 {
 public:
@@ -80,6 +79,39 @@ private:
 	__device__ LocationMessage *loadNextMessage(LocationMessage *message);
 
 };
+
+/* //These structures would be used if we were passing more data with neighbours, than simply location
+template<class T>
+struct LocationMessageExt<T>
+{
+    unsigned int id;
+    BinState state;
+	DIMENSIONS_VEC location;
+    T data;
+};
+template<class T>
+struct LocationMessagesExt<T>
+{
+public:
+    float *locationX;
+	float *locationY;
+#ifdef _3D
+	float *locationZ;
+#endif
+#if defined(_GL) || defined(_DEBUG)
+    float *count;
+#endif
+    T *data;
+    __device__ LocationMessage *getFirstNeighbour(DIMENSIONS_VEC location);
+    __device__ LocationMessage *getNextNeighbour(LocationMessageExt<T> *message);
+
+private:
+	__device__ bool nextBin(LocationMessageExt<T> *sm_message);
+    //Load the next desired message into shared memory
+	__device__ LocationMessage *loadNextMessage(LocationMessageExt<T> *message);
+
+};
+*/
 
 extern __host__ __device__ unsigned int morton3D(DIMENSIONS_IVEC pos);
 extern __host__ __device__ DIMENSIONS_IVEC getGridPosition(DIMENSIONS_VEC worldPos);

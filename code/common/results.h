@@ -32,7 +32,7 @@ enum ModelEnum : unsigned int
 struct ModelParams 
 {
     ModelParams()
-        : iterations(5000)
+        : iterations(1000)
     {
         
     }
@@ -46,11 +46,11 @@ struct ModelParams
 struct CirclesParams : ModelParams
 {
     CirclesParams()
-		: width(100)
-		, density(0.005f)
-		, interactionRad(10.0f)
-		, attractionForce(0.00001f)
-		, repulsionForce(0.00001f)
+		: width(50)
+		, density(0.01f)
+		, interactionRad(5.0f)
+		, attractionForce(0.5f)
+		, repulsionForce(0.5f)
 	{ }
 	unsigned int width;
 	float density;
@@ -65,21 +65,25 @@ private:
     const char *MODEL_NAME = "Circles";
     const char *MODEL_FLAG = "-circles";
 };
-class SpatialPartition;
-class Model
+
+struct NullParams : ModelParams
 {
-public:
-    Model(const unsigned int agentMax)
-        :agentMax(agentMax)
+    NullParams()
+        : agents(16384)
+        , density(0.125f)
+        , interactionRad(5.0f)
     { }
-    virtual ~Model() = default;
-    virtual const Time_Init initPopulation(const unsigned long long rngSeed = 12)=0;
-    virtual const Time_Step step()=0;
-    virtual std::shared_ptr<SpatialPartition> getPartition() = 0;
-    const unsigned int agentMax;
+    unsigned int agents;
+    float density;
+    float interactionRad;
+
+    const char *modelName() override { return MODEL_NAME; };
+    const char *modelFlag() override { return MODEL_FLAG; };
+    ModelEnum enumerator() override { return ModelEnum::Null; };
+private:
+    const char *MODEL_NAME = "Null";
+    const char *MODEL_FLAG = "-null";
 };
-
-
 struct ArgData
 {
     ArgData()

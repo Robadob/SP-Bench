@@ -2,7 +2,7 @@
 
 #include "visualisation/GLcheck.h"
 
-ParticleScene::ParticleScene(Visualisation &visualisation, std::shared_ptr<Model> model)
+ParticleScene::ParticleScene(Visualisation &visualisation, std::shared_ptr<CoreModel> model)
     : Scene(visualisation)
     , icosphere(std::make_shared<Entity>(Stock::Models::ICOSPHERE, 1.0f, std::make_shared<Shaders>("../shaders/instanced.vert","../shaders/instanced.frag")))
     , count(model->agentMax)

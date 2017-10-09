@@ -24,6 +24,9 @@ SpatialPartition::SpatialPartition(DIMENSIONS_VEC  environmentMin, DIMENSIONS_VE
     , PBM_isBuilt(0)
 #endif
 {
+#ifdef _DEBUG
+    printf("Spatial Partition: Interaction Rad(%.3f), Grid Dims(%d,%d,%d)\n", interactionRad, gridDim.x, gridDim.y, gridDim.z);
+#endif
 	setBinCount();
     //Allocate bins in GPU memory
     deviceAllocateLocationMessages(&d_locationMessages, &hd_locationMessages);
@@ -347,7 +350,6 @@ void SpatialPartition::deviceAllocateLocationMessages(LocationMessages **d_locMe
     CUDA_CALL(cudaMalloc(&hd_locMessage->count, sizeof(float)*maxAgents));
 	CUDA_CALL(cudaMemcpy(&((*d_locMessage)->count), &(hd_locMessage->count), sizeof(float*), cudaMemcpyHostToDevice));
 	CUDA_CALL(cudaMemset(hd_locMessage->count, 0, sizeof(float)*maxAgents));//Must be 0'd to protect assertions on k20
-
 #endif
 }
 void SpatialPartition::deviceAllocatePBM(unsigned int **d_PBM_t)
@@ -363,7 +365,6 @@ void SpatialPartition::deviceAllocatePrimitives(unsigned int **d_keys, unsigned 
 #ifndef THRUST
 void SpatialPartition::deviceAllocateCUBTemp(void **d_CUB_temp, size_t &d_cub_temp_bytes)
 {
-
 	//CUB version
 	// Determine temporary device storage requirements
 	d_cub_temp_bytes = 0;
@@ -399,7 +400,6 @@ void SpatialPartition::fillTextures()
 #ifdef _GL
     CUDA_CALL(cudaMemcpy(tex_location_ptr_count, hd_locationMessages.count, locationMessageCount*sizeof(float), cudaMemcpyDeviceToDevice));
 #endif
-
     CUDA_CALL(cudaMemcpy(tex_PBM_ptr, d_PBM, (this->binCountMax+1)*sizeof(unsigned int), cudaMemcpyDeviceToDevice));
 }
 

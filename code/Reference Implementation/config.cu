@@ -8,10 +8,11 @@
 #include "near_neighbours/Neighbourhood.cu"
 #include "near_neighbours/NeighbourhoodKernels.cu"
 //Build the Benchmark Models 
+#include "benchmarks/core/Core.cuh"
 //Circles model (defines CIRCLES_MODEL)
 #include "benchmarks/circles/Circles.cuh"
 //Circles model (defines NULL_MODEL)
-//#include "benchmarks/null/Null.cuh"
+#include "benchmarks/null/Null.cuh"
 //Circles model (defines DENSITY_MODEL)
 //#include "benchmarks/density/Density.cuh"
 

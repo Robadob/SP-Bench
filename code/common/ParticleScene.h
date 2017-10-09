@@ -16,7 +16,7 @@ class ParticleScene : protected Scene
 {
 public:
 
-    ParticleScene(Visualisation &visualisation, std::shared_ptr<Model> model);
+    ParticleScene(Visualisation &visualisation, std::shared_ptr<CoreModel> model);
     ~ParticleScene() override;
     void render() override;
     void reload() override;
@@ -33,7 +33,7 @@ private:
     unsigned int count;// Number of agents within the texture buffer
     GLuint tex[DIMENSIONS];//Array of texture arrays containing our instance data to be rendered
 
-    std::shared_ptr<Model> model;
+    std::shared_ptr<CoreModel> model;
 };
 
 #endif __ParticleScene_h__

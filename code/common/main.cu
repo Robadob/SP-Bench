@@ -31,7 +31,7 @@ ArgData parseArgs(int argc, char * argv[])
 		{
 			data.profile = true;
 		}
-		//-seed <ulong>, Uses the specified rng seed, defaults to 12
+		//-seed <ulong>, Uses the specified rng seed, defaults to 12, 0 produces uniform initialisation
 		else if (arg.compare("-seed") == 0)
 		{
 			data.seed = (unsigned int)strtoul(argv[++i], nullptr, 0);
@@ -59,21 +59,18 @@ ArgData parseArgs(int argc, char * argv[])
         }
 #endif
 #ifdef NULL_MODEL
-        ////-null <uint> <float> <float> <float> <float> <ulong>
+        ////-null <uint> <float> <float> <ulong>
         ////Enables null model
-        ////Sets the width, density, interaction rad, attractionForce, repulsionForce and iterations to be executed
+        ////Sets the agent count, density, interaction rad and iterations to be executed
         else if (arg.compare("-null") == 0)
         {
-            assert(false);//TODO
-        //    assert(!data.model);//Two model params passed at runtime?
-        //    std::shared_ptr<NullParams> mdl = std::make_shared<NullParams>();
-        //    mdl->width = (unsigned int)strtoul(argv[++i], nullptr, 0);
-        //    mdl->density = (float)atof(argv[++i]);
-        //    mdl->interactionRad = (float)atof(argv[++i]);
-        //    mdl->attractionForce = (float)atof(argv[++i]);
-        //    mdl->repulsionForce = (float)atof(argv[++i]);
-        //    mdl->iterations = strtoul(argv[++i], nullptr, 0);
-        //    data.model = mdl;
+           assert(!data.model);//Two model params passed at runtime?
+           std::shared_ptr<NullParams> mdl = std::make_shared<NullParams>();
+           mdl->agents = (unsigned int)strtoul(argv[++i], nullptr, 0);
+           mdl->density = (float)atof(argv[++i]);
+           mdl->interactionRad = (float)atof(argv[++i]);
+           mdl->iterations = strtoul(argv[++i], nullptr, 0);
+           data.model = mdl;
         }
 #endif
 #ifdef DENSITY_MODEL
@@ -82,6 +79,35 @@ ArgData parseArgs(int argc, char * argv[])
             assert(false);//TODO
         }
 #endif
+        else if (arg.compare("-demo") == 0)
+        {
+            assert(!data.model);//Two model params passed at runtime?
+            arg = argv[++i];
+#ifdef CIRCLES_MODEL
+            if(arg.compare("circles") == 0)
+            {
+                data.model = std::make_shared<CirclesParams>();
+                data.seed = 12;
+                continue;
+            }
+#endif
+#ifdef NULL_MODEL
+            if (arg.compare("null") == 0)
+            {
+                data.model = std::make_shared<NullParams>();
+                data.seed = 12;
+                continue;
+            }
+#endif
+#ifdef DENSITY_MODEL
+            if (arg.compare("density") == 0)
+            {
+                assert(false);//todo
+                data.model = std::make_shared<DensityParams>();
+                continue;
+            }
+#endif
+        }
 #ifdef _GL
 		//-resolution <uint> <uint>, Sets the width and height of the GL window
 		else if (arg.compare("-resolution") == 0 || arg.compare("-res") == 0)
@@ -134,7 +160,7 @@ int main(int argc, char * argv[])
 #ifdef _GL
 	Visualisation v("Visulisation Example", args.GLwidth, args.GLheight);//Need to init GL before creating CUDA textures
 #endif
-    std::shared_ptr<Model> model;
+    std::shared_ptr<CoreModel> model;
     
     switch (args.model->enumerator())
     {
@@ -149,7 +175,8 @@ int main(int argc, char * argv[])
 #ifdef NULL_MODEL
         case Null:
         {
-            assert(false);//TODO
+            std::shared_ptr<NullParams> _model = std::dynamic_pointer_cast<NullParams>(args.model);
+            model = std::make_shared<NullModel>(_model->agents, _model->density, _model->interactionRad);
             break;
         }
 #endif
