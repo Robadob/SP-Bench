@@ -54,10 +54,20 @@ const Time_Init CoreModel::initPopulation(const unsigned long long rngSeed)
     //Generate initial states, and store in location messages
     LocationMessages *d_lm = getPartition()->d_getLocationMessages();
     if (rngSeed != 0)
-        init_particles << <initBlocks, initThreads >> >(d_rng, d_lm);//Defined in CircleKernels.cuh
+    {
+        init_particles << <initBlocks, initThreads >> >(d_rng, d_lm);
+    }
     else
     {
-        init_particles_uniform << <initBlocks, initThreads >> >(d_lm);//Defined in CircleKernels.cuh
+#if DIMENSIONS==3
+        int particlesPerDim = cbrt(agentMax)+1;
+#elif DIMENSIONS==2
+        int particlesPerDim = sqrt(agentMax)+1;
+#else
+#error Invalid DIMENSIONS value, only 2 and 3 are suitable
+#endif
+        DIMENSIONS_VEC offset = getPartition()->getEnvironmentDimensions() / (float)particlesPerDim;
+        init_particles_uniform << <initBlocks, initThreads >> >(d_lm, particlesPerDim, offset);
         //Not sure why this ifdef is required
 #ifdef _GL
         int bins = glm::compMul(getPartition()->getGridDim());

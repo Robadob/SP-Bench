@@ -59,6 +59,13 @@ bool ParticleScene::keypress(SDL_Keycode keycode, int x, int y)
     case SDLK_p:
         this->drawPBM = !this->drawPBM;
         break;
+    case SDLK_o:
+        if (visualisation.isRunning())
+        {
+            this->model->step();
+            setCount(this->model->getPartition()->getLocationCount());
+        }
+        break;
     default:
         //Only permit the keycode to be processed if we haven't handled personally
         return true;

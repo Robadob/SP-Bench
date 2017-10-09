@@ -24,6 +24,7 @@ public:
     Scene *setScene(Scene *scene);
     void Visualisation::render();
     void run(); // @todo - improve
+    bool isRunning() const { return continueRender; }
 
     const char *getWindowTitle() const;
     void setWindowTitle(const char *windowTitle);

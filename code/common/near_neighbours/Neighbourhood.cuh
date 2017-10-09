@@ -133,6 +133,7 @@ public:
     DIMENSIONS_IVEC getGridDim() const { return gridDim; }
     DIMENSIONS_VEC getEnvironmentMin() const { return environmentMin; }
     DIMENSIONS_VEC getEnvironmentMax() const { return environmentMax; }
+    DIMENSIONS_VEC getEnvironmentDimensions() const { return environmentMax - environmentMin; }
     float getCellSize() const { return interactionRad;  }
 #ifdef _DEBUG
     bool isValid(DIMENSIONS_IVEC bin) const;

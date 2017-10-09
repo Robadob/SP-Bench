@@ -116,7 +116,7 @@ __global__ void step_circles_model(LocationMessages *locationMessagesIn, Locatio
         lm = locationMessagesIn->getNextNeighbour(lm);//Returns a pointer to shared memory or 0
     } while (lm);
     //Export newLoc
-    newLoc /= ct;
+    newLoc /= ct>0?ct:1;
     newLoc += myLoc;
 #ifdef _DEBUG
     assert(!isnan(newLoc.x));
