@@ -1,9 +1,6 @@
-#define MOD_NAME "Individual Binning (default)"
+#ifndef __BuildAll_cuh__
+#define __BuildAll_cuh__
 
-//No options, this is default 
-
-
-//Move below into a single include?
 //Build the data-structure
 #include "near_neighbours/Neighbourhood.cu"
 #include "near_neighbours/NeighbourhoodKernels.cu"
@@ -11,10 +8,8 @@
 #include "benchmarks/core/Core.cuh"
 //Circles model (defines CIRCLES_MODEL)
 #include "benchmarks/circles/Circles.cuh"
-//Circles model (defines NULL_MODEL)
+//Circles model (defines NULL_MODEL, DENSITY_MODEL)
 #include "benchmarks/null/Null.cuh"
-//Circles model (defines DENSITY_MODEL)
-//#include "benchmarks/density/Density.cuh"
 
 //Build the actual entry point
 #include "main.cu"
@@ -27,3 +22,5 @@
 #include "ParticleScene.hpp"
 #include "BuildVisualisation.h"
 #endif
+
+#endif //__BuildAll_cuh__

@@ -35,8 +35,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{E4072939-4F0A-4CC1-A00E-87428A4C7F70}</ProjectGuid>
-    <RootNamespace>Reference_Implementation</RootNamespace>
+    <ProjectGuid>{18FDE371-76F3-4D2B-8A4E-025F100223D5}</ProjectGuid>
+    <RootNamespace>ModStrips</RootNamespace>
+    <ProjectName>Mod-Strips</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
