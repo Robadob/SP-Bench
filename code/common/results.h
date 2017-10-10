@@ -84,6 +84,29 @@ private:
     const char *MODEL_NAME = "Null";
     const char *MODEL_FLAG = "-null";
 };
+
+struct DensityParams : ModelParams
+{
+    DensityParams()
+        : agents(2048)
+        , envWidth(50.0f)
+        , interactionRad(5.0f)
+        , clusterCount(5)
+        , clusterRad(5.0f)
+    { }
+    unsigned int agents;
+    float envWidth;
+    float interactionRad;
+    unsigned int clusterCount;
+    float clusterRad;
+
+    const char *modelName() override { return MODEL_NAME; };
+    const char *modelFlag() override { return MODEL_FLAG; };
+    ModelEnum enumerator() override { return ModelEnum::Density; };
+private:
+    const char *MODEL_NAME = "Density";
+    const char *MODEL_FLAG = "-density";
+};
 struct ArgData
 {
     ArgData()

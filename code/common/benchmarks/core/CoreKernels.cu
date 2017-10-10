@@ -52,3 +52,27 @@ __global__ void init_particles_uniform(LocationMessages *locationMessages, int p
 //	locationMessages->locationZ[id] = (z * (d_environmentMax.z / (float)d_gridDim.z)) + (d_environmentMax.z / (float)d_gridDim.z)*0.5;
 //#endif
 }
+
+__global__ void init_particles_clusters(curandState *state, LocationMessages *locationMessages, unsigned int startIndex, unsigned int clusterSize, DIMENSIONS_VEC clusterCenter, float clusterWidth)
+{
+    int id = blockIdx.x * blockDim.x + threadIdx.x;
+    if (id >= clusterSize)
+        return;
+    id += startIndex;
+    if (id >= d_locationMessageCount)
+        return;
+    glm::vec3 newPos;
+    do
+    {
+        newPos.x = clusterCenter.x + ((curand_uniform(&state[id]) - 0.5f) * clusterWidth);
+        newPos.y = clusterCenter.y + ((curand_uniform(&state[id]) - 0.5f) * clusterWidth);
+#ifdef _3D
+        newPos.z = clusterCenter.z + ((curand_uniform(&state[id]) - 0.5f) * clusterWidth);
+#endif
+    } while (2*distance(clusterCenter, newPos)>clusterWidth);
+    locationMessages->locationX[id] = newPos.x;
+    locationMessages->locationY[id] = newPos.y;
+#ifdef _3D
+    locationMessages->locationZ[id] = newPos.z;
+#endif
+}

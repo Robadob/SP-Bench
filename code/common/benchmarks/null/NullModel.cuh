@@ -15,6 +15,12 @@ public:
         const float density = 0.125f,
         const float interactionRad=10.0f
         );
+    //Density alt constructor
+    NullModel(
+        const float envWidth,
+        const float interactionRad,
+        const unsigned int agents
+        );
     ~NullModel();
     //Returns the time taken
     const Time_Step step() override;
@@ -64,6 +70,26 @@ NullModel::NullModel(
 {
 #ifdef _DEBUG
     printf("Null Model: Agent Count(%d), Width(%d)\n", agentMax, width);
+#endif
+    CUDA_CALL(cudaMalloc(&d_result, agentMax*sizeof(DIMENSIONS_VEC)));
+    CUDA_CALL(cudaMemset(d_result, 0, agentMax*sizeof(DIMENSIONS_VEC)));
+    h_result = (DIMENSIONS_VEC*)malloc(agentMax*sizeof(DIMENSIONS_VEC));
+}
+NullModel::NullModel(
+    const float envWidth,
+    const float interactionRad,
+    const unsigned int agents
+    )
+    : CoreModel(agents)
+    , spatialPartition(std::make_shared<SpatialPartition>(DIMENSIONS_VEC(0.0f), DIMENSIONS_VEC(envWidth), agentMax, interactionRad))
+    , d_result(nullptr)
+    , h_result(nullptr)
+    , width(envWidth)
+    , density(pow(envWidth, DIMENSIONS)/agentMax)
+    , interactionRad(interactionRad)
+{
+#ifdef _DEBUG
+    printf("Null Model (Density): Agent Count(%d), Width(%d)\n", agentMax, width);
 #endif
     CUDA_CALL(cudaMalloc(&d_result, agentMax*sizeof(DIMENSIONS_VEC)));
     CUDA_CALL(cudaMemset(d_result, 0, agentMax*sizeof(DIMENSIONS_VEC)));
