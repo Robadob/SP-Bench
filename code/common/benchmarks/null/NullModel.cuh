@@ -84,7 +84,7 @@ NullModel::NullModel(
     , spatialPartition(std::make_shared<SpatialPartition>(DIMENSIONS_VEC(0.0f), DIMENSIONS_VEC(envWidth), agentMax, interactionRad))
     , d_result(nullptr)
     , h_result(nullptr)
-    , width(envWidth)
+    , width(envWidth)//Unsigned or float?
     , density(pow(envWidth, DIMENSIONS)/agentMax)
     , interactionRad(interactionRad)
 {

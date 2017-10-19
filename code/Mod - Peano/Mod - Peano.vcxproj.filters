@@ -4,6 +4,6 @@
     <CudaCompile Include="config.cu" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Morton.h" />
+    <ClInclude Include="Peano.h" />
   </ItemGroup>
 </Project>

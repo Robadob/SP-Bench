@@ -118,6 +118,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Mod-Strips", "Mod - Strips\
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Mod-Morton", "Mod - Morton\Mod - Morton.vcxproj", "{E88FDA92-F5FD-4972-A33C-463A61C8B25A}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Mod-Hilbert", "Mod - Hilbert\Mod - Hilbert.vcxproj", "{1A66FCC5-290F-48CA-81EA-7CAF74FB49F9}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Mod - Peano", "Mod - Peano\Mod - Peano.vcxproj", "{E5DD0EE3-85C1-45F3-8D20-667B5B976C42}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug GL|Mixed Platforms = Debug GL|Mixed Platforms
@@ -227,6 +231,54 @@ Global
 		{E88FDA92-F5FD-4972-A33C-463A61C8B25A}.Release|Win32.Build.0 = Release|Win32
 		{E88FDA92-F5FD-4972-A33C-463A61C8B25A}.Release|x64.ActiveCfg = Release|x64
 		{E88FDA92-F5FD-4972-A33C-463A61C8B25A}.Release|x64.Build.0 = Release|x64
+		{1A66FCC5-290F-48CA-81EA-7CAF74FB49F9}.Debug GL|Mixed Platforms.ActiveCfg = Debug|Win32
+		{1A66FCC5-290F-48CA-81EA-7CAF74FB49F9}.Debug GL|Mixed Platforms.Build.0 = Debug|Win32
+		{1A66FCC5-290F-48CA-81EA-7CAF74FB49F9}.Debug GL|Win32.ActiveCfg = Debug GL|Win32
+		{1A66FCC5-290F-48CA-81EA-7CAF74FB49F9}.Debug GL|Win32.Build.0 = Debug GL|Win32
+		{1A66FCC5-290F-48CA-81EA-7CAF74FB49F9}.Debug GL|x64.ActiveCfg = Debug GL|x64
+		{1A66FCC5-290F-48CA-81EA-7CAF74FB49F9}.Debug GL|x64.Build.0 = Debug GL|x64
+		{1A66FCC5-290F-48CA-81EA-7CAF74FB49F9}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{1A66FCC5-290F-48CA-81EA-7CAF74FB49F9}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{1A66FCC5-290F-48CA-81EA-7CAF74FB49F9}.Debug|Win32.ActiveCfg = Debug|Win32
+		{1A66FCC5-290F-48CA-81EA-7CAF74FB49F9}.Debug|Win32.Build.0 = Debug|Win32
+		{1A66FCC5-290F-48CA-81EA-7CAF74FB49F9}.Debug|x64.ActiveCfg = Debug|x64
+		{1A66FCC5-290F-48CA-81EA-7CAF74FB49F9}.Debug|x64.Build.0 = Debug|x64
+		{1A66FCC5-290F-48CA-81EA-7CAF74FB49F9}.Release GL|Mixed Platforms.ActiveCfg = Release|Win32
+		{1A66FCC5-290F-48CA-81EA-7CAF74FB49F9}.Release GL|Mixed Platforms.Build.0 = Release|Win32
+		{1A66FCC5-290F-48CA-81EA-7CAF74FB49F9}.Release GL|Win32.ActiveCfg = Release GL|Win32
+		{1A66FCC5-290F-48CA-81EA-7CAF74FB49F9}.Release GL|Win32.Build.0 = Release GL|Win32
+		{1A66FCC5-290F-48CA-81EA-7CAF74FB49F9}.Release GL|x64.ActiveCfg = Release GL|x64
+		{1A66FCC5-290F-48CA-81EA-7CAF74FB49F9}.Release GL|x64.Build.0 = Release GL|x64
+		{1A66FCC5-290F-48CA-81EA-7CAF74FB49F9}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{1A66FCC5-290F-48CA-81EA-7CAF74FB49F9}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{1A66FCC5-290F-48CA-81EA-7CAF74FB49F9}.Release|Win32.ActiveCfg = Release|Win32
+		{1A66FCC5-290F-48CA-81EA-7CAF74FB49F9}.Release|Win32.Build.0 = Release|Win32
+		{1A66FCC5-290F-48CA-81EA-7CAF74FB49F9}.Release|x64.ActiveCfg = Release|x64
+		{1A66FCC5-290F-48CA-81EA-7CAF74FB49F9}.Release|x64.Build.0 = Release|x64
+		{E5DD0EE3-85C1-45F3-8D20-667B5B976C42}.Debug GL|Mixed Platforms.ActiveCfg = Debug|Win32
+		{E5DD0EE3-85C1-45F3-8D20-667B5B976C42}.Debug GL|Mixed Platforms.Build.0 = Debug|Win32
+		{E5DD0EE3-85C1-45F3-8D20-667B5B976C42}.Debug GL|Win32.ActiveCfg = Debug GL|Win32
+		{E5DD0EE3-85C1-45F3-8D20-667B5B976C42}.Debug GL|Win32.Build.0 = Debug GL|Win32
+		{E5DD0EE3-85C1-45F3-8D20-667B5B976C42}.Debug GL|x64.ActiveCfg = Debug GL|x64
+		{E5DD0EE3-85C1-45F3-8D20-667B5B976C42}.Debug GL|x64.Build.0 = Debug GL|x64
+		{E5DD0EE3-85C1-45F3-8D20-667B5B976C42}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{E5DD0EE3-85C1-45F3-8D20-667B5B976C42}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{E5DD0EE3-85C1-45F3-8D20-667B5B976C42}.Debug|Win32.ActiveCfg = Debug|Win32
+		{E5DD0EE3-85C1-45F3-8D20-667B5B976C42}.Debug|Win32.Build.0 = Debug|Win32
+		{E5DD0EE3-85C1-45F3-8D20-667B5B976C42}.Debug|x64.ActiveCfg = Debug|x64
+		{E5DD0EE3-85C1-45F3-8D20-667B5B976C42}.Debug|x64.Build.0 = Debug|x64
+		{E5DD0EE3-85C1-45F3-8D20-667B5B976C42}.Release GL|Mixed Platforms.ActiveCfg = Release|Win32
+		{E5DD0EE3-85C1-45F3-8D20-667B5B976C42}.Release GL|Mixed Platforms.Build.0 = Release|Win32
+		{E5DD0EE3-85C1-45F3-8D20-667B5B976C42}.Release GL|Win32.ActiveCfg = Release GL|Win32
+		{E5DD0EE3-85C1-45F3-8D20-667B5B976C42}.Release GL|Win32.Build.0 = Release GL|Win32
+		{E5DD0EE3-85C1-45F3-8D20-667B5B976C42}.Release GL|x64.ActiveCfg = Release GL|x64
+		{E5DD0EE3-85C1-45F3-8D20-667B5B976C42}.Release GL|x64.Build.0 = Release GL|x64
+		{E5DD0EE3-85C1-45F3-8D20-667B5B976C42}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{E5DD0EE3-85C1-45F3-8D20-667B5B976C42}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{E5DD0EE3-85C1-45F3-8D20-667B5B976C42}.Release|Win32.ActiveCfg = Release|Win32
+		{E5DD0EE3-85C1-45F3-8D20-667B5B976C42}.Release|Win32.Build.0 = Release|Win32
+		{E5DD0EE3-85C1-45F3-8D20-667B5B976C42}.Release|x64.ActiveCfg = Release|x64
+		{E5DD0EE3-85C1-45F3-8D20-667B5B976C42}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

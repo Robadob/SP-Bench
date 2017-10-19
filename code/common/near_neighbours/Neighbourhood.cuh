@@ -10,23 +10,24 @@
 #endif
 
 
-#ifdef _3D
+#if defined(_3D) && !defined(DIMENSIONS)
 #define DIMENSIONS 3
 #define DIMENSIONS_VEC glm::vec3
 #define DIMENSIONS_IVEC glm::ivec3
-#else
+#elif defined(_2D) && !defined(DIMENSIONS)
 #define DIMENSIONS 2
 #define DIMENSIONS_VEC glm::vec2
 #define DIMENSIONS_IVEC glm::ivec2
 #endif
 //#include "NeighbourhoodKernels.cuh"
 
+
 /**
 * Structure used to maintain search state in each thread during neigbourhood search
 **/
 struct BinState
 {
-#if defined(STRIPS) && !defined (MORTON)
+#if defined(STRIPS)
 #if defined (_3D)
     glm::ivec2 relative;
 	glm::ivec3 location;
@@ -112,8 +113,12 @@ private:
 
 };
 */
-
-extern __host__ __device__ unsigned int morton3D(DIMENSIONS_IVEC pos);
+#if defined(MORTON)
+extern __host__ __device__ unsigned int morton3D(const DIMENSIONS_IVEC &pos);
+#elif defined(HILBERT)
+extern __host__ __device__ unsigned int hilbertEncode(const unsigned int &gridExponent, const DIMENSIONS_IVEC &pos);
+extern __host__ __device__ unsigned int hilbertDecode(const unsigned int &gridExponent, const DIMENSIONS_IVEC &pos);
+#endif
 extern __host__ __device__ DIMENSIONS_IVEC getGridPosition(DIMENSIONS_VEC worldPos);
 class SpatialPartition
 {
@@ -181,6 +186,9 @@ private:
     unsigned int getBinCount() const;//(ceil((X_MAX-X_MIN)/SEARCH_RADIUS)*ceil((Y_MAX-Y_MIN)/SEARCH_RADIUS)*ceil((Z_MAX-Z_MIN)/SEARCH_RADIUS))
 	unsigned int binCount;
 	unsigned int binCountMax;
+#if defined(MORTON) || defined(HILBERT) || defined(PEANO)
+    unsigned int gridExponent;//The exponent of the grid, when using morton/hilbert encoding, which requires 2^n grid dims
+#endif
 	const unsigned int maxAgents;
     float interactionRad;//Radius of agent interaction
     //Kernel launchers

@@ -121,10 +121,14 @@ __global__ void step_circles_model(LocationMessages *locationMessagesIn, Locatio
 #ifdef _DEBUG
     assert(!isnan(newLoc.x));
     assert(!isnan(newLoc.y));
+#ifdef _3D
     assert(!isnan(newLoc.z));
+#endif
     assert(!isnan(myLoc.x));
     assert(!isnan(myLoc.y));
+#ifdef _3D
     assert(!isnan(myLoc.z));
+#endif
 #endif
     newLoc = glm::clamp(newLoc, d_environmentMin, d_environmentMax);
     locationMessagesOut->locationX[id] = newLoc.x;

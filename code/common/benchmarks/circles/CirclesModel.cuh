@@ -41,7 +41,7 @@ CirclesModel::CirclesModel(
     const float repulse
     )
     : CoreModel((int)(round(pow(width, DIMENSIONS) * (double)density)))
-    , spatialPartition(std::make_shared<SpatialPartition>(DIMENSIONS_VEC(0.0f, 0.0f, 0.0f), DIMENSIONS_VEC(width, width, width), (int)round(pow(width, DIMENSIONS) * (double)density), interactionRad))
+    , spatialPartition(std::make_shared<SpatialPartition>(DIMENSIONS_VEC(0.0f), DIMENSIONS_VEC((float)width), (int)round(pow(width, DIMENSIONS) * (double)density), interactionRad))
     , width(width)
     , density(density)
     , interactionRad(interactionRad)

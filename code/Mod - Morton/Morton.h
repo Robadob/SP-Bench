@@ -19,7 +19,7 @@ __host__ __device__ unsigned int expandBits16(unsigned int v)
     return v;
 }
 // Calculates a 32-bit Morton code
-__host__ __device__ unsigned int mortonEncode(const glm::ivec3 &pos)
+__host__ __device__ unsigned int mortonEncode(const glm::ivec2 &pos)
 {
     //Pos should be clamped to 0<=x<65536
 #ifdef _DEBUG
@@ -27,8 +27,6 @@ __host__ __device__ unsigned int mortonEncode(const glm::ivec3 &pos)
     assert(pos.x < 65536);
     assert(pos.y >= 0);
     assert(pos.y < 65536);
-    assert(pos.z >= 0);
-    assert(pos.z < 65536);
 #endif
     return expandBits16((unsigned int)pos.x) | (expandBits16((unsigned int)pos.y)<<1);
 }

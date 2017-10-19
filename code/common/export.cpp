@@ -137,11 +137,11 @@ void exportPopulation(std::shared_ptr<SpatialPartition> s, const ArgData &args, 
 			sprintf(buffer, "%.*g", 9, lm.locationY[i]);
 			rapidxml::xml_node<> *y_node = doc.allocate_node(rapidxml::node_element, y_node_str, doc.allocate_string(buffer));
 			xagent_node->append_node(y_node);
-
+#ifdef _3D
 			sprintf(buffer, "%.*g", 9, lm.locationZ[i]);
 			rapidxml::xml_node<> *z_node = doc.allocate_node(rapidxml::node_element, z_node_str, doc.allocate_string(buffer));
 			xagent_node->append_node(z_node);
-
+#endif
             //Skip printing velocity defaults
 			//rapidxml::xml_node<> *fx_node = doc.allocate_node(rapidxml::node_element, fx_node_str, zero_pt_zero_str);
 			//xagent_node->append_node(fx_node);
@@ -163,8 +163,10 @@ void exportPopulation(std::shared_ptr<SpatialPartition> s, const ArgData &args, 
 
 	f.close();
 	free(lm.locationX);
-	free(lm.locationY);
+    free(lm.locationY);
+#ifdef _3D
 	free(lm.locationZ);
+#endif
 }
 
 void exportAgents(std::shared_ptr<SpatialPartition> s, char *path)
@@ -194,7 +196,11 @@ void exportAgents(std::shared_ptr<SpatialPartition> s, char *path)
 		oFile << len << "\n";
 		for (int i = 0; i < len; i++)
 		{
+#if defined(_2D)
+            sprintf(&buffer[0], "%.9g,%.9g\n", lm.locationX[i], lm.locationY[i]);
+#elif defined(_3D)
 			sprintf(&buffer[0], "%.9g,%.9g,%.9g\n", lm.locationX[i], lm.locationY[i], lm.locationZ[i]);
+#endif
 			oFile << buffer;
 		}
 		oFile.close();

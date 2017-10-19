@@ -33,10 +33,14 @@ __global__ void step_null_model(LocationMessages *locationMessagesIn, LocationMe
 #ifdef _DEBUG
     assert(!isnan(averageLoc.x));
     assert(!isnan(averageLoc.y));
+#ifdef _3D
     assert(!isnan(averageLoc.z));
+#endif
     assert(!isnan(myLoc.x));
     assert(!isnan(myLoc.y));
+#ifdef _3D
     assert(!isnan(myLoc.z));
+#endif
 #endif
     result[id] = averageLoc;
 }

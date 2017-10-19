@@ -61,7 +61,7 @@ __global__ void init_particles_clusters(curandState *state, LocationMessages *lo
     id += startIndex;
     if (id >= d_locationMessageCount)
         return;
-    glm::vec3 newPos;
+    DIMENSIONS_VEC newPos;
     do
     {
         newPos.x = clusterCenter.x + ((curand_uniform(&state[id]) - 0.5f) * clusterWidth);

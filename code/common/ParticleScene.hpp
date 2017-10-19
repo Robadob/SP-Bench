@@ -4,7 +4,11 @@
 
 ParticleScene::ParticleScene(Visualisation &visualisation, std::shared_ptr<CoreModel> model)
     : Scene(visualisation)
-    , icosphere(std::make_shared<Entity>(Stock::Models::ICOSPHERE, 1.0f, std::make_shared<Shaders>("../shaders/instanced.vert","../shaders/instanced.frag")))
+#if defined(_2D)
+    , icosphere(std::make_shared<Entity>(Stock::Models::ICOSPHERE, 1.0f, std::make_shared<Shaders>("../shaders/instanced2d.vert","../shaders/instanced.frag")))
+#elif defined(_3D)
+    , icosphere(std::make_shared<Entity>(Stock::Models::ICOSPHERE, 1.0f, std::make_shared<Shaders>("../shaders/instanced3d.vert","../shaders/instanced.frag")))
+#endif
     , count(model->agentMax)
     , model(model)
     , drawPBM(true)
@@ -107,22 +111,39 @@ void ParticleScene::renderPBM()
     glBegin(GL_LINES);
     // X lines
     for (int y = 0; y <= dim.y; y++)
+    {
+#if defined(_2D)
+        glColor3f(0.5, y / (float)dim.y, 0.5);
+        glVertex3f(envMin.x, y*cellSize, 0);
+        glVertex3f(envMax.x, y*cellSize, 0);
+#elif defined(_3D)
         for (int z = 0; z <= dim.z; z++)
         {
-            glColor3f(0.5, y/(float)dim.y, z/(float)dim.z);
+            glColor3f(0.5, y / (float)dim.y, z / (float)dim.z);
             glVertex3f(envMin.x, y*cellSize, z*cellSize);
             glVertex3f(envMax.x, y*cellSize, z*cellSize);
         }
+#endif
+    }
 
     //// Y axis
     for (int x = 0; x <= dim.x; x++)
+    {
+#if defined(_2D)
+        glColor3f(x / (float)dim.x, 0.5, 0.5);
+        glVertex3f(x*cellSize, envMin.y, 0);
+        glVertex3f(x*cellSize, envMax.y, 0);
+#elif defined(_3D)
         for (int z = 0; z <= dim.z; z++)
         {
-        glColor3f(x / (float)dim.x, 0.5, z / (float)dim.z);
+            glColor3f(x / (float)dim.x, 0.5, z / (float)dim.z);
             glVertex3f(x*cellSize, envMin.y, z*cellSize);
             glVertex3f(x*cellSize, envMax.y, z*cellSize);
         }
+#endif
+    }
 
+#ifdef _3D
     //// Z axis
     for (int x = 0; x <= dim.x; x++)
         for (int y = 0; y <= dim.y; y++)
@@ -131,6 +152,7 @@ void ParticleScene::renderPBM()
             glVertex3f(x*cellSize, y*cellSize, envMin.z);
             glVertex3f(x*cellSize, y*cellSize, envMax.z);
         }
+#endif
     glEnd();
     GL_CHECK();
     glPopAttrib();

@@ -62,9 +62,9 @@ const Time_Init CoreModel::initPopulation(const unsigned long long rngSeed)
     else
     {
 #if DIMENSIONS==3
-        int particlesPerDim = cbrt(agentMax)+1;
+        int particlesPerDim = (int)cbrt(agentMax)+1;
 #elif DIMENSIONS==2
-        int particlesPerDim = sqrt(agentMax)+1;
+        int particlesPerDim = (int)sqrt(agentMax)+1;
 #else
 #error Invalid DIMENSIONS value, only 2 and 3 are suitable
 #endif
@@ -146,8 +146,8 @@ const Time_Init CoreModel::initPopulationClusters(const unsigned int clusterCoun
     //Generate initial states, and store in location messages
     LocationMessages *d_lm = getPartition()->d_getLocationMessages();
     const unsigned int agentsPerCluster = (agentMax / clusterCount) + 1;
-    const glm::vec3 envMin = getPartition()->getEnvironmentMin() + glm::vec3(clusterRad);
-    const glm::vec3 envMax = getPartition()->getEnvironmentMax() - glm::vec3(clusterRad);
+    const DIMENSIONS_VEC envMin = getPartition()->getEnvironmentMin() + DIMENSIONS_VEC(clusterRad);
+    const DIMENSIONS_VEC envMax = getPartition()->getEnvironmentMax() - DIMENSIONS_VEC(clusterRad);
     std::default_random_engine rng((unsigned int)rngSeed);
     std::uniform_real_distribution<float> rng_x(envMin.x, envMax.x);
     std::uniform_real_distribution<float> rng_y(envMin.y, envMax.y);

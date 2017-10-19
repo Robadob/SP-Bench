@@ -36,7 +36,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{E4072939-4F0A-4CC1-A00E-87428A4C7F70}</ProjectGuid>
-    <RootNamespace>Reference_Implementation</RootNamespace>
+    <RootNamespace>ModDefault</RootNamespace>
     <ProjectName>Mod-Default</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />

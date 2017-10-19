@@ -180,12 +180,13 @@ void Visualisation::handleKeypress(SDL_Keycode keycode, int x, int y){
 Provides destruction of the object, deletes child objects, removes the GL context, closes the window and calls SDL_quit()
 */
 void Visualisation::close(){
+    this->continueRender = false;
     //Delete objects before we delete the GL context!
-    if (this->scene)
-    {
-        delete this->scene;
-        this->scene = 0;
-    }
+    //if (this->scene)
+    //{//Can't delete scene here, was deffed elsewhere with shared pointer
+    //    delete this->scene;
+    //    this->scene = 0;
+    //}
     if (this->skybox)
     {
         delete this->skybox;

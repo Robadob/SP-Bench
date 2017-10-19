@@ -24,51 +24,98 @@ __host__ __device__ DIMENSIONS_IVEC getGridPosition(DIMENSIONS_VEC worldPos)
 #endif
 }
 
-#ifdef MORTON
-// Expands a 10-bit integer into 30 bits
-// by inserting 2 zeros after each bit.
-__host__ __device__ unsigned int expandBits(unsigned int v)
-{
-	v = (v * 0x00010001u) & 0xFF0000FFu;
-	v = (v * 0x00000101u) & 0x0F00F00Fu;
-	v = (v * 0x00000011u) & 0xC30C30C3u;
-	v = (v * 0x00000005u) & 0x49249249u;
-	return v;
-}
+//Moved to Morton.h
+//#if defined(MORTON) && defined(_3D)
+//// Expands a 10-bit integer into 30 bits
+//// by inserting 2 zeros after each bit.
+//__host__ __device__ unsigned int expandBits(unsigned int v)
+//{
+//	v = (v * 0x00010001u) & 0xFF0000FFu;
+//	v = (v * 0x00000101u) & 0x0F00F00Fu;
+//	v = (v * 0x00000011u) & 0xC30C30C3u;
+//	v = (v * 0x00000005u) & 0x49249249u;
+//	return v;
+//}
+//
+//// Calculates a 30-bit Morton code for the
+//__host__ __device__ unsigned int morton3D(const DIMENSIONS_IVEC &pos)
+//{
+//	//Pos should be clamped to 0<=x<1024
+//
+//#ifdef _DEBUG
+//	assert(pos.x >= 0);
+//	assert(pos.x < 1024);
+//	assert(pos.y >= 0);
+//	assert(pos.y < 1024);
+//	assert(pos.z >= 0);
+//	assert(pos.z < 1024);
+//#endif
+//	unsigned int xx = expandBits((unsigned int)pos.x);
+//	unsigned int yy = expandBits((unsigned int)pos.y);
+//	unsigned int zz = expandBits((unsigned int)pos.z);
+//	return xx * 4 + yy * 2 + zz;
+//}
+//#endif
 
-// Calculates a 30-bit Morton code for the
-__host__ __device__ unsigned int morton3D(glm::ivec3 pos)
-{
-	//Pos should be clamped to 0<=x<1024
-
-#ifdef _DEBUG
-	assert(pos.x >= 0);
-	assert(pos.x < 1024);
-	assert(pos.y >= 0);
-	assert(pos.y < 1024);
-	assert(pos.z >= 0);
-	assert(pos.z < 1024);
-#endif
-	unsigned int xx = expandBits((unsigned int)pos.x);
-	unsigned int yy = expandBits((unsigned int)pos.y);
-	unsigned int zz = expandBits((unsigned int)pos.z);
-	return xx * 4 + yy * 2 + zz;
-}
-#endif
+//Never tested?
+//#if defined(MORTON) && defined(_2D)
+//
+//#error Morton encoding/decoding 2D not yet implemented
+//
+//#endif
+//
+//#if defined(HILBERT) && defined(_2D)
+//
+////rotate/flip a quadrant appropriately
+//__host__ __device__ void rot(int n, glm::ivec3 *pos, int rx, int ry) {
+//    if (ry == 0) {
+//        if (rx == 1) {
+//            pos->x = n-1 - pos->x;
+//            pos->y = n-1 - pos->y;
+//        }
+//
+//        //Swap x and y
+//        int t  = pos->x;
+//        pos->x = pos->y;
+//        pos->y = t;
+//    }
+//}
+//
+////convert d to (x,y)
+//__host__ __device__ void hilbertDecode(int n, int d, glm::ivec3 *pos) {
+//    int rx, ry, s, t=d;
+//    pos->x = pos->y = 0;
+//    for (s=1; s<n; s*=2) {
+//        rx = 1 & (t/2);
+//        ry = 1 & (t ^ rx);
+//        rot(s, x, y, rx, ry);
+//        pos->x += s * rx;
+//        pos->y += s * ry;
+//        t /= 4;
+//    }
+//}
+//__host__ __device__ int hilbertEncode (const unsigned int &n, const DIMENSIONS_IVEC &pos) {
+//    int rx, ry, s, d=0;
+//    for (s=n/2; s>0; s/=2) {
+//        rx = (pos.x & s) > 0;
+//        ry = (pos.y & s) > 0;
+//        d += s * s * ((3 * rx) ^ ry);
+//        rot(s, &x, &y, rx, ry);
+//    }
+//    return d;
+//}
+//#endif
 __device__ unsigned int getHash(DIMENSIONS_IVEC gridPos)
 {
     //Bound gridPos to gridDimensions
-    //Cheaper to bound without mod
     gridPos = clamp(gridPos, DIMENSIONS_IVEC(0), d_gridDim - DIMENSIONS_IVEC(1));
-//    gridPos.x = (gridPos.x<0) ? d_gridDim.x - 1 : gridPos.x;
-//    gridPos.x = (gridPos.x >= d_gridDim.x) ? 0 : gridPos.x;
-//    gridPos.y = (gridPos.y<0) ? d_gridDim.y - 1 : gridPos.y;
-//    gridPos.y = (gridPos.y >= d_gridDim.y) ? 0 : gridPos.y;
-//#ifdef _3D
-//    gridPos.z = (gridPos.z<0) ? d_gridDim.z - 1 : gridPos.z;
-//    gridPos.z = (gridPos.z >= d_gridDim.z) ? 0 : gridPos.z;
-//#endif
-#ifndef MORTON
+#if defined(MORTON)
+    return morton3D(gridPos);
+#elif defined(HILBERT)
+
+#elif defined(PEANO)
+    return d_peanoEncode(gridPos);
+#else
     //Compute hash (effectivley an index for to a bin within the partitioning grid in this case)
 	return (unsigned int)(
 #ifdef _3D
@@ -76,8 +123,6 @@ __device__ unsigned int getHash(DIMENSIONS_IVEC gridPos)
 #endif
         (gridPos.y * d_gridDim.x) +					//y
         gridPos.x); 	                            //x
-#else
-	return morton3D(gridPos);
 #endif
 }
 __global__ void hashLocationMessages(unsigned int* keys, unsigned int* vals, LocationMessages* messageBuffer)
@@ -201,9 +246,11 @@ __global__ void reorderLocationMessages(
 
 #ifdef _DEBUG
     //Check these rather than ordered in hopes of memory coealesce
-    if (ordered_messages->locationX[index] == NAN ||
-        ordered_messages->locationY[index] == NAN ||
-        ordered_messages->locationZ[index] == NAN
+    if (ordered_messages->locationX[index] == NAN
+        || ordered_messages->locationY[index] == NAN
+#ifdef _3D
+        || ordered_messages->locationZ[index] == NAN
+#endif
         )
     {
         printf("ERROR: Location containing NaN detected.\n");
@@ -216,30 +263,34 @@ __device__ LocationMessage *LocationMessages::getNextNeighbour(LocationMessage *
 {
 	return loadNextMessage(sm_message);
 }
-__device__ bool invalidBinXYZ(glm::ivec3 bin)
+__device__ bool invalidBinXYZ(DIMENSIONS_IVEC bin)
 {
 	if (
-		bin.x<0 || bin.x >= d_gridDim.x ||
-		bin.y<0 || bin.y >= d_gridDim.y ||
-		bin.z<0 || bin.z >= d_gridDim.z
+		bin.x<0 || bin.x >= d_gridDim.x
+		|| bin.y<0 || bin.y >= d_gridDim.y
+#ifdef _3D
+		|| bin.z<0 || bin.z >= d_gridDim.z
+#endif
 		)
 	{
 		return true;
 	}
 	return false;
 }
-__device__ bool invalidBinYZ(glm::ivec3 bin)
+__device__ bool invalidBinYZ(DIMENSIONS_IVEC bin)
 {
     if (
-        bin.y<0 || bin.y >= d_gridDim.y ||
-        bin.z<0 || bin.z >= d_gridDim.z
+        bin.y<0 || bin.y >= d_gridDim.y
+#ifdef _3D
+        || bin.z<0 || bin.z >= d_gridDim.z
+#endif
         )
     {
         return true;
     }
     return false;
 }
-__device__ bool invalidBinX(glm::ivec3 bin)
+__device__ bool invalidBinX(DIMENSIONS_IVEC bin)
 {
     if (
         bin.x<0 || bin.x >= d_gridDim.x 
@@ -250,7 +301,7 @@ __device__ bool invalidBinX(glm::ivec3 bin)
     return false;
 }
 //If we want to get next bin as strip
-#if defined(STRIPS) && !defined(MORTON)
+#if defined(STRIPS)
 __device__ bool LocationMessages::nextBin(LocationMessage *sm_message)
 {
     //extern __shared__ LocationMessage sm_messages[];
@@ -342,7 +393,7 @@ __device__ LocationMessage *LocationMessages::loadNextMessage(LocationMessage *s
     {
 		if (nextBin(sm_message))
         {
-#if defined(STRIPS) && !defined(MORTON)
+#if defined(STRIPS)
 //Iterate bins in strips
             //calculate the next strip of contiguous bins
 #ifdef _3D

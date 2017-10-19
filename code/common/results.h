@@ -46,7 +46,11 @@ struct ModelParams
 struct CirclesParams : ModelParams
 {
     CirclesParams()
-		: width(50)
+#if defined(_2D)
+		: width(250)
+#elif defined(_3D)
+        : width(50)
+#endif
 		, density(0.01f)
 		, interactionRad(5.0f)
 		, attractionForce(0.5f)
