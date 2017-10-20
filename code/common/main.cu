@@ -156,6 +156,11 @@ int main(int argc, char * argv[])
 		exit(EXIT_FAILURE);
 	}
 
+    if (!args.pipe&&!args.profile)
+    {
+        printf("Active Mod: %s\n", MOD_NAME);
+    }
+
     //Begin instrumentation
 	cudaEvent_t start, stop;
 	cudaEventCreate(&start);

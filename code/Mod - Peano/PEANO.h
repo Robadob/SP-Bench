@@ -11,8 +11,9 @@
 #endif
 
 /**
-* 2D Peano Space Filling Encode/Decode
-*/
+ * 2D Peano Space Filling Encode/Decode
+ * Uses a texture cached look-up table
+ */
 #if defined(PEANO) && defined(_2D)
 
 #if defined(_2D)
@@ -197,7 +198,7 @@ __device__ inline unsigned int to1d(const DIMENSIONS_IVEC &pos)
 #endif
 }
 // Calculates a 32-bit Peano code
-__device__ unsigned int d_peanoEncode(const DIMENSIONS_IVEC &pos)
+__device__ inline unsigned int d_peanoEncode(const DIMENSIONS_IVEC &pos)
 {
     return tex1Dfetch<unsigned int>(d_tex_lookup, to1d(pos));
     //Is this necessary? (not if we're building a look up table)

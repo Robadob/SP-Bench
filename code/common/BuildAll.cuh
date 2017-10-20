@@ -1,6 +1,8 @@
 #ifndef __BuildAll_cuh__
 #define __BuildAll_cuh__
 
+#define _2D
+
 //Build the data-structure
 #include "near_neighbours/Neighbourhood.cu"
 #include "near_neighbours/NeighbourhoodKernels.cu"

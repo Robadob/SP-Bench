@@ -1,7 +1,15 @@
 #include "NeighbourhoodConstants.cuh"
-#ifdef PEANO
-#include "PEANO.h"
+
+#if defined(MORTON)
+#include "Morton.h"
+#elif defined(HILBERT)
+#include "Hilbert.h"
+#elif defined(PEANO)
+#include "Peano.h"
+#elif defined(MORTON_COMPUTE)
+#include "MortonCompute.h"
 #endif
+
 #include "Neighbourhood.cuh"
 #include "NeighbourhoodKernels.cuh"
 
@@ -24,7 +32,7 @@ SpatialPartition::SpatialPartition(DIMENSIONS_VEC  environmentMin, DIMENSIONS_VE
     , environmentMin(environmentMin)
     , environmentMax(environmentMax)
     , gridDim((environmentMax - environmentMin) / interactionRad)
-#if defined(MORTON) || defined(HILBERT)
+#if defined(MORTON) || defined(HILBERT) || defined(PEANO) || defined(MORTON_COMPUTE)
     , gridExponent(0)
 #endif
 #ifdef _DEBUG
@@ -73,7 +81,12 @@ SpatialPartition::SpatialPartition(DIMENSIONS_VEC  environmentMin, DIMENSIONS_VE
     CUDA_CALL(cudaMemcpyToSymbol(d_locationMessagesA, &d_locationMessages, sizeof(LocationMessages *)));
     CUDA_CALL(cudaMemcpyToSymbol(d_locationMessagesB, &d_locationMessages_swap, sizeof(LocationMessages *)));
 #endif
-#ifdef PEANO
+    //Init lookup table
+#if defined(MORTON)
+    initMorton(gridDim);
+#elif defined(HILBERT)
+    initHilbert(gridDim);
+#elif defined(PEANO)
     initPeano(gridDim);
 #endif
 }
@@ -93,7 +106,12 @@ SpatialPartition::~SpatialPartition()
 #endif
     //Deallocate tex
     deviceDeallocateTextures();
-#ifdef PEANO
+    //Free lookup table
+#if defined(MORTON)
+    freeMorton();
+#elif defined(HILBERT)
+    freeHilbert();
+#elif defined(PEANO)
     freePeano();
 #endif
 }
@@ -123,11 +141,13 @@ int SpatialPartition::getHash(DIMENSIONS_IVEC gridPos)
 {//Host version using host copy of gridDim
     gridPos = glm::clamp(gridPos, DIMENSIONS_IVEC(0), gridDim - DIMENSIONS_IVEC(1));
 #if defined(MORTON)
-    return morton3D(gridPos);
+    return h_mortonEncode(gridPos);
 #elif defined(HILBERT)
-    return hilbert(this->gridExponent, gridPos);
+    return h_hilbertEncode(gridPos);
 #elif defined(PEANO)
     return h_peanoEncode(gridPos);
+#elif defined(MORTON_COMPUTE)
+    return mortonComputeEncode(gridPos);
 #else
     return
 #ifdef _3D
@@ -142,9 +162,11 @@ DIMENSIONS_IVEC SpatialPartition::getPos(unsigned int hash)
 #if defined(MORTON)
     return mortonDecode(hash);
 #elif defined(HILBERT)
-    return hilbertDecode(this->gridExponent, hash);
+    return hilbertDecode(hash, this->gridExponent);
 #elif defined(PEANO)
     return peanoDecode(hash, this->gridExponent);
+#elif defined(MORTON_COMPUTE)
+    return mortonDecode(hash);
 #else
     if (hash >= this->binCountMax)
         return DIMENSIONS_IVEC(-1);
@@ -210,14 +232,18 @@ void SpatialPartition::assertSearch()
         printf("%i PBM records exist for %i agents.\n", agtCount, maxAgents);
     }
 
-#ifdef MORTON
+#if defined(MORTON) || defined(HILBERT) || defined(PEANO) || defined(MORTON_COMPUTE)
     //In the case of morton coding, we sort PBM back into our regular order to compare
     unsigned int *PBM_coded = PBM_binSize;
     PBM_binSize = static_cast<unsigned int *>(malloc(sizeof(unsigned int)*tableSize));
     memset(PBM_binSize, 0, tableSize * sizeof(unsigned int));
     for (int i = 0; i < this->binCount; i++)
     {
+#if defined(_3D)
         PBM_binSize[i] = PBM_coded[getHash(glm::ivec3((i % (gridDim.y * gridDim.x)) % gridDim.x, (i % (gridDim.y * gridDim.x)) / gridDim.x, (i / (gridDim.y * gridDim.x))))];
+#elif defined(_2D)
+        PBM_binSize[i] = PBM_coded[getHash(glm::ivec2(i % gridDim.x, i / gridDim.x))];
+#endif
     }
     free(PBM_coded);
 #endif
@@ -620,7 +646,7 @@ void SpatialPartition::setBinCount()
     //Get max grid dimension
     this->binCount = glm::compMax(gridDim);
     //Find the next biggest power of two
-#if defined(MORTON) || defined(HILBERT)
+#if defined(MORTON) || defined(HILBERT) || defined(MORTON_COMPUTE)
     this->gridExponent = ceil(log2f(this->binCount));
     int l2 = pow(2, this->gridExponent);
     this->binCountMax = (unsigned int)pow(l2, DIMENSIONS);
@@ -628,11 +654,14 @@ void SpatialPartition::setBinCount()
     this->gridExponent =ceil(log(this->binCount) / log(3));
     int l3 = pow(3, this->gridExponent);
     this->binCountMax = (unsigned int)pow(l3, DIMENSIONS);
-
 #else
     this->binCountMax = (unsigned int)pow(this->binCount, DIMENSIONS);
 #endif
     this->binCount = (unsigned int)pow(this->binCount, DIMENSIONS);
+
+#if defined(MORTON) || defined(HILBERT) ||defined(PEANO)
+    printf("Space-filling grid exponent set to: %u\n", this->gridExponent);
+#endif
 }
 void SpatialPartition::setLocationCount(unsigned int t_locationMessageCount)
 {

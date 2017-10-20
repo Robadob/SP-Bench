@@ -57,64 +57,18 @@ __host__ __device__ DIMENSIONS_IVEC getGridPosition(DIMENSIONS_VEC worldPos)
 //}
 //#endif
 
-//Never tested?
-//#if defined(MORTON) && defined(_2D)
-//
-//#error Morton encoding/decoding 2D not yet implemented
-//
-//#endif
-//
-//#if defined(HILBERT) && defined(_2D)
-//
-////rotate/flip a quadrant appropriately
-//__host__ __device__ void rot(int n, glm::ivec3 *pos, int rx, int ry) {
-//    if (ry == 0) {
-//        if (rx == 1) {
-//            pos->x = n-1 - pos->x;
-//            pos->y = n-1 - pos->y;
-//        }
-//
-//        //Swap x and y
-//        int t  = pos->x;
-//        pos->x = pos->y;
-//        pos->y = t;
-//    }
-//}
-//
-////convert d to (x,y)
-//__host__ __device__ void hilbertDecode(int n, int d, glm::ivec3 *pos) {
-//    int rx, ry, s, t=d;
-//    pos->x = pos->y = 0;
-//    for (s=1; s<n; s*=2) {
-//        rx = 1 & (t/2);
-//        ry = 1 & (t ^ rx);
-//        rot(s, x, y, rx, ry);
-//        pos->x += s * rx;
-//        pos->y += s * ry;
-//        t /= 4;
-//    }
-//}
-//__host__ __device__ int hilbertEncode (const unsigned int &n, const DIMENSIONS_IVEC &pos) {
-//    int rx, ry, s, d=0;
-//    for (s=n/2; s>0; s/=2) {
-//        rx = (pos.x & s) > 0;
-//        ry = (pos.y & s) > 0;
-//        d += s * s * ((3 * rx) ^ ry);
-//        rot(s, &x, &y, rx, ry);
-//    }
-//    return d;
-//}
-//#endif
 __device__ unsigned int getHash(DIMENSIONS_IVEC gridPos)
 {
     //Bound gridPos to gridDimensions
     gridPos = clamp(gridPos, DIMENSIONS_IVEC(0), d_gridDim - DIMENSIONS_IVEC(1));
 #if defined(MORTON)
-    return morton3D(gridPos);
+    return d_mortonEncode(gridPos);
 #elif defined(HILBERT)
-
+    return d_hilbertEncode(gridPos);
 #elif defined(PEANO)
     return d_peanoEncode(gridPos);
+#elif defined(MORTON_COMPUTE)
+    return mortonComputeEncode(gridPos);
 #else
     //Compute hash (effectivley an index for to a bin within the partitioning grid in this case)
 	return (unsigned int)(

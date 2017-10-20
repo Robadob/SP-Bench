@@ -1,4 +1,4 @@
-#define MOD_NAME "Z-Order Curve Binning"
+#define MOD_NAME "Z-Order Curve Binning (look-up)"
 
 //Options
 #define MORTON
