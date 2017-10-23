@@ -33,6 +33,7 @@ struct ModelParams
 {
     ModelParams()
         : iterations(1000)
+        , seed(12)
     {
         
     }
@@ -41,6 +42,7 @@ struct ModelParams
     virtual const char *modelFlag() = 0;
     virtual ModelEnum enumerator() = 0;
     unsigned long long iterations;
+    unsigned long long seed;
 };
 
 struct CirclesParams : ModelParams
@@ -117,7 +119,6 @@ struct ArgData
         : pipe(false)
         , profile(false)
         , device(0)
-        , seed(12)
 #ifdef _GL
         , GLwidth(1280)
         , GLheight(720)
@@ -129,7 +130,6 @@ struct ArgData
     bool exportAgents = false;
     bool exportInit = false;
     unsigned int device;
-    unsigned long long seed;
 #ifdef _GL
     unsigned int GLwidth;
     unsigned int GLheight;

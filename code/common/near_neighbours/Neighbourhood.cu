@@ -40,11 +40,11 @@ SpatialPartition::SpatialPartition(DIMENSIONS_VEC  environmentMin, DIMENSIONS_VE
 #endif
 {
 #ifdef _DEBUG
-#if defined(_2D)
-    printf("Spatial Partition: Interaction Rad(%.3f), Grid Dims(%d,%d)\n", interactionRad, gridDim.x, gridDim.y);
-#elif defined(_3D)
-    printf("Spatial Partition: Interaction Rad(%.3f), Grid Dims(%d,%d,%d)\n", interactionRad, gridDim.x, gridDim.y, gridDim.z);
-#endif
+//#if defined(_2D)
+//    printf("Spatial Partition: Interaction Rad(%.3f), Grid Dims(%d,%d)\n", interactionRad, gridDim.x, gridDim.y);
+//#elif defined(_3D)
+//    printf("Spatial Partition: Interaction Rad(%.3f), Grid Dims(%d,%d,%d)\n", interactionRad, gridDim.x, gridDim.y, gridDim.z);
+//#endif
 #endif
     setBinCount();
     //Allocate bins in GPU memory
@@ -92,6 +92,7 @@ SpatialPartition::SpatialPartition(DIMENSIONS_VEC  environmentMin, DIMENSIONS_VE
 }
 SpatialPartition::~SpatialPartition()
 {
+    CUDA_CHECK();
     //Dellocate bins in GPU memory
     deviceDeallocateLocationMessages(d_locationMessages, hd_locationMessages);
     //Dellocate bins swap in GPU memory

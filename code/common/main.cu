@@ -15,6 +15,7 @@
 
 ArgData parseArgs(int argc, char * argv[])
 {
+    unsigned long long seed = ULONG_MAX;
 	//Init so defaults are used
 	ArgData data = { };	
     for (int i = 0; i < argc; i++)
@@ -34,7 +35,7 @@ ArgData parseArgs(int argc, char * argv[])
 		//-seed <ulong>, Uses the specified rng seed, defaults to 12, 0 produces uniform initialisation
 		else if (arg.compare("-seed") == 0)
 		{
-			data.seed = (unsigned int)strtoul(argv[++i], nullptr, 0);
+            seed = (unsigned int)strtoul(argv[++i], nullptr, 0);
 		}
 		//-device <uint>, Uses the specified cuda device, defaults to 0
 		else if (arg.compare("-device") == 0)
@@ -95,7 +96,7 @@ ArgData parseArgs(int argc, char * argv[])
             if(arg.compare("circles") == 0)
             {
                 data.model = std::make_shared<CirclesParams>();
-                data.seed = 12;
+                data.model->seed = 12;
                 continue;
             }
 #endif
@@ -103,7 +104,7 @@ ArgData parseArgs(int argc, char * argv[])
             if (arg.compare("null") == 0)
             {
                 data.model = std::make_shared<NullParams>();
-                data.seed = 12;
+                data.model->seed = 12;
                 continue;
             }
             if (arg.compare("density") == 0)
@@ -130,6 +131,9 @@ ArgData parseArgs(int argc, char * argv[])
 			data.exportInit = true;
 		}
 	}
+    //If seed is set, add to model data
+    if (seed != ULONG_MAX &&data.model)
+        data.model->seed = seed;
 	return data;
 }
 int main(int argc, char * argv[])
@@ -202,9 +206,9 @@ int main(int argc, char * argv[])
     //Arkward def, to ensure we keep initTimes const
     std::shared_ptr<DensityParams> _model = std::dynamic_pointer_cast<DensityParams>(args.model);
     //Need to init textures before creating the scene
-    const Time_Init initTimes = args.model->enumerator() == Density
-        ? model->initPopulationClusters(_model->clusterCount, _model->clusterRad, args.seed)
-        : model->initPopulation(args.seed);
+    const Time_Init initTimes = _model
+        ? model->initPopulationClusters(_model->clusterCount, _model->clusterRad, _model->seed)
+        : model->initPopulation(args.model->seed);
 #ifdef _GL
 	std::shared_ptr<ParticleScene> scene = std::make_shared<ParticleScene>(v, model);
 #endif
@@ -309,7 +313,12 @@ int main(int argc, char * argv[])
 	}
 #ifdef _GL
     v.run();
+    v.reset();
+    scene.reset();
 #endif
+    //Shutdown model before CUDA device reset
+    model.reset();
+
 	cudaDeviceReset();
     //Wait for input before exit
 	if (!args.pipe&&!args.profile)

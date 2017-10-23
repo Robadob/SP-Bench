@@ -37,6 +37,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{E5DD0EE3-85C1-45F3-8D20-667B5B976C42}</ProjectGuid>
     <RootNamespace>ModPeano</RootNamespace>
+    <ProjectName>Mod-Peano</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

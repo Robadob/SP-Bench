@@ -75,7 +75,7 @@ void exportPopulation(std::shared_ptr<SpatialPartition> s, const ArgData &args, 
         rapidxml::xml_node<> *name_node = doc.allocate_node(rapidxml::node_element, name_node_str, doc.allocate_string(buffer));
         params_node->append_node(name_node);
         //seed
-        sprintf(buffer, "%llu", args.seed);
+        sprintf(buffer, "%llu", args.model->seed);
         rapidxml::xml_node<> *seed_node = doc.allocate_node(rapidxml::node_element, seed_node_str, doc.allocate_string(buffer));
         params_node->append_node(seed_node);
         //Model specific params
