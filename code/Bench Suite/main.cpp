@@ -13,6 +13,7 @@
 
 CirclesParams interpolateParams(const CirclesParams &start, const CirclesParams &end, const unsigned int step, const unsigned int totalSteps);
 NullParams interpolateParams(const NullParams &start, const NullParams &end, const unsigned int step, const unsigned int totalSteps);
+DensityParams interpolateParams(const DensityParams &start, const DensityParams &end, const unsigned int step, const unsigned int totalSteps);
 void execString(const char* executable, CirclesParams model, char **rtn);
 void execString(const char* executable, NullParams model, char **rtn);
 template<class T>
@@ -23,6 +24,8 @@ void logResult(FILE *out, const CirclesParams* modelArgs, const unsigned int age
 void logHeader(FILE *out, const CirclesParams &modelArgs);
 void logResult(FILE *out, const NullParams* modelArgs, const unsigned int agentCount, const Time_Init *initRes, const Time_Step_dbl *stepRes, const float totalTime);
 void logHeader(FILE *out, const NullParams &modelArgs);
+void logResult(FILE *out, const DensityParams* modelArgs, const unsigned int agentCount, const Time_Init *initRes, const Time_Step_dbl *stepRes, const float totalTime);
+void logHeader(FILE *out, const DensityParams &modelArgs);
 const char *TEST_NAMES[] = { "Default", "Strips", "Morton", "MortonCompute", "Hilbert", "Peano" };
 const char *TEST_EXECUTABLES[] = { "Release-Mod-Default.exe", "Release-Mod-Strips.exe", "Release-Mod-Morton.exe", "Release-Mod-MortonCompute.exe", "Release-Mod-Hilbert.exe", "Release-Mod-Peano.exe" };
 const char *DIR_X64 = "..\\bin\\x64\\";
@@ -105,21 +108,38 @@ int main(int argc, char* argv[])
         run(start, end, steps, "CirclesNeighbourhoodScale");
     }
     {//Something Null
-        //const int steps = 16;
+        const int steps = 16;
         ////Init model arg start
-        //NullParams  start = {};
+        NullParams  start = {};
         //start.iterations = 1000;
         //start.density = 0.01f;
         //start.interactionRad = 1.0f;
         //start.agents = 100;
         ////Init model arg end
-        //NullParams end = {};
+        NullParams end = {};
         //end.iterations = 1000;
         //end.density = 0.01f;
         //end.interactionRad = 15.0f;
         //end.agents = 100;
         ////Init step count
-        //run(start, end, steps, "CirclesNeighbourhoodScale");
+        run(start, end, steps, "CirclesNeighbourhoodScale");
+    }
+    {//Something Density
+        const int steps = 16;
+        ////Init model arg start
+        DensityParams  start = {};
+        //start.iterations = 1000;
+        //start.density = 0.01f;
+        //start.interactionRad = 1.0f;
+        //start.agents = 100;
+        ////Init model arg end
+        DensityParams end = {};
+        //end.iterations = 1000;
+        //end.density = 0.01f;
+        //end.interactionRad = 15.0f;
+        //end.agents = 100;
+        ////Init step count
+        run(start, end, steps, "CirclesNeighbourhoodScale");
     }
 #endif
 	printf("\nComplete\n");
@@ -220,6 +240,18 @@ NullParams interpolateParams(const NullParams &start, const NullParams &end, con
     modelArgs.iterations = start.iterations + (long long)((step / stepsM1)*((int)end.iterations - (int)start.iterations));
     return modelArgs;
 }
+DensityParams interpolateParams(const DensityParams &start, const DensityParams &end, const unsigned int step, const unsigned int totalSteps)
+{
+    const float stepsM1 = (float)totalSteps - 1.0f;
+    DensityParams modelArgs;
+    modelArgs.seed = start.seed + (long long)((step / stepsM1)*((long long)end.seed - (long long)start.seed));
+    modelArgs.agents = start.agents + (unsigned int)((step / stepsM1)*((unsigned int)end.agents - (unsigned int)start.agents));
+    modelArgs.interactionRad = start.interactionRad + ((step / stepsM1)*(end.interactionRad - start.interactionRad));
+    modelArgs.clusterCount = start.clusterCount + ((step / stepsM1)*(end.clusterCount - start.clusterCount));
+    modelArgs.clusterRad = start.clusterRad + ((step / stepsM1)*(end.clusterRad - start.clusterRad));
+    modelArgs.iterations = start.iterations + (long long)((step / stepsM1)*((int)end.iterations - (int)start.iterations));
+    return modelArgs;
+}
 template<class T>
 bool executeBenchmark(const char* executable, T modelArgs, T *modelparamOut, unsigned int *agentCount, Time_Init *initRes, Time_Step_dbl *stepRes, float *totalTime)
 {
@@ -305,6 +337,43 @@ void execString(const char* executable, NullParams modelArgs, char **rtn)
     buffer = buffer.append(std::to_string(modelArgs.agents));
     buffer = buffer.append(" ");
     buffer = buffer.append(std::to_string(modelArgs.density));
+    buffer = buffer.append(" ");
+    buffer = buffer.append(std::to_string(modelArgs.interactionRad));
+    buffer = buffer.append(" ");
+    buffer = buffer.append(std::to_string(modelArgs.iterations));
+    if (modelArgs.seed != 12)
+    {
+
+        buffer = buffer.append(" ");
+        buffer = buffer.append(" -seed");
+        buffer = buffer.append(" ");
+        buffer = buffer.append(std::to_string(modelArgs.seed));
+    }
+    const char *src = buffer.c_str();
+    *rtn = (char *)malloc(sizeof(char*)*(buffer.length() + 1));
+    memcpy(*rtn, src, sizeof(char*)*(buffer.length() + 1));
+}
+void execString(const char* executable, DensityParams modelArgs, char **rtn)
+{
+    std::string buffer("\"");
+    buffer = buffer.append(DIR_X64);
+    buffer = buffer.append(executable);
+    buffer = buffer.append("\"");
+    buffer = buffer.append("-pipe");
+    buffer = buffer.append(" ");
+    buffer = buffer.append("-device");
+    buffer = buffer.append(" ");
+    buffer = buffer.append(std::to_string(0));
+    buffer = buffer.append(" ");
+    buffer = buffer.append("-density");
+    buffer = buffer.append(" ");
+    buffer = buffer.append(std::to_string(modelArgs.agents));
+    buffer = buffer.append(" ");
+    buffer = buffer.append(std::to_string(modelArgs.envWidth));
+    buffer = buffer.append(" ");
+    buffer = buffer.append(std::to_string(modelArgs.clusterCount));
+    buffer = buffer.append(" ");
+    buffer = buffer.append(std::to_string(modelArgs.clusterRad));
     buffer = buffer.append(" ");
     buffer = buffer.append(std::to_string(modelArgs.interactionRad));
     buffer = buffer.append(" ");
@@ -467,6 +536,92 @@ void logResult(FILE *out, const NullParams* modelArgs, const unsigned int agentC
         modelArgs->agents,
         modelArgs->density,
         modelArgs->interactionRad,
+        modelArgs->iterations,
+        modelArgs->seed
+        );
+    //Agent count
+    fprintf(out, "%i,",
+        agentCount
+        );
+    //Init
+    fprintf(out, "%f,%f,%f,%f,%f,",
+        initRes->overall / 1000,
+        initRes->initCurand / 1000,
+        initRes->kernel / 1000,
+        initRes->pbm / 1000,
+        initRes->freeCurand / 1000
+        );
+    //Step avg
+    fprintf(out, "%f,%f,%f,",
+        stepRes->overall / 1000,
+        stepRes->kernel / 1000,
+        stepRes->texture / 1000
+        );
+    //Total
+    fprintf(out, "%f,",
+        totalTime / 1000
+        );
+    //ln
+    fputs("\n", out);
+    fflush(out);
+}
+void logHeader(FILE *out, const DensityParams &modelArgs)
+{
+    fputs("model", out);
+    fputs(",,,,,,,", out);
+    fputs("init (s)", out);
+    fputs(",,,,,,", out);
+    fputs("step avg (s)", out);
+    fputs(",,,", out);
+    fputs("overall (s)", out);
+    fputs(",", out);
+    fputs("\n", out);
+    //ModelArgs
+    fputs("agents-in", out);
+    fputs(",", out);
+    fputs("interactionRad", out);
+    fputs(",", out);
+    fputs("clusterCount", out);
+    fputs(",", out);
+    fputs("clusterRad", out);
+    fputs(",", out);
+    fputs("iterations", out);
+    fputs(",", out);
+    fputs("seed", out);
+    fputs(",", out);
+    fputs("agents-out", out);
+    fputs(",", out);
+    //Init
+    fputs("overall", out);
+    fputs(",", out);
+    fputs("initCurand", out);
+    fputs(",", out);
+    fputs("kernel", out);
+    fputs(",", out);
+    fputs("pbm", out);
+    fputs(",", out);
+    fputs("freeCurand", out);
+    fputs(",", out);
+    //Step avg
+    fputs("overall", out);
+    fputs(",", out);
+    fputs("kernel", out);
+    fputs(",", out);
+    fputs("texture", out);
+    fputs(",", out);
+    //Total
+    fputs("time", out);
+    fputs(",", out);
+    //ln
+    fputs("\n", out);
+}
+void logResult(FILE *out, const DensityParams* modelArgs, const unsigned int agentCount, const Time_Init *initRes, const Time_Step_dbl *stepRes, const float totalTime)
+{	//ModelArgs
+    fprintf(out, "%i,%f,%u,%f,%llu,%llu,",
+        modelArgs->agents,
+        modelArgs->interactionRad,
+        modelArgs->clusterCount,
+        modelArgs->clusterRad,
         modelArgs->iterations,
         modelArgs->seed
         );

@@ -84,6 +84,7 @@ ArgData parseArgs(int argc, char * argv[])
             mdl->envWidth = (float)atof(argv[++i]);
             mdl->clusterCount = (unsigned int)strtoul(argv[++i], nullptr, 0);
             mdl->clusterRad = (float)atof(argv[++i]);
+            mdl->interactionRad = (float)atof(argv[++i]);
             mdl->iterations = strtoul(argv[++i], nullptr, 0);
             data.model = mdl;
         }
