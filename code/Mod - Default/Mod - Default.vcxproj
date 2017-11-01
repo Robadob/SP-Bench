@@ -183,7 +183,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
       <Include>$(SolutionDir)include</Include>
       <Defines>__CUDACC__;CUB_LOG</Defines>
       <GenerateRelocatableDeviceCode>true</GenerateRelocatableDeviceCode>
-      <CodeGeneration>compute_50,sm_50;compute_35,sm_35</CodeGeneration>
+      <CodeGeneration>compute_50,sm_50;compute_35,sm_35;compute_61,sm_61;</CodeGeneration>
       <GenerateLineInfo>true</GenerateLineInfo>
     </CudaCompile>
   </ItemDefinitionGroup>
@@ -209,7 +209,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
       <Include>$(SolutionDir)include</Include>
       <Defines>__CUDACC__;CUB_LOG</Defines>
       <GenerateRelocatableDeviceCode>true</GenerateRelocatableDeviceCode>
-      <CodeGeneration>compute_50,sm_50;compute_35,sm_35</CodeGeneration>
+      <CodeGeneration>compute_50,sm_50;compute_35,sm_35;compute_61,sm_61;</CodeGeneration>
       <GPUDebugInfo>true</GPUDebugInfo>
       <GenerateLineInfo>true</GenerateLineInfo>
     </CudaCompile>
@@ -236,7 +236,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
       <Include>$(SolutionDir)include</Include>
       <GenerateRelocatableDeviceCode>true</GenerateRelocatableDeviceCode>
       <Defines>__CUDACC__</Defines>
-      <CodeGeneration>compute_50,sm_50;compute_35,sm_35</CodeGeneration>
+      <CodeGeneration>compute_50,sm_50;compute_35,sm_35;compute_61,sm_61;</CodeGeneration>
       <GenerateLineInfo>true</GenerateLineInfo>
     </CudaCompile>
   </ItemDefinitionGroup>
@@ -262,7 +262,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
       <Include>$(SolutionDir)include</Include>
       <GenerateRelocatableDeviceCode>true</GenerateRelocatableDeviceCode>
       <Defines>__CUDACC__</Defines>
-      <CodeGeneration>compute_50,sm_50;compute_35,sm_35</CodeGeneration>
+      <CodeGeneration>compute_50,sm_50;compute_35,sm_35;compute_61,sm_61;</CodeGeneration>
       <GPUDebugInfo>true</GPUDebugInfo>
       <GenerateLineInfo>true</GenerateLineInfo>
     </CudaCompile>
@@ -292,7 +292,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
       <Include>$(SolutionDir)include</Include>
       <Defines>__CUDACC__</Defines>
       <GenerateRelocatableDeviceCode>true</GenerateRelocatableDeviceCode>
-      <CodeGeneration>compute_50,sm_50;compute_35,sm_35</CodeGeneration>
+      <CodeGeneration>compute_50,sm_50;compute_35,sm_35;compute_61,sm_61;</CodeGeneration>
       <GPUDebugInfo>true</GPUDebugInfo>
       <GenerateLineInfo>true</GenerateLineInfo>
     </CudaCompile>
@@ -322,7 +322,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
       <Include>$(SolutionDir)include</Include>
       <Defines>__CUDACC__</Defines>
       <GenerateRelocatableDeviceCode>true</GenerateRelocatableDeviceCode>
-      <CodeGeneration>compute_50,sm_50;compute_35,sm_35</CodeGeneration>
+      <CodeGeneration>compute_50,sm_50;compute_35,sm_35;compute_61,sm_61;</CodeGeneration>
       <GPUDebugInfo>true</GPUDebugInfo>
       <GenerateLineInfo>true</GenerateLineInfo>
     </CudaCompile>
@@ -353,7 +353,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
       <Include>$(SolutionDir)include</Include>
       <Defines>__CUDACC__</Defines>
       <GenerateRelocatableDeviceCode>true</GenerateRelocatableDeviceCode>
-      <CodeGeneration>compute_50,sm_50;compute_35,sm_35</CodeGeneration>
+      <CodeGeneration>compute_50,sm_50;compute_35,sm_35;compute_61,sm_61;</CodeGeneration>
       <GenerateLineInfo>true</GenerateLineInfo>
       <GPUDebugInfo>true</GPUDebugInfo>
     </CudaCompile>
@@ -384,7 +384,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
       <Include>$(SolutionDir)include</Include>
       <Defines>__CUDACC__</Defines>
       <GenerateRelocatableDeviceCode>true</GenerateRelocatableDeviceCode>
-      <CodeGeneration>compute_50,sm_50;compute_35,sm_35</CodeGeneration>
+      <CodeGeneration>compute_50,sm_50;compute_35,sm_35;compute_61,sm_61;</CodeGeneration>
       <GPUDebugInfo>true</GPUDebugInfo>
       <GenerateLineInfo>true</GenerateLineInfo>
     </CudaCompile>
