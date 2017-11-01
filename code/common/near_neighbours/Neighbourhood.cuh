@@ -71,7 +71,6 @@ private:
 	__device__ LocationMessage *loadNextMessage(LocationMessage *message);
 
 };
-
 /* //These structures would be used if we were passing more data with neighbours, than simply location
 template<class T>
 struct LocationMessageExt<T>
@@ -124,17 +123,18 @@ public:
     DIMENSIONS_VEC getEnvironmentMin() const { return environmentMin; }
     DIMENSIONS_VEC getEnvironmentMax() const { return environmentMax; }
     DIMENSIONS_VEC getEnvironmentDimensions() const { return environmentMax - environmentMin; }
-    float getCellSize() const { return interactionRad;  }
-#ifdef _DEBUG
+    float getCellSize() const { return interactionRad; }
     bool isValid(DIMENSIONS_IVEC bin) const;
-	DIMENSIONS_IVEC getPos(unsigned int hash);
-	int getHash(DIMENSIONS_IVEC gridPos);
+    DIMENSIONS_IVEC getPos(unsigned int hash);
+    unsigned int getHash(DIMENSIONS_IVEC gridPos);
+#ifdef _DEBUG
     void assertSearch();
     void launchAssertPBMIntegerity();
 #endif
+    NeighbourhoodStats getNeighbourhoodStats();
 #ifdef _GL
-    const GLuint *SpatialPartition::getLocationTexNames() const { return gl_tex; }
-    GLuint SpatialPartition::getCountTexName() const { return gl_tex_count; }
+    const GLuint *getLocationTexNames() const { return gl_tex; }
+    GLuint getCountTexName() const { return gl_tex_count; }
 #endif
 private:
 	void setBinCount();

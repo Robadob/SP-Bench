@@ -19,15 +19,17 @@ void execString(const char* executable, NullParams model, char **rtn);
 template<class T>
 bool run(const T &start, const T &end, const unsigned int steps, const char *runName);
 template<class T>
-bool executeBenchmark(const char* executable, T modelArgs, T *modelparamOut, unsigned int *agentCount, Time_Init *initRes, Time_Step_dbl *stepRes, float *totalTime);
-void logResult(FILE *out, const CirclesParams* modelArgs, const unsigned int agentCount, const Time_Init *initRes, const Time_Step_dbl *stepRes, const float totalTime);
+bool executeBenchmark(const char* executable, T modelArgs, T *modelparamOut, unsigned int *agentCount, Time_Init *initRes, Time_Step_dbl *stepRes, float *totalTime, NeighbourhoodStats *nsFirst, NeighbourhoodStats *nsLast);
+void logResult(FILE *out, const CirclesParams* modelArgs, const unsigned int agentCount, const Time_Init *initRes, const Time_Step_dbl *stepRes, const float totalTime, const NeighbourhoodStats *nsFirst, const NeighbourhoodStats *nsLast);
 void logHeader(FILE *out, const CirclesParams &modelArgs);
-void logResult(FILE *out, const NullParams* modelArgs, const unsigned int agentCount, const Time_Init *initRes, const Time_Step_dbl *stepRes, const float totalTime);
+void logResult(FILE *out, const NullParams* modelArgs, const unsigned int agentCount, const Time_Init *initRes, const Time_Step_dbl *stepRes, const float totalTime, const NeighbourhoodStats *nsFirst, const NeighbourhoodStats *nsLast);
 void logHeader(FILE *out, const NullParams &modelArgs);
-void logResult(FILE *out, const DensityParams* modelArgs, const unsigned int agentCount, const Time_Init *initRes, const Time_Step_dbl *stepRes, const float totalTime);
+void logResult(FILE *out, const DensityParams* modelArgs, const unsigned int agentCount, const Time_Init *initRes, const Time_Step_dbl *stepRes, const float totalTime, const NeighbourhoodStats *nsFirst, const NeighbourhoodStats *nsLast);
 void logHeader(FILE *out, const DensityParams &modelArgs);
 const char *TEST_NAMES[] = { "Default", "Strips", "Morton", "MortonCompute", "Hilbert", "Peano" };
 const char *TEST_EXECUTABLES[] = { "Release-Mod-Default.exe", "Release-Mod-Strips.exe", "Release-Mod-Morton.exe", "Release-Mod-MortonCompute.exe", "Release-Mod-Hilbert.exe", "Release-Mod-Peano.exe" };
+//const char *TEST_NAMES[] = { "Morton", "MortonCompute" };
+//const char *TEST_EXECUTABLES[] = { "Release-Mod-Morton.exe", "Release-Mod-MortonCompute.exe" };
 const char *DIR_X64 = "..\\bin\\x64\\";
 int main(int argc, char* argv[])
 {
@@ -69,77 +71,237 @@ int main(int argc, char* argv[])
         run(start, end, steps, "CirclesNeighbourhoodScale");
     }
 #elif defined(_2D)
-    {//Problem Scale - Circles
+    //Collected
+    /*{//Problem Scale - Circles
         //Init step count
-        const int steps = 11;
+        const int steps = 97;
         //Init model arg start
         CirclesParams start = {};
         start.iterations = 1000;
-        start.density = 0.01f;
-        start.interactionRad = 5.0f;
-        start.width = 300;
-        start.seed = 100;
+        start.density = 0.1f;
+        start.interactionRad = 2.0f;
+        start.seed = 0;
+        start.width = 40;//160 agents
+        start.attractionForce = 0.2f;
+        start.repulsionForce = 0.2f;
         //Init model arg end
-        CirclesParams end = {};
-        end.iterations = 1000;
-        end.density = 0.01f;
-        end.interactionRad = 5.0f;
-        end.width = 300;
-        end.seed = 250;
-        run(start, end, steps, "CirclesProblemScale");
+        CirclesParams end = start;
+        end.width = 1000;//100k agents
+        run(start, end, steps, "CirclesProblemScaleLD");
+    }*/
+    //{//Problem Scale - Circles
+    //    //Init step count
+    //    const int steps = 97;
+    //    //Init model arg start
+    //    CirclesParams start = {};
+    //    start.iterations = 1000;
+    //    start.density = 1.0f;
+    //    start.interactionRad = 0.4f;
+    //    start.seed = 0;
+    //    start.width = 250;//25k agents
+    //    start.attractionForce = 0.2f;
+    //    start.repulsionForce = 0.2f;
+    //    //Init model arg end
+    //    CirclesParams end = start;
+    //    end.width = 100;//100k agents
+    //    run(start, end, steps, "CirclesProblemScaleHD");
+    //}
+    //{//Neighbourhood Scale - Circles
+    //    const int steps = 100;
+    //    //Init model arg start
+    //    CirclesParams  start = {};
+    //    start.iterations = 1000;
+    //    start.density = 0.4f;
+    //    start.interactionRad = 1.0f;
+    //    start.width = 250;
+    //    start.seed = 0;
+    //    start.attractionForce = 0.2f;
+    //    start.repulsionForce = 0.2f;
+    //    //Init model arg end
+    //    CirclesParams end = start;
+    //    end.interactionRad = 15.0f;
+    //    //Init step count
+    //    run(start, end, steps, "CirclesNeighbourhoodScaleLD");
+    //}
+    //Collected
+    /*
+    {//Null - Problem scale
+        const int steps = 101;
+        //Init model arg start
+        NullParams  start = {};
+        start.agents = 1000;
+        start.iterations = 1000;
+        start.density = 0.1f;
+        start.interactionRad = 2.0f;
+        start.seed = 0;
+        //Init model arg end
+        NullParams end = start;
+        end.agents = 100000;
+        run(start, end, steps, "NullProblemScaleLD");
+    }*/
+    //{//Density - ClusterCount//Re-assess, dumb slow around step 20
+    //    const int steps = 100;
+    //    //Init model arg start
+    //    DensityParams  start = {};
+    //    start.iterations = 1000;
+    //    start.envWidth = 1000;
+    //    start.agents = 10000;
+    //    start.seed = 1;
+    //    start.interactionRad = 1.0f;
+    //    start.clusterRad = 5.0f;
+    //    start.clusterCount = 1;
+
+    //    //Init model arg end
+    //    DensityParams end = start;
+    //    end.clusterCount = 200;
+
+    //    run(start, end, steps, "ClusterCount 10k");
+    //}
+    //Collected
+/*
+    {//Null - Problem scale
+        const int steps = 101;
+        //Init model arg start
+        NullParams  start = {};
+        start.agents = 1000;
+        start.iterations = 1000;
+        start.density = 1.0f;
+        start.interactionRad = 2.0f;
+        start.seed = 0;
+        //Init model arg end
+        NullParams end = start;
+        end.agents = 100000;
+        run(start, end, steps, "NullProblemScaleHD");
+    }*/
+    //completed
+    /*
+    {//Null - Neighbour scale 100k
+        const int steps = 100;
+        //Init model arg start
+        NullParams  start = {};
+        start.agents = 100000;
+        start.iterations = 1000;
+        start.density = 1.0f;
+        start.interactionRad = 0.5f;
+        start.seed = 0;
+        //Init model arg end
+        NullParams end = start;
+        end.interactionRad = 10.0f;
+        run(start, end, steps, "NullNeighbourhoodScale100k");
+    }*/
+    {//Null - Neighbour scale 25k
+        const int steps = 100;
+        //Init model arg start
+        NullParams  start = {};
+        start.agents = 25000;
+        start.iterations = 1000;
+        start.density = 1.0f;
+        start.interactionRad = 0.5f;
+        start.seed = 0;
+        //Init model arg end
+        NullParams end = start;
+        end.interactionRad = 10.0f;
+        run(start, end, steps, "NullNeighbourhoodScale25k");
     }
+    {//Null - Neighbour scale 50k
+        const int steps = 100;
+        //Init model arg start
+        NullParams  start = {};
+        start.agents = 50000;
+        start.iterations = 1000;
+        start.density = 1.0f;
+        start.interactionRad = 0.5f;
+        start.seed = 0;
+        //Init model arg end
+        NullParams end = start;
+        end.interactionRad = 10.0f;
+        run(start, end, steps, "NullNeighbourhoodScale50k");
+    }
+    {//Density - ClusterCount
+        const int steps = 100;
+        //Init model arg start
+        DensityParams  start = {};
+        start.iterations = 1000;
+        start.envWidth = 1000;
+        start.agents = 10000;
+        start.seed = 1;
+        start.interactionRad = 1.0f;
+        start.clusterRad = 1.0f;
+        start.clusterCount = 1;
+
+        //Init model arg end
+        DensityParams end = start;
+        end.clusterCount = 200;
+
+        run(start, end, steps, "ClusterCount 10k");
+    }
+    {//Density - ClusterRad
+        const int steps = 100;
+        //Init model arg start
+        DensityParams  start = {};
+        start.iterations = 1000;
+        start.envWidth = 1000;
+        start.agents = 10000;
+        start.seed = 1;
+        start.interactionRad = 1.0f;
+        start.clusterRad = 0.1f;
+        start.clusterCount = 1;
+
+        //Init model arg end
+        DensityParams end = start;
+        end.clusterRad = 100.0f;
+
+        run(start, end, steps, "ClusterRad1-10k");
+    }
+    {//Density - ClusterRad
+        const int steps = 100;
+        //Init model arg start
+        DensityParams  start = {};
+        start.iterations = 1000;
+        start.envWidth = 100;
+        start.agents = 10000;
+        start.seed = 1;
+        start.interactionRad = 1.0f;
+        start.clusterRad = 0.1f;
+        start.clusterCount = 10;
+
+        //Init model arg end
+        DensityParams end = start;
+        end.clusterRad = 100.0f;
+
+        run(start, end, steps, "ClusterRad10-10k");
+    }
+    //Ones likely to TDR
     {//Neighbourhood Scale - Circles
-        const int steps = 16;
+        const int steps = 97;
         //Init model arg start
         CirclesParams  start = {};
         start.iterations = 1000;
-        start.density = 0.01f;
+        start.density = 10.0f;
         start.interactionRad = 1.0f;
-        start.width = 100;
-        start.seed = 100;
+        start.width = 250;
+        start.seed = 0;
+        start.attractionForce = 0.2f;
+        start.repulsionForce = 0.2f;
         //Init model arg end
-        CirclesParams end = {};
-        end.iterations = 1000;
-        end.density = 0.01f;
+        CirclesParams end = start;
         end.interactionRad = 15.0f;
-        end.width = 100;
-        end.seed = 250;
         //Init step count
-        run(start, end, steps, "CirclesNeighbourhoodScale");
+        run(start, end, steps, "CirclesNeighbourhoodScaleHD");
     }
-    {//Something Null
-        const int steps = 16;
-        ////Init model arg start
+    {//Null - Neighbour scale
+        const int steps = 100;
+        //Init model arg start
         NullParams  start = {};
-        //start.iterations = 1000;
-        //start.density = 0.01f;
-        //start.interactionRad = 1.0f;
-        //start.agents = 100;
-        ////Init model arg end
-        NullParams end = {};
-        //end.iterations = 1000;
-        //end.density = 0.01f;
-        //end.interactionRad = 15.0f;
-        //end.agents = 100;
-        ////Init step count
-        run(start, end, steps, "CirclesNeighbourhoodScale");
-    }
-    {//Something Density
-        const int steps = 16;
-        ////Init model arg start
-        DensityParams  start = {};
-        //start.iterations = 1000;
-        //start.density = 0.01f;
-        //start.interactionRad = 1.0f;
-        //start.agents = 100;
-        ////Init model arg end
-        DensityParams end = {};
-        //end.iterations = 1000;
-        //end.density = 0.01f;
-        //end.interactionRad = 15.0f;
-        //end.agents = 100;
-        ////Init step count
-        run(start, end, steps, "CirclesNeighbourhoodScale");
+        start.agents = 10000;
+        start.iterations = 1000;
+        start.density = 10.0f;
+        start.interactionRad = 1.0f;
+        start.seed = 0;
+        //Init model arg end
+        NullParams end = start;
+        end.interactionRad = 15.0f;
+        run(start, end, steps, "NULLNeighbourhoodScaleHD");
     }
 #endif
 	printf("\nComplete\n");
@@ -152,6 +314,7 @@ bool run(const T &start, const T &end, const unsigned int steps, const char *run
     //Create objects for use within the loop
     Time_Init initRes;
     Time_Step_dbl stepRes;
+    NeighbourhoodStats nsFirst, nsLast;
     T modelArgs;
     T modelParamsOut;
     unsigned int agentCount;
@@ -184,7 +347,7 @@ bool run(const T &start, const T &end, const unsigned int steps, const char *run
         FILE *log = fopen(logPath.c_str(), "w");
         if (!log)
         {
-            fprintf(stderr,"Failed to create log filed '%s'\n", logPath.c_str());
+            fprintf(stderr, "Benchmark '%s' '%s' failed to create log filed '%s'\n", runName, TEST_NAMES[j], logPath.c_str());
             return false;
         }
         //Create log header
@@ -202,13 +365,13 @@ bool run(const T &start, const T &end, const unsigned int steps, const char *run
             agentCount = 0;
             totalTime = 0;
             //executeBenchmark
-            if (!executeBenchmark(TEST_EXECUTABLES[j], modelArgs, &modelParamsOut, &agentCount, &initRes, &stepRes, &totalTime))
+            if (!executeBenchmark(TEST_EXECUTABLES[j], modelArgs, &modelParamsOut, &agentCount, &initRes, &stepRes, &totalTime, &nsFirst, &nsLast))
             {
-                fprintf(stderr, "\rBenchmark '%s' '%s' execution failed, exiting early.\n", runName, TEST_NAMES[j]);
+                fprintf(stderr, "\rBenchmark '%s' '%s' execution failed on stage %d/%d, exiting early.\n", runName, TEST_NAMES[j], i+1,steps);
                 return false;
             }
             //logResult
-            logResult(log, &modelParamsOut, agentCount, &initRes, &stepRes, totalTime);
+            logResult(log, &modelParamsOut, agentCount, &initRes, &stepRes, totalTime, &nsFirst, &nsLast);
         }
         printf("\n");
         //Close log
@@ -246,39 +409,55 @@ DensityParams interpolateParams(const DensityParams &start, const DensityParams 
     DensityParams modelArgs;
     modelArgs.seed = start.seed + (long long)((step / stepsM1)*((long long)end.seed - (long long)start.seed));
     modelArgs.agents = start.agents + (unsigned int)((step / stepsM1)*((unsigned int)end.agents - (unsigned int)start.agents));
+    modelArgs.envWidth = start.envWidth + ((step / stepsM1)*(end.envWidth - start.envWidth));
     modelArgs.interactionRad = start.interactionRad + ((step / stepsM1)*(end.interactionRad - start.interactionRad));
-    modelArgs.clusterCount = start.clusterCount + ((step / stepsM1)*(end.clusterCount - start.clusterCount));
+    modelArgs.clusterCount = start.clusterCount + (unsigned int)((step / stepsM1)*(end.clusterCount - start.clusterCount));
     modelArgs.clusterRad = start.clusterRad + ((step / stepsM1)*(end.clusterRad - start.clusterRad));
     modelArgs.iterations = start.iterations + (long long)((step / stepsM1)*((int)end.iterations - (int)start.iterations));
     return modelArgs;
 }
 template<class T>
-bool executeBenchmark(const char* executable, T modelArgs, T *modelparamOut, unsigned int *agentCount, Time_Init *initRes, Time_Step_dbl *stepRes, float *totalTime)
+bool executeBenchmark(const char* executable, T modelArgs, T *modelparamOut, unsigned int *agentCount, Time_Init *initRes, Time_Step_dbl *stepRes, float *totalTime, NeighbourhoodStats *nsFirst, NeighbourhoodStats *nsLast)
 {
     char *command;
     bool rtn = true;
     execString(executable, modelArgs, &command);
     std::shared_ptr<FILE> pipe(_popen(command, "rb"), _pclose);
-    if (!pipe.get()) return false;
-    if (fread(modelparamOut, sizeof(T), 1, pipe.get()) != 1)
+    if (!pipe.get()) rtn = false;
+    if (rtn)
     {
-        rtn = false; printf("\nReading model params failed.\n");
+        if (fread(modelparamOut, sizeof(T), 1, pipe.get()) != 1)
+        {
+            rtn = false; printf("\nReading model params failed.\n");
+        }
+        if (fread(agentCount, sizeof(unsigned int), 1, pipe.get()) != 1)
+        {
+            rtn = false; printf("Reading agent count failed.\n");
+        }
+        if (fread(initRes, sizeof(Time_Init), 1, pipe.get()) != 1)
+        {
+            rtn = false; printf("Reading init timings failed.\n");
+        }
+        if (fread(stepRes, sizeof(Time_Step_dbl), 1, pipe.get()) != 1)
+        {
+            rtn = false; printf("Reading step timings failed.\n");
+        }
+        if (fread(totalTime, sizeof(float), 1, pipe.get()) != 1)
+        {
+            rtn = false; printf("Reading total time failed.\n");
+        }
+        if (fread(nsFirst, sizeof(NeighbourhoodStats), 1, pipe.get()) != 1)
+        {
+            rtn = false; printf("Reading first NeighbourhoodStats failed.\n");
+        }
+        if (fread(nsLast, sizeof(NeighbourhoodStats), 1, pipe.get()) != 1)
+        {
+            rtn = false; printf("Reading last NeighbourhoodStats failed.\n");
+        }
     }
-    if (fread(agentCount, sizeof(unsigned int), 1, pipe.get()) != 1)
+    if (!rtn)
     {
-        rtn = false; printf("\nReading agent count failed.\n");
-    }
-    if (fread(initRes, sizeof(Time_Init), 1, pipe.get()) != 1)
-    {
-        rtn = false; printf("\nReading init timings failed.\n");
-    }
-    if (fread(stepRes, sizeof(Time_Step_dbl), 1, pipe.get()) != 1)
-    {
-        rtn = false; printf("\nReading step timings failed.\n");
-    }
-    if (fread(totalTime, sizeof(float), 1, pipe.get()) != 1)
-    {
-        rtn = false; printf("\nReading total time failed.\n");
+        printf("Exec: %s\n", command);
     }
     return rtn;
 }
@@ -288,7 +467,8 @@ void execString(const char* executable, CirclesParams modelArgs, char **rtn)
 	std::string buffer("\"");
 	buffer = buffer.append(DIR_X64);
 	buffer = buffer.append(executable);
-	buffer = buffer.append("\"");
+    buffer = buffer.append("\"");
+    buffer = buffer.append(" ");
 	buffer = buffer.append("-pipe");
 	buffer = buffer.append(" ");
 	buffer = buffer.append("-device");
@@ -326,6 +506,7 @@ void execString(const char* executable, NullParams modelArgs, char **rtn)
     buffer = buffer.append(DIR_X64);
     buffer = buffer.append(executable);
     buffer = buffer.append("\"");
+    buffer = buffer.append(" ");
     buffer = buffer.append("-pipe");
     buffer = buffer.append(" ");
     buffer = buffer.append("-device");
@@ -359,6 +540,7 @@ void execString(const char* executable, DensityParams modelArgs, char **rtn)
     buffer = buffer.append(DIR_X64);
     buffer = buffer.append(executable);
     buffer = buffer.append("\"");
+    buffer = buffer.append(" ");
     buffer = buffer.append("-pipe");
     buffer = buffer.append(" ");
     buffer = buffer.append("-device");
@@ -402,7 +584,9 @@ void logHeader(FILE *out, const CirclesParams &modelArgs)
 	fputs("step avg (s)", out);
 	fputs(",,,", out);
 	fputs("overall (s)", out);
-	fputs(",", out);
+    fputs(",", out);
+    fputs("Neighbourhood Stats", out);
+    fputs(",,,,,,", out);
 	fputs("\n", out);
 	//ModelArgs
 	fputs("width", out);
@@ -441,13 +625,26 @@ void logHeader(FILE *out, const CirclesParams &modelArgs)
 	fputs(",", out);
 	//Total
 	fputs("time", out);
-	fputs(",", out);
+    fputs(",", out);
+    //Neighbourhood stats
+    fputs("First Min", out);
+    fputs(",", out);
+    fputs("First Max", out);
+    fputs(",", out);
+    fputs("First Avg", out);
+    fputs(",", out);
+    fputs("Last Min", out);
+    fputs(",", out);
+    fputs("Last Max", out);
+    fputs(",", out);
+    fputs("Last Avg", out);
+    fputs(",", out);
 	//ln
 	fputs("\n", out);
 }
-void logResult(FILE *out, const CirclesParams* modelArgs, const unsigned int agentCount, const Time_Init *initRes, const Time_Step_dbl *stepRes, const float totalTime)
+void logResult(FILE *out, const CirclesParams* modelArgs, const unsigned int agentCount, const Time_Init *initRes, const Time_Step_dbl *stepRes, const float totalTime, const NeighbourhoodStats *nsFirst, const NeighbourhoodStats *nsLast)
 {	//ModelArgs
-	fprintf(out, "%i,%f,%f,%f,%f,%llu,%llu,",
+	fprintf(out, "%u,%f,%f,%f,%f,%llu,%llu,",
 		modelArgs->width,
 		modelArgs->density,
 		modelArgs->interactionRad,
@@ -477,7 +674,12 @@ void logResult(FILE *out, const CirclesParams* modelArgs, const unsigned int age
 	//Total
 	fprintf(out, "%f,",
 		totalTime /1000
-		);
+        );
+    //Neighbourhood stats
+    fprintf(out, "%d,%d,%f,%d,%d,%f,",
+        nsFirst->min, nsFirst->max, nsFirst->average,
+        nsLast->min, nsLast->max, nsLast->average
+        );
 	//ln
 	fputs("\n", out);
 	fflush(out);
@@ -487,11 +689,13 @@ void logHeader(FILE *out, const NullParams &modelArgs)
     fputs("model", out);
     fputs(",,,,,,", out);
     fputs("init (s)", out);
-    fputs(",,,,,,", out);
+    fputs(",,,,,", out);
     fputs("step avg (s)", out);
     fputs(",,,", out);
     fputs("overall (s)", out);
     fputs(",", out);
+    fputs("Neighbourhood Stats", out);
+    fputs(",,,,,,", out);
     fputs("\n", out);
     //ModelArgs
     fputs("agents-in", out);
@@ -527,12 +731,25 @@ void logHeader(FILE *out, const NullParams &modelArgs)
     //Total
     fputs("time", out);
     fputs(",", out);
+    //Neighbourhood stats
+    fputs("First Min", out);
+    fputs(",", out);
+    fputs("First Max", out);
+    fputs(",", out);
+    fputs("First Avg", out);
+    fputs(",", out);
+    fputs("Last Min", out);
+    fputs(",", out);
+    fputs("Last Max", out);
+    fputs(",", out);
+    fputs("Last Avg", out);
+    fputs(",", out);
     //ln
     fputs("\n", out);
 }
-void logResult(FILE *out, const NullParams* modelArgs, const unsigned int agentCount, const Time_Init *initRes, const Time_Step_dbl *stepRes, const float totalTime)
+void logResult(FILE *out, const NullParams* modelArgs, const unsigned int agentCount, const Time_Init *initRes, const Time_Step_dbl *stepRes, const float totalTime, const NeighbourhoodStats *nsFirst, const NeighbourhoodStats *nsLast)
 {	//ModelArgs
-    fprintf(out, "%i,%f,%f,%llu,%llu,",
+    fprintf(out, "%u,%f,%f,%llu,%llu,",
         modelArgs->agents,
         modelArgs->density,
         modelArgs->interactionRad,
@@ -561,6 +778,11 @@ void logResult(FILE *out, const NullParams* modelArgs, const unsigned int agentC
     fprintf(out, "%f,",
         totalTime / 1000
         );
+    //Neighbourhood stats
+    fprintf(out, "%d,%d,%f,%d,%d,%f,",
+        nsFirst->min, nsFirst->max, nsFirst->average,
+        nsLast->min, nsLast->max, nsLast->average
+        );
     //ln
     fputs("\n", out);
     fflush(out);
@@ -568,16 +790,20 @@ void logResult(FILE *out, const NullParams* modelArgs, const unsigned int agentC
 void logHeader(FILE *out, const DensityParams &modelArgs)
 {
     fputs("model", out);
-    fputs(",,,,,,,", out);
+    fputs(",,,,,,,,", out);
     fputs("init (s)", out);
-    fputs(",,,,,,", out);
+    fputs(",,,,,", out);
     fputs("step avg (s)", out);
     fputs(",,,", out);
     fputs("overall (s)", out);
     fputs(",", out);
+    fputs("Neighbourhood Stats", out);
+    fputs(",,,,,,", out);
     fputs("\n", out);
     //ModelArgs
     fputs("agents-in", out);
+    fputs(",", out);
+    fputs("envWidth", out);
     fputs(",", out);
     fputs("interactionRad", out);
     fputs(",", out);
@@ -612,13 +838,27 @@ void logHeader(FILE *out, const DensityParams &modelArgs)
     //Total
     fputs("time", out);
     fputs(",", out);
+    //Neighbourhood stats
+    fputs("First Min", out);
+    fputs(",", out);
+    fputs("First Max", out);
+    fputs(",", out);
+    fputs("First Avg", out);
+    fputs(",", out);
+    fputs("Last Min", out);
+    fputs(",", out);
+    fputs("Last Max", out);
+    fputs(",", out);
+    fputs("Last Avg", out);
+    fputs(",", out);
     //ln
     fputs("\n", out);
 }
-void logResult(FILE *out, const DensityParams* modelArgs, const unsigned int agentCount, const Time_Init *initRes, const Time_Step_dbl *stepRes, const float totalTime)
+void logResult(FILE *out, const DensityParams* modelArgs, const unsigned int agentCount, const Time_Init *initRes, const Time_Step_dbl *stepRes, const float totalTime, const NeighbourhoodStats *nsFirst, const NeighbourhoodStats *nsLast)
 {	//ModelArgs
-    fprintf(out, "%i,%f,%u,%f,%llu,%llu,",
+    fprintf(out, "%u,%f,%f,%u,%f,%llu,%llu,",
         modelArgs->agents,
+        modelArgs->envWidth,
         modelArgs->interactionRad,
         modelArgs->clusterCount,
         modelArgs->clusterRad,
@@ -646,6 +886,11 @@ void logResult(FILE *out, const DensityParams* modelArgs, const unsigned int age
     //Total
     fprintf(out, "%f,",
         totalTime / 1000
+        );
+    //Neighbourhood stats
+    fprintf(out, "%d,%d,%f,%d,%d,%f,",
+        nsFirst->min, nsFirst->max, nsFirst->average,
+        nsLast->min, nsLast->max, nsLast->average
         );
     //ln
     fputs("\n", out);

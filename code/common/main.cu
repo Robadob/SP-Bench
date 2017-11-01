@@ -235,6 +235,7 @@ int main(int argc, char * argv[])
 	//v.run();
 	//Do iterations
 	Time_Step_dbl average = {};//init
+    NeighbourhoodStats nhFirst, nhLast;
     for (unsigned long long i = 1; i <= args.model->iterations; i++)
 	{
 		const Time_Step iterTime = model->step();
@@ -251,14 +252,23 @@ int main(int argc, char * argv[])
 		{
 			printf("\r%6llu/%llu", i, args.model->iterations);
 		}
-	}
+        if (i==1)
+        {
+            nhFirst = model->getPartition()->getNeighbourhoodStats();
+        }
+    }
+    nhLast = model->getPartition()->getNeighbourhoodStats();
 	if (!args.pipe&&!args.profile)
 	{
 		printf("\nModel complete - Average Times\n");
 		printf("Main kernel - %.3fs\n", average.kernel / 1000);
 		printf("Build PBM   - %.3fs\n", average.texture / 1000);
 		printf("Combined    - %.3fs\n", average.overall / 1000);
-		printf("\n");
+        printf("\n");
+        printf("Neighbourhood stats\n");
+        printf("First - Min:%d, Max:%d, Average:%f\n", nhFirst.min, nhFirst.max, nhFirst.average);
+        printf("Last  - Min:%d, Max:%d, Average:%f\n", nhLast.min, nhLast.max, nhLast.average);
+        printf("\n");
 	}
 
     //Calculate final timing
@@ -276,7 +286,26 @@ int main(int argc, char * argv[])
 	{
 		//FILE *pipe = fopen("CON", "wb+");// _popen("", "wb");
 		setmode(fileno(stdout), O_BINARY);
-        if (fwrite(&args.model, sizeof(CirclesParams), 1, stdout) != 1)
+        size_t modelSize = 0;
+        switch (args.model->enumerator())
+        {
+#ifdef CIRCLES_MODEL
+        case Circles:
+            modelSize = sizeof(CirclesParams);
+            break;
+#endif
+#ifdef NULL_MODEL
+        case Null:
+            modelSize = sizeof(NullParams);
+            break;
+        case Density:
+            modelSize = sizeof(DensityParams);
+            break;
+#endif
+        default:
+            assert(false);//Model not configured
+        }
+        if (fwrite(args.model.get(), modelSize, 1, stdout) != 1)
 		{
 			freopen("error.log", "a", stderr);
 			fprintf(stderr, "Writing model params failed.\n"); 
@@ -307,6 +336,18 @@ int main(int argc, char * argv[])
 			fprintf(stderr, "Writing total time failed.\n"); 
 			fflush(stderr);
 		};
+        if (fwrite(&nhFirst, sizeof(NeighbourhoodStats), 1, stdout) != 1)
+        {
+            freopen("error.log", "a", stderr);
+            fprintf(stderr, "Writing first NeighbourhoodStats failed.\n");
+            fflush(stderr);
+        };
+        if (fwrite(&nhLast, sizeof(NeighbourhoodStats), 1, stdout) != 1)
+        {
+            freopen("error.log", "a", stderr);
+            fprintf(stderr, "Writing last NeighbourhoodStats failed.\n");
+            fflush(stderr);
+        };
 	}
 	if (args.exportAgents)
 	{
@@ -314,7 +355,7 @@ int main(int argc, char * argv[])
 	}
 #ifdef _GL
     v.run();
-    v.reset();
+    v.~Visualisation();
     scene.reset();
 #endif
     //Shutdown model before CUDA device reset

@@ -20,7 +20,7 @@
 //https://graphics.stanford.edu/~seander/bithacks.html#InterleaveBMN
 // Expands a 16-bit integer into 32 bits
 // by inserting 1 zeros after each bit.
-__host__ __device__ unsigned int expandBits16(unsigned int v)
+__host__ __device__ inline unsigned int expandBits16(unsigned int v)
 {
     v = (v | (v << 8u)) & 0x00FF00FFu;
     v = (v | (v << 4u)) & 0x0F0F0F0Fu;
@@ -29,6 +29,18 @@ __host__ __device__ unsigned int expandBits16(unsigned int v)
     return v;
 }
 // Calculates a 32-bit Morton code
+// Calculates a 32-bit Morton code
+__host__ __device__ inline unsigned int mortonComputeEncode(const unsigned int &x, const unsigned int &y)
+{
+    //Pos should be clamped to 0<=x<65536
+#ifdef _DEBUG
+    assert(x >= 0);
+    assert(x < 65536);
+    assert(y >= 0);
+    assert(y < 65536);
+#endif
+    return expandBits16((unsigned int)x) | (expandBits16((unsigned int)y) << 1);
+}
 __host__ __device__ inline unsigned int mortonComputeEncode(const glm::ivec2 &pos)
 {
     //Pos should be clamped to 0<=x<65536
@@ -40,7 +52,7 @@ __host__ __device__ inline unsigned int mortonComputeEncode(const glm::ivec2 &po
 #endif
     return expandBits16((unsigned int)pos.x) | (expandBits16((unsigned int)pos.y) << 1);
 }
-__host__ __device__ DIMENSIONS_IVEC mortonDecode(const int &d) {
+__host__ __device__ DIMENSIONS_IVEC mortonComputeDecode(const int &d) {
     //Convert a morton coded hash back into a grid square
     DIMENSIONS_IVEC ret = DIMENSIONS_IVEC(0);
     for (int i = 0; i < 32; i++)
@@ -69,7 +81,7 @@ __host__ __device__ unsigned int expandBits10(unsigned int v)
     return v;
 }
 // Calculates a 30-bit Morton code for the
-__host__ __device__ unsigned int mortonEncode(const glm::ivec3 &pos)
+__host__ __device__ unsigned int mortonComputeEncode(const glm::ivec3 &pos)
 {
     //Pos should be clamped to 0<=x<1024
 
@@ -86,7 +98,7 @@ __host__ __device__ unsigned int mortonEncode(const glm::ivec3 &pos)
     unsigned int zz = expandBits10((unsigned int)pos.z);
     return xx * 4 + yy * 2 + zz;
 }
-__host__ __device__ DIMENSIONS_IVEC mortonDecode(const int &d) {
+__host__ __device__ DIMENSIONS_IVEC mortonComputeDecode(const int &d) {
     //Convert a morton coded hash back into a grid square
     DIMENSIONS_IVEC ret = DIMENSIONS_IVEC(0);
     for (int i = 0; i < 30; i++)

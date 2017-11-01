@@ -29,8 +29,23 @@ __global__ void step_null_model(LocationMessages *locationMessagesIn, LocationMe
     } while (lm);
 
     //Export newLoc
-    averageLoc /= ct;
+    if (ct)
+        averageLoc /= ct;
 #ifdef _DEBUG
+    //if (isnan(averageLoc.x) || isnan(averageLoc.y))
+    //{
+    //    lm = locationMessagesIn->getFirstNeighbour(myLoc);do
+    //    {
+    //        assert(lm != 0);
+    //        if ((lm->id != id))//CHANGED: Don't sort particles
+    //        {
+    //            //Sum neighbours
+    //            averageLoc += lm->location;
+    //            ct++;
+    //        }
+    //        lm = locationMessagesIn->getNextNeighbour(lm);//Returns a pointer to shared memory or 0
+    //} while (lm);
+    //}
     assert(!isnan(averageLoc.x));
     assert(!isnan(averageLoc.y));
 #ifdef _3D

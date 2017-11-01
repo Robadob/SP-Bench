@@ -23,6 +23,14 @@ struct Time_Step_dbl
 	double kernel;
 	double texture;
 };
+struct NeighbourhoodStats
+{
+    NeighbourhoodStats()
+        :max(0), min(UINT_MAX), average(0.0f) { }
+    unsigned int max;
+    unsigned int min;
+    float average;
+};
 enum ModelEnum : unsigned int
 {
     Null = 0,

@@ -116,29 +116,7 @@ SpatialPartition::~SpatialPartition()
     freePeano();
 #endif
 }
-#ifdef _DEBUG
-
-//DIMENSIONS_IVEC SpatialPartition::getGridPosition(DIMENSIONS_VEC worldPos)
-//{
-//#ifndef SP_NO_CLAMP_GRID
-//    //Clamp each grid coord to 0<=x<dim
-//    return clamp(floor(((worldPos - environmentMin) / (environmentMax - environmentMin))*glm::vec3(gridDim)), glm::vec3(0), glm::vec3(gridDim)-glm::vec3(1));
-//#else
-//    return floor(((worldPos - environmentMin) / (environmentMax - environmentMin))*glm::vec3(gridDim));
-//#endif
-//}
-//
-//unsigned int SpatialPartition::getHash(DIMENSIONS_IVEC gridPos)
-//{
-//    gridPos = clamp(gridPos, DIMENSIONS_IVEC(0), gridDim - DIMENSIONS_IVEC(1));
-//    return
-//#ifdef _3D
-//        (gridPos.z * gridDim.y * gridDim.x) +   //z
-//#endif
-//        (gridPos.y * gridDim.x) +					//y
-//        gridPos.x; 	                                //x
-//}
-int SpatialPartition::getHash(DIMENSIONS_IVEC gridPos)
+unsigned int SpatialPartition::getHash(DIMENSIONS_IVEC gridPos)
 {//Host version using host copy of gridDim
     gridPos = glm::clamp(gridPos, DIMENSIONS_IVEC(0), gridDim - DIMENSIONS_IVEC(1));
 #if defined(MORTON)
@@ -167,7 +145,7 @@ DIMENSIONS_IVEC SpatialPartition::getPos(unsigned int hash)
 #elif defined(PEANO)
     return peanoDecode(hash, this->gridExponent);
 #elif defined(MORTON_COMPUTE)
-    return mortonDecode(hash);
+    return mortonComputeDecode(hash);
 #else
     if (hash >= this->binCountMax)
         return DIMENSIONS_IVEC(-1);
@@ -201,64 +179,76 @@ bool SpatialPartition::isValid(DIMENSIONS_IVEC bin) const
     }
     return true;
 }
+#ifdef _DEBUG
+
+//DIMENSIONS_IVEC SpatialPartition::getGridPosition(DIMENSIONS_VEC worldPos)
+//{
+//#ifndef SP_NO_CLAMP_GRID
+//    //Clamp each grid coord to 0<=x<dim
+//    return clamp(floor(((worldPos - environmentMin) / (environmentMax - environmentMin))*glm::vec3(gridDim)), glm::vec3(0), glm::vec3(gridDim)-glm::vec3(1));
+//#else
+//    return floor(((worldPos - environmentMin) / (environmentMax - environmentMin))*glm::vec3(gridDim));
+//#endif
+//}
+//
+//unsigned int SpatialPartition::getHash(DIMENSIONS_IVEC gridPos)
+//{
+//    gridPos = clamp(gridPos, DIMENSIONS_IVEC(0), gridDim - DIMENSIONS_IVEC(1));
+//    return
+//#ifdef _3D
+//        (gridPos.z * gridDim.y * gridDim.x) +   //z
+//#endif
+//        (gridPos.y * gridDim.x) +					//y
+//        gridPos.x; 	                                //x
+//}
 void SpatialPartition::assertSearch()
 {
     //return;//
     unsigned int outCount = this->binCountMax + 1;
-    unsigned int tableSize = ((outCount / 10) + 1) * 10;
+    //unsigned int tableSize = ((outCount / 10) + 1) * 10;
 
     //Copy raw PBM from device to host
-    unsigned int *PBM_raw = static_cast<unsigned int *>(malloc(sizeof(unsigned int)*tableSize));
-    memset(PBM_raw, 0, tableSize * sizeof(unsigned int));
+    unsigned int *PBM_raw = static_cast<unsigned int *>(malloc(sizeof(unsigned int)*outCount));
+    memset(PBM_raw, 0, outCount * sizeof(unsigned int));
     CUDA_CALL(cudaMemcpy(PBM_raw, d_PBM, sizeof(unsigned int)*outCount, cudaMemcpyDeviceToHost));
 
     //Calculate the size of every bin
     unsigned int agtCount = 0;
-    unsigned int *PBM_binSize = static_cast<unsigned int *>(malloc(sizeof(unsigned int)*tableSize));
-    for (unsigned int i = 0; i < tableSize; i++)
+    unsigned int *PBM_binSize = static_cast<unsigned int *>(malloc(sizeof(unsigned int)*this->binCountMax));
+    for (unsigned int i = 0; i < this->binCountMax; i++)
     {
-        if (i < outCount - 1)
-        {
             PBM_binSize[i] = PBM_raw[i + 1] - PBM_raw[i];
             agtCount += PBM_binSize[i];
-        }
-        else
-        {
-            PBM_binSize[i] = 11111;
-        }
-
     }
     if (agtCount != maxAgents&&agtCount != 0)
     {
         printf("%i PBM records exist for %i agents.\n", agtCount, maxAgents);
     }
 
-#if defined(MORTON) || defined(HILBERT) || defined(PEANO) || defined(MORTON_COMPUTE)
-    //In the case of morton coding, we sort PBM back into our regular order to compare
-    unsigned int *PBM_coded = PBM_binSize;
-    PBM_binSize = static_cast<unsigned int *>(malloc(sizeof(unsigned int)*tableSize));
-    memset(PBM_binSize, 0, tableSize * sizeof(unsigned int));
-    for (int i = 0; i < this->binCount; i++)
-    {
-#if defined(_3D)
-        PBM_binSize[i] = PBM_coded[getHash(glm::ivec3((i % (gridDim.y * gridDim.x)) % gridDim.x, (i % (gridDim.y * gridDim.x)) / gridDim.x, (i / (gridDim.y * gridDim.x))))];
-#elif defined(_2D)
-        PBM_binSize[i] = PBM_coded[getHash(glm::ivec2(i % gridDim.x, i / gridDim.x))];
-#endif
-    }
-    free(PBM_coded);
-#endif
+//#if defined(MORTON) || defined(HILBERT) || defined(PEANO) || defined(MORTON_COMPUTE)
+//    //In the case of morton coding, we sort PBM back into our regular order to compare
+//    unsigned int *PBM_coded = PBM_binSize;
+//    PBM_binSize = static_cast<unsigned int *>(malloc(sizeof(unsigned int)*outCount));
+//    memset(PBM_binSize, 0, tableSize * sizeof(unsigned int));
+//    for (int i = 0; i < this->binCount; i++)
+//    {
+//#if defined(_3D)
+//        PBM_binSize[i] = PBM_coded[getHash(glm::ivec3((i % (gridDim.y * gridDim.x)) % gridDim.x, (i % (gridDim.y * gridDim.x)) / gridDim.x, (i / (gridDim.y * gridDim.x))))];
+//#elif defined(_2D)
+//        PBM_binSize[i] = PBM_coded[getHash(glm::ivec2(i % gridDim.x, i / gridDim.x))];
+//#endif
+//    }
+//    free(PBM_coded);
+//#endif
     //Calculate the size of each bin's neighbourhood
-    unsigned int *PBM_neighbourhoodSize = static_cast<unsigned int *>(malloc(sizeof(unsigned int)*tableSize));
-    for (unsigned int i = 0; i < ((outCount / 10) + 1) * 10; i++)
+    unsigned int *PBM_neighbourhoodSize = static_cast<unsigned int *>(malloc(sizeof(unsigned int)*this->binCountMax));
+    for (unsigned int i = 0; i < this->binCountMax; i++)
     {
         PBM_neighbourhoodSize[i] = 0;
-        if (i < outCount - 1)
-        {
-            DIMENSIONS_IVEC curCell = getPos(i);
-            for (int x = -1; x <= 1; x++)
-                for (int y = -1; y <= 1; y++)
-                {
+        DIMENSIONS_IVEC curCell = getPos(i);
+        for (int x = -1; x <= 1; x++)
+            for (int y = -1; y <= 1; y++)
+            {
 #if defined(_2D)
                 DIMENSIONS_IVEC neighbourCell = curCell + DIMENSIONS_IVEC(x, y);
 #elif defined(_3D)
@@ -268,13 +258,14 @@ void SpatialPartition::assertSearch()
 #endif
                     if (isValid(neighbourCell))
                     {
-                        PBM_neighbourhoodSize[i] += PBM_binSize[getHash(neighbourCell)];
+                        unsigned int hash = getHash(neighbourCell);
+                        assert(hash < this->binCountMax);
+                        PBM_neighbourhoodSize[i] += PBM_binSize[hash];
                     }
 #ifdef _3D
                 }
 #endif
-                }
-        }
+            }
 
     }
 
@@ -305,6 +296,8 @@ void SpatialPartition::assertSearch()
 #elif defined(_3D)
         unsigned int hash = getHash(getGridPosition(DIMENSIONS_VEC(lm.locationX[i], lm.locationY[i], lm.locationZ[i])));
 #endif
+
+        assert(hash < this->binCountMax);
         if (glm::epsilonNotEqual(lm.count[i], PBM_neighbourhoodSize[hash] / (float)locationMessageCount, 0.5f))
         {
             //printf("%u=%u-%f=%f,", (unsigned int)(lm.count[i] * locationMessageCount), PBM_neighbourhoodSize[hash], lm.count[i], PBM_neighbourhoodSize[hash] / (float)locationMessageCount);
@@ -393,6 +386,81 @@ void SpatialPartition::assertSearch()
     free(PBM_neighbourhoodSize);
 }
 #endif
+NeighbourhoodStats SpatialPartition::getNeighbourhoodStats()
+{//Based on assertSearch()
+    unsigned int outCount = this->binCountMax + 1;
+    NeighbourhoodStats rtn;
+    //Copy raw PBM from device to host
+    unsigned int *PBM_raw = static_cast<unsigned int *>(malloc(sizeof(unsigned int)*(this->binCountMax + 1)));
+    memset(PBM_raw, 0, (this->binCountMax + 1) * sizeof(unsigned int));
+    CUDA_CALL(cudaMemcpy(PBM_raw, d_PBM, sizeof(unsigned int)*(this->binCountMax + 1), cudaMemcpyDeviceToHost));
+
+    //Calculate the size of every bin
+    unsigned int agtCount = 0;
+    unsigned int *PBM_binSize = static_cast<unsigned int *>(malloc(sizeof(unsigned int)*this->binCountMax));
+    for (unsigned int i = 0; i < this->binCountMax; i++)
+    {
+        PBM_binSize[i] = PBM_raw[i + 1] - PBM_raw[i];
+        agtCount += PBM_binSize[i];
+    }
+    free(PBM_raw);
+    if (agtCount != maxAgents&&agtCount != 0)
+    {
+        printf("%i PBM records exist for %i agents.\n", agtCount, maxAgents);
+    }
+//#if defined(MORTON) || defined(HILBERT) || defined(PEANO) || defined(MORTON_COMPUTE)
+//    //In the case of morton coding, we sort PBM back into our regular order to compare
+//    unsigned int *PBM_coded = PBM_binSize;
+//    PBM_binSize = static_cast<unsigned int *>(malloc(sizeof(unsigned int)*this->binCountMax));
+//    memset(PBM_binSize, 0, this->binCountMax * sizeof(unsigned int));
+//    for (int i = 0; i < this->binCount; i++)
+//    {
+//#if defined(_3D)
+//        PBM_binSize[i] = PBM_coded[getHash(glm::ivec3((i % (gridDim.y * gridDim.x)) % gridDim.x, (i % (gridDim.y * gridDim.x)) / gridDim.x, (i / (gridDim.y * gridDim.x))))];
+//#elif defined(_2D)
+//        PBM_binSize[i] = PBM_coded[getHash(glm::ivec2(i % gridDim.x, i / gridDim.x))];
+//#endif
+//    }
+//    free(PBM_coded);
+//#endif
+    //Calculate the size of each bin's neighbourhood
+    unsigned int *PBM_neighbourhoodSize = static_cast<unsigned int *>(malloc(sizeof(unsigned int)*this->binCountMax));
+    for (unsigned int i = 0; i < this->binCountMax; i++)
+    {
+        PBM_neighbourhoodSize[i] = 0;
+        DIMENSIONS_IVEC curCell = getPos(i);
+        for (int x = -1; x <= 1; x++)
+            for (int y = -1; y <= 1; y++)
+            {
+#if defined(_2D)
+            DIMENSIONS_IVEC neighbourCell = curCell + DIMENSIONS_IVEC(x, y);
+#elif defined(_3D)
+            for (int z = -1; z <= 1; z++)
+            {
+                DIMENSIONS_IVEC neighbourCell = curCell + DIMENSIONS_IVEC(x, y, z);
+#endif
+                if (isValid(neighbourCell))
+                {
+                    unsigned int hash = getHash(neighbourCell);
+                    assert(hash < this->binCountMax);
+                    PBM_neighbourhoodSize[i] += PBM_binSize[hash];
+                }
+#ifdef _3D
+            }
+#endif
+            }
+        if (PBM_binSize[i])
+        {
+            rtn.min = min(PBM_neighbourhoodSize[i], rtn.min);
+            rtn.max = max(PBM_neighbourhoodSize[i], rtn.max);
+        }
+        rtn.average += ((PBM_neighbourhoodSize[i] * PBM_binSize[i]) / (float)maxAgents);
+    }
+
+    free(PBM_binSize);
+    free(PBM_neighbourhoodSize);
+    return rtn;
+}
 void SpatialPartition::deviceAllocateLocationMessages(LocationMessages **d_locMessage, LocationMessages *hd_locMessage)
 {
     CUDA_CALL(cudaMalloc(d_locMessage, sizeof(LocationMessages)));
@@ -660,9 +728,9 @@ void SpatialPartition::setBinCount()
 #endif
     this->binCount = (unsigned int)pow(this->binCount, DIMENSIONS);
 
-#if defined(MORTON) || defined(HILBERT) ||defined(PEANO)
-    printf("Space-filling grid exponent set to: %u\n", this->gridExponent);
-#endif
+//#if defined(MORTON) || defined(HILBERT) ||defined(PEANO)
+//    printf("Space-filling grid exponent set to: %u\n", this->gridExponent);
+//#endif
 }
 void SpatialPartition::setLocationCount(unsigned int t_locationMessageCount)
 {
