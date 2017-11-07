@@ -142,7 +142,7 @@ const Time_Step NullModel::step()
 }
 int requiredSM_stepNullModel(int blockSize)
 {
-    return sizeof(LocationMessage)*blockSize;
+    return SpatialPartition::requiredSM(blockSize);
 }
 void NullModel::launchStep()
 {

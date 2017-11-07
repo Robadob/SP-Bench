@@ -27,6 +27,9 @@
 **/
 struct BinState
 {
+#if defined(MODULAR)
+    DIMENSIONS_IVEC offset;//The grid cells alignment offset, so we calculate once
+#endif
 #if defined(STRIPS)
 #if defined (_3D)
     glm::ivec2 relative;
@@ -62,11 +65,18 @@ public:
 #if defined(_GL) || defined(_DEBUG)
     float *count;
 #endif
+#if !defined(MODULAR)
     __device__ LocationMessage *getFirstNeighbour(DIMENSIONS_VEC location);
+#endif
     __device__ LocationMessage *getNextNeighbour(LocationMessage *message);
-
+#if defined(MODULAR)
+    __device__ LocationMessage *firstBin(DIMENSIONS_VEC location);
+    __device__ bool nextBin(LocationMessage *sm_message);
+#endif
 private:
+#if !defined(MODULAR)
 	__device__ bool nextBin(LocationMessage *sm_message);
+#endif
     //Load the next desired message into shared memory
 	__device__ LocationMessage *loadNextMessage(LocationMessage *message);
 
@@ -103,7 +113,7 @@ private:
 
 };
 */
-extern __host__ __device__ DIMENSIONS_IVEC getGridPosition(DIMENSIONS_VEC worldPos);
+extern __device__ DIMENSIONS_IVEC getGridPosition(DIMENSIONS_VEC worldPos);
 class SpatialPartition
 {
 public:
@@ -126,7 +136,9 @@ public:
     float getCellSize() const { return interactionRad; }
     bool isValid(DIMENSIONS_IVEC bin) const;
     DIMENSIONS_IVEC getPos(unsigned int hash);
+    DIMENSIONS_IVEC getGridPosition(DIMENSIONS_VEC worldPos);
     unsigned int getHash(DIMENSIONS_IVEC gridPos);
+    static int requiredSM(int blockSize);
 #ifdef _DEBUG
     void assertSearch();
     void launchAssertPBMIntegerity();

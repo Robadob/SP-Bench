@@ -300,7 +300,7 @@ void SpatialPartition::assertSearch()
         assert(hash < this->binCountMax);
         if (glm::epsilonNotEqual(lm.count[i], PBM_neighbourhoodSize[hash] / (float)locationMessageCount, 0.5f))
         {
-            //printf("%u=%u-%f=%f,", (unsigned int)(lm.count[i] * locationMessageCount), PBM_neighbourhoodSize[hash], lm.count[i], PBM_neighbourhoodSize[hash] / (float)locationMessageCount);
+            printf("%u=%u-%f=%f,", (unsigned int)(lm.count[i] * locationMessageCount), PBM_neighbourhoodSize[hash], lm.count[i], PBM_neighbourhoodSize[hash] / (float)locationMessageCount);
             matchFails++;
         }
     }
@@ -388,7 +388,6 @@ void SpatialPartition::assertSearch()
 #endif
 NeighbourhoodStats SpatialPartition::getNeighbourhoodStats()
 {//Based on assertSearch()
-    unsigned int outCount = this->binCountMax + 1;
     NeighbourhoodStats rtn;
     //Copy raw PBM from device to host
     unsigned int *PBM_raw = static_cast<unsigned int *>(malloc(sizeof(unsigned int)*(this->binCountMax + 1)));
@@ -716,8 +715,8 @@ void SpatialPartition::setBinCount()
     this->binCount = glm::compMax(gridDim);
     //Find the next biggest power of two
 #if defined(MORTON) || defined(HILBERT) || defined(MORTON_COMPUTE)
-    this->gridExponent = ceil(log2f(this->binCount));
-    int l2 = pow(2, this->gridExponent);
+    this->gridExponent = (unsigned int)ceil(log2f((float)this->binCount));
+    int l2 = (int)pow(2, this->gridExponent);
     this->binCountMax = (unsigned int)pow(l2, DIMENSIONS);
 #elif defined(PEANO)
     this->gridExponent =ceil(log(this->binCount) / log(3));
@@ -847,5 +846,35 @@ void SpatialPartition::buildPBM()
     launchAssertPBMIntegerity();
     PBM_isBuilt = 1;
     CUDA_CALL(cudaMemcpyToSymbol(d_PBM_isBuilt, &PBM_isBuilt, sizeof(unsigned int)));
+#endif
+}
+
+int SpatialPartition::requiredSM(int blockSize)
+{
+    return blockSize*sizeof(LocationMessage)
+#if defined(MODULAR) //BlockRelative + BlockContinue
+        + sizeof(DIMENSIONS_IVEC) + sizeof(bool)
+#endif
+    ;
+}
+DIMENSIONS_IVEC SpatialPartition::getGridPosition(DIMENSIONS_VEC worldPos)
+{
+#ifndef SP_NO_CLAMP_GRID
+    //Clamp each grid coord to 0<=x<dim
+    return clamp(floor(((worldPos - environmentMin) / (environmentMax - environmentMin))*glm::vec2(gridDim)), DIMENSIONS_VEC(0), glm::vec2(gridDim) - DIMENSIONS_VEC(1));
+#else
+    return floor(((worldPos - environmentMin) / (environmentMax - environmentMin))*gridDim);
+    //#ifdef _3D
+    //    glm::ivec3 gridPos;
+    //#else
+    //    glm::ivec2 gridPos;
+    //#endif
+    //    gridPos.x = floor(gridDim.x * (worldPos.x - environmentMin.x) / (environmentMax.x - environmentMin.x));
+    //    gridPos.y = floor(gridDim.y * (worldPos.y - environmentMin.y) / (environmentMax.y - environmentMin.y));
+    //#ifdef _3D
+    //    gridPos.z = floor(gridDim.z * (worldPos.z - environmentMin.z) / (environmentMax.z - environmentMin.z));
+    //#endif
+    //
+    //    return gridPos;
 #endif
 }

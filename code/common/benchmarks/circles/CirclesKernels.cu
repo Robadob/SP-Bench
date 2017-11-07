@@ -76,23 +76,32 @@ __global__ void step_circles_model(LocationMessages *locationMessagesIn, Locatio
 
     //Get my local location
 #ifdef _3D
-    DIMENSIONS_VEC myLoc(locationMessagesIn->locationX[id], locationMessagesIn->locationY[id], locationMessagesIn->locationZ[id]), toLoc, newLoc;
+    const DIMENSIONS_VEC myLoc(locationMessagesIn->locationX[id], locationMessagesIn->locationY[id], locationMessagesIn->locationZ[id]);
 #else
-    DIMENSIONS_VEC myLoc(locationMessagesIn->locationX[id], locationMessagesIn->locationY[id]), toLoc, newLoc;
+    const DIMENSIONS_VEC myLoc(locationMessagesIn->locationX[id], locationMessagesIn->locationY[id]);
 #endif
-    newLoc = DIMENSIONS_VEC(0);//myLoc;//
+    DIMENSIONS_VEC toLoc, newLoc = DIMENSIONS_VEC(0);//myLoc;//
     //Get first message
     float separation, k;
-#ifdef _local
-    LocationMessage lm2;
-    LocationMessage *lm = locationMessagesIn->getFirstNeighbour(myLoc, &lm2);
-#else
-    LocationMessage *lm = locationMessagesIn->getFirstNeighbour(myLoc);
-#endif
+//#ifdef _local
+//    LocationMessage lm2;
+//    LocationMessage *lm = locationMessagesIn->getFirstNeighbour(myLoc, &lm2);
+//#else
+//    LocationMessage *lm = locationMessagesIn->getFirstNeighbour(myLoc);
+//#endif
     //Always atleast 1 location message, our own location!
     //const float rHalf = d_interactionRad / 2.0f;
     int ct = 0;
+#if defined(MODULAR)
+    LocationMessage *lm = locationMessagesIn->firstBin(myLoc);
+do
+{
+    while (locationMessagesIn->getNextNeighbour(lm))//Returns a pointer to shared memory or 0
+#else
+    //Always atleast 1 location message, our own location!
+    LocationMessage *lm = locationMessagesIn->getFirstNeighbour(myLoc);
     do
+#endif
     {
         assert(lm != 0);
         if ((lm->id != id))//CHANGED: Don't sort particles
@@ -113,8 +122,15 @@ __global__ void step_circles_model(LocationMessages *locationMessagesIn, Locatio
                 }
             }
         }
+#if !defined(MODULAR)
         lm = locationMessagesIn->getNextNeighbour(lm);//Returns a pointer to shared memory or 0
-    } while (lm);
+#endif
+    }
+#if defined(MODULAR)
+} while (locationMessagesIn->nextBin(lm));
+#else
+    while (lm);
+#endif
     //Export newLoc
     newLoc /= ct>0?ct:1;
     newLoc += myLoc;

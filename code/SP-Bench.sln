@@ -121,6 +121,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Mod-Peano", "Mod - Peano\Mo
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Mod-MortonCompute", "Mod - MortonCompute\Mod - MortonCompute.vcxproj", "{E2039F00-E220-4593-9828-62155968117D}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Mod-Modular", "Mod - Modular\Mod - Modular.vcxproj", "{A20B963C-CB09-44B0-9D96-40860343028C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug GL|Mixed Platforms = Debug GL|Mixed Platforms
@@ -302,6 +304,30 @@ Global
 		{E2039F00-E220-4593-9828-62155968117D}.Release|Win32.Build.0 = Release|Win32
 		{E2039F00-E220-4593-9828-62155968117D}.Release|x64.ActiveCfg = Release|x64
 		{E2039F00-E220-4593-9828-62155968117D}.Release|x64.Build.0 = Release|x64
+		{A20B963C-CB09-44B0-9D96-40860343028C}.Debug GL|Mixed Platforms.ActiveCfg = Debug|Win32
+		{A20B963C-CB09-44B0-9D96-40860343028C}.Debug GL|Mixed Platforms.Build.0 = Debug|Win32
+		{A20B963C-CB09-44B0-9D96-40860343028C}.Debug GL|Win32.ActiveCfg = Debug GL|Win32
+		{A20B963C-CB09-44B0-9D96-40860343028C}.Debug GL|Win32.Build.0 = Debug GL|Win32
+		{A20B963C-CB09-44B0-9D96-40860343028C}.Debug GL|x64.ActiveCfg = Debug GL|x64
+		{A20B963C-CB09-44B0-9D96-40860343028C}.Debug GL|x64.Build.0 = Debug GL|x64
+		{A20B963C-CB09-44B0-9D96-40860343028C}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{A20B963C-CB09-44B0-9D96-40860343028C}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{A20B963C-CB09-44B0-9D96-40860343028C}.Debug|Win32.ActiveCfg = Debug|Win32
+		{A20B963C-CB09-44B0-9D96-40860343028C}.Debug|Win32.Build.0 = Debug|Win32
+		{A20B963C-CB09-44B0-9D96-40860343028C}.Debug|x64.ActiveCfg = Debug|x64
+		{A20B963C-CB09-44B0-9D96-40860343028C}.Debug|x64.Build.0 = Debug|x64
+		{A20B963C-CB09-44B0-9D96-40860343028C}.Release GL|Mixed Platforms.ActiveCfg = Release|Win32
+		{A20B963C-CB09-44B0-9D96-40860343028C}.Release GL|Mixed Platforms.Build.0 = Release|Win32
+		{A20B963C-CB09-44B0-9D96-40860343028C}.Release GL|Win32.ActiveCfg = Release GL|Win32
+		{A20B963C-CB09-44B0-9D96-40860343028C}.Release GL|Win32.Build.0 = Release GL|Win32
+		{A20B963C-CB09-44B0-9D96-40860343028C}.Release GL|x64.ActiveCfg = Release GL|x64
+		{A20B963C-CB09-44B0-9D96-40860343028C}.Release GL|x64.Build.0 = Release GL|x64
+		{A20B963C-CB09-44B0-9D96-40860343028C}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{A20B963C-CB09-44B0-9D96-40860343028C}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{A20B963C-CB09-44B0-9D96-40860343028C}.Release|Win32.ActiveCfg = Release|Win32
+		{A20B963C-CB09-44B0-9D96-40860343028C}.Release|Win32.Build.0 = Release|Win32
+		{A20B963C-CB09-44B0-9D96-40860343028C}.Release|x64.ActiveCfg = Release|x64
+		{A20B963C-CB09-44B0-9D96-40860343028C}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

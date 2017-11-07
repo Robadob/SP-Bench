@@ -6,6 +6,7 @@
 
 __device__ DIMENSIONS_IVEC getGridPosition(DIMENSIONS_VEC worldPos);
 __device__ unsigned int getHash(DIMENSIONS_IVEC gridPos);
+//__device__ unsigned int getHash(unsigned int x, unsigned int y);
 
 
 __global__ void hashLocationMessages(unsigned int* keys, unsigned int* vals, LocationMessages* messageBuffer);

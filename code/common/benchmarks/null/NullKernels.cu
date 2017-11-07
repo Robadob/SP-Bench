@@ -8,15 +8,22 @@ __global__ void step_null_model(LocationMessages *locationMessagesIn, LocationMe
 
     //Get my local location
 #ifdef _3D
-    DIMENSIONS_VEC myLoc(locationMessagesIn->locationX[id], locationMessagesIn->locationY[id], locationMessagesIn->locationZ[id]), averageLoc;
+    const DIMENSIONS_VEC myLoc(locationMessagesIn->locationX[id], locationMessagesIn->locationY[id], locationMessagesIn->locationZ[id]);
 #else
-    DIMENSIONS_VEC myLoc(locationMessagesIn->locationX[id], locationMessagesIn->locationY[id]),  averageLoc;
+    const DIMENSIONS_VEC myLoc(locationMessagesIn->locationX[id], locationMessagesIn->locationY[id]);
 #endif
-    averageLoc = DIMENSIONS_VEC(0);
-    LocationMessage *lm = locationMessagesIn->getFirstNeighbour(myLoc);
-    //Always atleast 1 location message, our own location!
+    DIMENSIONS_VEC averageLoc = DIMENSIONS_VEC(0);
     int ct = 0;
+#if defined(MODULAR)
+    LocationMessage *lm = locationMessagesIn->firstBin(myLoc);
+do
+{
+    while (locationMessagesIn->getNextNeighbour(lm))//Returns a pointer to shared memory or 0
+#else
+    //Always atleast 1 location message, our own location!
+    LocationMessage *lm = locationMessagesIn->getFirstNeighbour(myLoc);
     do
+#endif
     {
         assert(lm != 0);
         if ((lm->id != id))//CHANGED: Don't sort particles
@@ -25,8 +32,15 @@ __global__ void step_null_model(LocationMessages *locationMessagesIn, LocationMe
             averageLoc += lm->location;
             ct++;
         }
+#if !defined(MODULAR)
         lm = locationMessagesIn->getNextNeighbour(lm);//Returns a pointer to shared memory or 0
-    } while (lm);
+#endif
+    }
+#if defined(MODULAR)
+} while (locationMessagesIn->nextBin(lm));
+#else
+    while (lm);
+#endif
 
     //Export newLoc
     if (ct)

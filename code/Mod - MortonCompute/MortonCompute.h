@@ -34,12 +34,12 @@ __host__ __device__ inline unsigned int mortonComputeEncode(const unsigned int &
 {
     //Pos should be clamped to 0<=x<65536
 #ifdef _DEBUG
-    assert(x >= 0);
+    //assert(x >= 0);
     assert(x < 65536);
-    assert(y >= 0);
+    //assert(y >= 0);
     assert(y < 65536);
 #endif
-    return expandBits16((unsigned int)x) | (expandBits16((unsigned int)y) << 1);
+    return expandBits16(x) | (expandBits16(y) << 1);
 }
 __host__ __device__ inline unsigned int mortonComputeEncode(const glm::ivec2 &pos)
 {

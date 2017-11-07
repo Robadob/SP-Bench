@@ -2,7 +2,7 @@
 //getHash already clamps.
 //#define SP_NO_CLAMP_GRID //Clamp grid coords to within grid (if it's possible for model to go out of bounds)
 
-__host__ __device__ DIMENSIONS_IVEC getGridPosition(DIMENSIONS_VEC worldPos)
+__device__ DIMENSIONS_IVEC getGridPosition(DIMENSIONS_VEC worldPos)
 {
 #ifndef SP_NO_CLAMP_GRID
     //Clamp each grid coord to 0<=x<dim
@@ -254,13 +254,77 @@ __device__ bool invalidBinX(DIMENSIONS_IVEC bin)
     }
     return false;
 }
-//If we want to get next bin as strip
-#if defined(STRIPS)
 __device__ bool LocationMessages::nextBin(LocationMessage *sm_message)
 {
-    //extern __shared__ LocationMessage sm_messages[];
-    //LocationMessage *sm_message = &(sm_messages[threadIdx.x]);
+	//extern __shared__ LocationMessage sm_messages[];
+	//LocationMessage *sm_message = &(sm_messages[threadIdx.x]);
+//Max number of bins, fixed loop might get CUDA to unroll
+#if defined(STRIPS) //Strips has less passes
+#if defined(_2D)
+    for(unsigned int i = 0;i<3;++i)
+#elif defined(_3D)
+    for (unsigned int i = 0; i<9; ++i)
+#endif
+#elif !defined(MODULAR) //Modular only checks if we have bin, not if bin is valid
+#if defined(_2D)
+for(unsigned int i = 0;i<9;++i)
+#elif defined(_3D)
+for (unsigned int i = 0; i<27; ++i)
+#endif
+#endif
+{
+//Get next bin
+#if defined(MODULAR)
+    extern __shared__ LocationMessage sm_messages[];
+    DIMENSIONS_IVEC *blockRelative = (DIMENSIONS_IVEC *)(void*)(&(sm_messages[blockDim.x]));
+    bool *blockContinue = (bool *)(void*)&blockRelative[1];
+    if(threadIdx.x==0)//&&threadIdx.y==0&&threadIdx.z==0)
+    {
+        if (blockRelative->x >= 1)
+        {
+            blockRelative->x = -1;
 
+            if (blockRelative->y >= 1)
+            {
+
+#ifdef _3D
+                blockRelative->y = -1;
+
+                if (blockRelative->z >= 1)
+                {
+                    *blockContinue = false;
+                }
+                else
+                {
+                    blockRelative->z++;
+                }
+#else
+                *blockContinue = false;
+#endif
+            }
+            else
+            {
+                blockRelative->y++;
+            }
+        }
+        else
+        {
+            blockRelative->x++;
+        }
+    }
+    //Wait for all threads to finish previous bin
+    __syncthreads();
+    if(!*blockContinue)
+    {
+#if defined(_GL) || defined(_DEBUG)
+        //No more neighbours, finalise count by dividing by the number of messages.
+        int id = blockIdx.x * blockDim.x + threadIdx.x;
+        d_locationMessagesA->count[id] /= d_locationMessageCount;
+        d_locationMessagesB->count[id] /= d_locationMessageCount;
+#endif
+        return false;
+    }
+#elif defined(STRIPS)
 #ifdef _3D
     if (sm_message->state.relative.x >= 1)
     {
@@ -268,6 +332,12 @@ __device__ bool LocationMessages::nextBin(LocationMessage *sm_message)
 
         if (sm_message->state.relative.y >= 1)
         {
+#if defined(_GL) || defined(_DEBUG)
+            //No more neighbours, finalise count by dividing by the number of messages.
+            int id = blockIdx.x * blockDim.x + threadIdx.x;
+            d_locationMessagesA->count[id] /= d_locationMessageCount;
+            d_locationMessagesB->count[id] /= d_locationMessageCount;
+#endif
             return false;
         }
         else
@@ -279,148 +349,168 @@ __device__ bool LocationMessages::nextBin(LocationMessage *sm_message)
     {
         sm_message->state.relative.x++;
     }
-    return true;
 #else
     if (sm_message->state.relative >= 1)
     {
+#if defined(_GL) || defined(_DEBUG)
+        //No more neighbours, finalise count by dividing by the number of messages.
+        int id = blockIdx.x * blockDim.x + threadIdx.x;
+        d_locationMessagesA->count[id] /= d_locationMessageCount;
+        d_locationMessagesB->count[id] /= d_locationMessageCount;
+#endif
         return false;
     }
     else
     {
         sm_message->state.relative++;
     }
-    return true;
 #endif
-}
 #else
-//Next bin individually
-__device__ bool LocationMessages::nextBin(LocationMessage *sm_message)
-{
-	//extern __shared__ LocationMessage sm_messages[];
-	//LocationMessage *sm_message = &(sm_messages[threadIdx.x]);
+    if (sm_message->state.relative.x >= 1)
+    {
+        sm_message->state.relative.x = -1;
 
-	if (sm_message->state.relative.x >= 1)
-	{
-		sm_message->state.relative.x = -1;
-
-		if (sm_message->state.relative.y >= 1)
-		{
+        if (sm_message->state.relative.y >= 1)
+        {
 
 #ifdef _3D
-			sm_message->state.relative.y = -1;
+            sm_message->state.relative.y = -1;
 
-			if (sm_message->state.relative.z >= 1)
-			{
-				return false;
-			}
-			else
-			{
-				sm_message->state.relative.z++;
-			}
+            if (sm_message->state.relative.z >= 1)
+            {
+#if defined(_GL) || defined(_DEBUG)
+                //No more neighbours, finalise count by dividing by the number of messages.
+                int id = blockIdx.x * blockDim.x + threadIdx.x;
+                d_locationMessagesA->count[id] /= d_locationMessageCount;
+                d_locationMessagesB->count[id] /= d_locationMessageCount;
+#endif
+                return false;
+            }
+            else
+            {
+                sm_message->state.relative.z++;
+            }
 #else
-			return false;
+#if defined(_GL) || defined(_DEBUG)
+            //No more neighbours, finalise count by dividing by the number of messages.
+            int id = blockIdx.x * blockDim.x + threadIdx.x;
+            d_locationMessagesA->count[id] /= d_locationMessageCount;
+            d_locationMessagesB->count[id] /= d_locationMessageCount;
 #endif
-		}
-		else
-		{
-			sm_message->state.relative.y++;
-		}
-	}
-	else
-	{
-		sm_message->state.relative.x++;
-	}
-	return true;
+            return false;
+#endif
+        }
+        else
+        {
+            sm_message->state.relative.y++;
+            }
+        }
+    else
+    {
+        sm_message->state.relative.x++;
+    }
+#endif
+    //Process the strip
+#if defined(STRIPS)
+    //Iterate bins in strips
+    //calculate the next strip of contiguous bins
+#ifdef _3D
+    glm::ivec3 next_bin_first = sm_message->state.location + glm::ivec3(-1, sm_message->state.relative.x, sm_message->state.relative.y);
+#else
+    glm::ivec2 next_bin_first = sm_message->state.location + glm::ivec2(-1, sm_message->state.relative);
+#endif
+
+    DIMENSIONS_IVEC next_bin_last = next_bin_first;
+    next_bin_last.x += 2;
+    bool firstInvalid = invalidBinX(next_bin_first);
+    bool lastInvalid = invalidBinX(next_bin_last);
+    if (invalidBinYZ(next_bin_first))
+    {//Whole strip invalid, skip
+        continue;
+    }
+    if (firstInvalid)
+    {
+        next_bin_first.x = 0;
+    }
+    if (lastInvalid)
+    {//If strip ends out of bounds only
+        next_bin_last.x = d_gridDim.x - 1;//Max x coord
+    }
+
+    int next_bin_first_hash = getHash(next_bin_first);
+    int next_bin_last_hash = next_bin_first_hash + (next_bin_last.x - next_bin_first.x);//Strips are at most length 3
+
+    //use the hash to calculate the start index (pbm stores location of 1st item)
+    sm_message->state.binIndex = tex1Dfetch<unsigned int>(d_tex_PBM, next_bin_first_hash);
+    sm_message->state.binIndexMax = tex1Dfetch<unsigned int>(d_tex_PBM, next_bin_last_hash + 1);
+
+    if (sm_message->state.binIndex < sm_message->state.binIndexMax)//(bin_index_min != 0xffffffff)
+    {
+        return true;//Bin strip has items!
+    }
+#else
+#if defined(MODULAR)
+    //Find relative + offset
+    sm_message->state.relative = (*blockRelative)+sm_message->state.offset;
+    //For each axis, if new relative > 1, set -1
+    sm_message->state.relative.x = sm_message->state.relative.x>1 ? sm_message->state.relative.x - 3 : sm_message->state.relative.x;
+    sm_message->state.relative.y = sm_message->state.relative.y>1 ? sm_message->state.relative.y - 3 : sm_message->state.relative.y;
+#ifdef _3D
+    sm_message->state.relative.z = sm_message->state.relative.z>1 ? sm_message->state.relative.z - 3 : sm_message->state.relative.z;
+#endif
+#endif
+    //Check the new bin is valid
+     DIMENSIONS_IVEC next_bin_first = sm_message->state.location + sm_message->state.relative;
+    if (invalidBinXYZ(next_bin_first))
+    {//Bin invalid, skip to next bin
+#if defined(MODULAR)
+        sm_message->state.binIndexMax = 0;
+        return true;
+#else
+        continue;
+#endif
+    }
+    //Get PBM bounds
+    int next_bin_first_hash = getHash(next_bin_first);
+#ifdef _DEBUG
+    assert(next_bin_first_hash < 100000);//arbitrary max
+    assert(next_bin_first_hash >= 0);
+#endif
+    //use the hash to calculate the start index (pbm stores location of 1st item)
+    sm_message->state.binIndex = tex1Dfetch<unsigned int>(d_tex_PBM, next_bin_first_hash);
+    sm_message->state.binIndexMax = tex1Dfetch<unsigned int>(d_tex_PBM, next_bin_first_hash + 1);
+
+#if !defined(MODULAR)
+    if (sm_message->state.binIndex < sm_message->state.binIndexMax)//(bin_index_min != 0xffffffff)
+    {
+        return true;//Bin has items!
+    }
+#endif
+#endif
 }
+#if defined(MODULAR)
+return true;
+#else
+return false;
 #endif
+}
 //Load the next desired message into shared memory
 __device__ LocationMessage *LocationMessages::loadNextMessage(LocationMessage *sm_message)
 {
     //extern __shared__ LocationMessage sm_messages[];
     //LocationMessage *sm_message = &(sm_messages[threadIdx.x]);
 
-    sm_message->state.binIndex++;
     
-	bool changeBin = (sm_message->state.binIndex >= sm_message->state.binIndexMax);
-
-    while (changeBin)
+    if(sm_message->state.binIndex >= sm_message->state.binIndexMax)//Do we need to change bin?
     {
-		if (nextBin(sm_message))
+#if defined(MODULAR)
+        return nullptr;
+#else
+		if (!nextBin(sm_message))
         {
-#if defined(STRIPS)
-//Iterate bins in strips
-            //calculate the next strip of contiguous bins
-#ifdef _3D
-            glm::ivec3 next_bin_first = sm_message->state.location + glm::ivec3(-1, sm_message->state.relative.x, sm_message->state.relative.y);
-#else
-            glm::ivec2 next_bin_first = sm_message->state.location + glm::ivec2(-1, sm_message->state.relative);
-#endif
-            
-            DIMENSIONS_IVEC next_bin_last = next_bin_first;
-            next_bin_last.x += 2;
-            bool firstInvalid = invalidBinX(next_bin_first);
-            bool lastInvalid = invalidBinX(next_bin_last);
-            if (invalidBinYZ(next_bin_first))
-            {//Whole strip invalid, skip
-                continue;
-            }
-            if (firstInvalid)
-            {
-                next_bin_first.x = 0;
-            }
-            if (lastInvalid)
-            {//If strip ends out of bounds only
-                next_bin_last.x = d_gridDim.x-1;//Max x coord
-            }
-
-            int next_bin_first_hash = getHash(next_bin_first);
-            int next_bin_last_hash = next_bin_first_hash + (next_bin_last.x-next_bin_first.x);//Strips are at most length 3
-
-            //use the hash to calculate the start index (pbm stores location of 1st item)
-            sm_message->state.binIndex = tex1Dfetch<unsigned int>(d_tex_PBM, next_bin_first_hash);
-            sm_message->state.binIndexMax = tex1Dfetch<unsigned int>(d_tex_PBM, next_bin_last_hash+1);
-            
-            if (sm_message->state.binIndex < sm_message->state.binIndexMax)//(bin_index_min != 0xffffffff)
-            {
-                break;//Bin strip has items!
-            }
-#else
-//Iterate bins individually
-#ifdef _3D
-			glm::ivec3 next_bin_first = sm_message->state.location + glm::ivec3(sm_message->state.relative.x, sm_message->state.relative.y, sm_message->state.relative.z);
-#else
-			glm::ivec2 next_bin_first = sm_message->state.location + glm::ivec2(sm_message->state.relative.x, sm_message->state.relative.y);
-#endif
-			if (invalidBinXYZ(next_bin_first))
-			{//Bin invalid, skip
-				continue;
-			}
-			//Get PBM bounds
-			int next_bin_first_hash = getHash(next_bin_first);
-#ifdef _DEBUG
-			assert(next_bin_first_hash < 100000);//arbitrary max
-			assert(next_bin_first_hash >= 0);
-#endif
-			//use the hash to calculate the start index (pbm stores location of 1st item)
-			sm_message->state.binIndex = tex1Dfetch<unsigned int>(d_tex_PBM, next_bin_first_hash);
-			sm_message->state.binIndexMax = tex1Dfetch<unsigned int>(d_tex_PBM, next_bin_first_hash + 1);
-
-			if (sm_message->state.binIndex < sm_message->state.binIndexMax)//(bin_index_min != 0xffffffff)
-			{
-				break;//Bin has items!
-			}
-#endif
+            return nullptr;//All bins exhausted
         }
-        else
-        {
-#if defined(_GL) || defined(_DEBUG)
-			//No more neighbours, finalise count by dividing by the number of messages.
-            int id = blockIdx.x * blockDim.x + threadIdx.x;
-            d_locationMessagesA->count[id] /= d_locationMessageCount;
-            d_locationMessagesB->count[id] /= d_locationMessageCount;
 #endif
-            return 0;//All bins exhausted
-        }
     }
 #if defined(_GL) || defined(_DEBUG)
 	//Found a neighbour, increment count.
@@ -435,14 +525,34 @@ __device__ LocationMessage *LocationMessages::loadNextMessage(LocationMessage *s
     sm_message->location.z = tex1Dfetch<float>(d_tex_location[2], sm_message->state.binIndex);
 #endif
 
+    sm_message->state.binIndex++;
     return sm_message;
 }
 
-
+#if defined(MODULAR)
+__device__ LocationMessage *LocationMessages::firstBin(DIMENSIONS_VEC location)
+#else
 __device__ LocationMessage *LocationMessages::getFirstNeighbour(DIMENSIONS_VEC location)
+#endif
 {
 	extern __shared__ LocationMessage sm_messages[];
 	LocationMessage *sm_message = &(sm_messages[threadIdx.x]);
+
+#if defined(MODULAR)
+    //Init global relative if block thread X
+    if (threadIdx.x == 0)//&&threadIdx.y==0&&threadIdx.z==0)
+    {
+        //Init blockRelative
+        DIMENSIONS_IVEC *blockRelative = (DIMENSIONS_IVEC *)(void*)(&(sm_messages[blockDim.x]));
+#ifdef _3D
+        blockRelative[0] = glm::ivec3(-2, -1, -1);
+#else
+        blockRelative[0] = glm::ivec2(-2, -1);
+#endif
+        //Init blockContinue true
+        ((bool*)(void*)&blockRelative[1])[0] = true;
+    }
+#endif
 
 #ifdef _DEBUG
     //If first thread and PBM isn't built, print warning
@@ -457,23 +567,36 @@ __device__ LocationMessage *LocationMessages::getFirstNeighbour(DIMENSIONS_VEC l
     d_locationMessagesA->count[id] = 0;
     d_locationMessagesB->count[id] = 0;
 #endif
+#if defined(MODULAR)
+    {
+        DIMENSIONS_IVEC gridPos = getGridPosition(location);
+        sm_message->state.offset = (gridPos + DIMENSIONS_IVEC(1)) % 3;
+        sm_message->state.location = gridPos;
+    }
+#else
     sm_message->state.location = getGridPosition(location);
-    sm_message->state.binIndex = 0;//Init binIndex greater than equal to binIndexMax to force bin change
-    sm_message->state.binIndexMax = 0;
+#endif
+    //sm_message->state.binIndex = 0;//Redundant setting this, 0 is min on UINT
+    sm_message->state.binIndexMax = 0;//Init binIndex greater than equal to binIndexMax to force bin change
     //Location in moore neighbourhood
     //Start out of range, so we get moved into 1st cell
-#if defined(STRIPS) && !defined(MORTON)
+#if defined(STRIPS)
 #ifdef _3D
 	sm_message->state.relative = glm::ivec2(-2, -1);
 #else
     sm_message->state.relative = -2;
 #endif
-#else
+#elif !defined(MODULAR) //No need to initialise this value for modular
 #ifdef _3D
 	sm_message->state.relative = glm::ivec3(-2, -1, -1);
 #else
 	sm_message->state.relative = glm::ivec2(-2, -1);
 #endif
 #endif
+#if defined(MODULAR)
+    nextBin(sm_message);
+    return sm_message;
+#else
 	return loadNextMessage(sm_message);
+#endif
 }

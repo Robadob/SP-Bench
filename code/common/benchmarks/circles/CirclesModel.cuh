@@ -94,7 +94,7 @@ const Time_Step CirclesModel::step()
 }
 int requiredSM_stepCirclesModel(int blockSize)
 {
-    return sizeof(LocationMessage)*blockSize;
+    return SpatialPartition::requiredSM(blockSize);
 }
 void CirclesModel::launchStep()
 {
