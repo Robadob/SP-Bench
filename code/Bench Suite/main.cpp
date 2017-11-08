@@ -116,7 +116,7 @@ int main(int argc, char* argv[])
     //    //Init model arg end
     //    CirclesParams end = start;
     //    end.width = 100;//100k agents
-    //    run(start, end, steps, "CirclesProblemScaleHD");
+    //    runCollated(start, end, steps, "CirclesProblemScaleHD");
     //}
     //{//Neighbourhood Scale - Circles
     //    const int steps = 100;
@@ -133,56 +133,56 @@ int main(int argc, char* argv[])
     //    CirclesParams end = start;
     //    end.interactionRad = 15.0f;
     //    //Init step count
-    //    run(start, end, steps, "CirclesNeighbourhoodScaleLD");
+    //    runCollated(start, end, steps, "CirclesNeighbourhoodScaleLD");
     //}
-    //Collected
-    {//Null - Problem scale
-        const int steps = 101;
-        //Init model arg start
-        NullParams  start = {};
-        start.agents = 1000;
-        start.iterations = 1000;
-        start.density = 0.1f;
-        start.interactionRad = 2.0f;
-        start.seed = 0;
-        //Init model arg end
-        NullParams end = start;
-        end.agents = 100000;
-        run(start, end, steps, "NullProblemScaleLD");
-    }
-    //{//Density - ClusterCount//Re-assess, dumb slow around step 20
-    //    const int steps = 100;
-    //    //Init model arg start
-    //    DensityParams  start = {};
-    //    start.iterations = 1000;
-    //    start.envWidth = 1000;
-    //    start.agents = 10000;
-    //    start.seed = 1;
-    //    start.interactionRad = 1.0f;
-    //    start.clusterRad = 5.0f;
-    //    start.clusterCount = 1;
-
-    //    //Init model arg end
-    //    DensityParams end = start;
-    //    end.clusterCount = 200;
-
-    //    run(start, end, steps, "ClusterCount 10k");
-    //}
-//completed
-    {//Null - Neighbour scale 100k
-        const int steps = 100;
-        //Init model arg start
-        NullParams  start = {};
-        start.agents = 100000;
-        start.iterations = 1000;
-        start.density = 1.0f;
-        start.interactionRad = 0.5f;
-        start.seed = 0;
-        //Init model arg end
-        NullParams end = start;
-        end.interactionRad = 10.0f;
-        runCollated(start, end, steps, "NullNeighbourhoodScale100k");
-    }
+//////////    //Collected
+//////////    {//Null - Problem scale
+//////////        const int steps = 101;
+//////////        //Init model arg start
+//////////        NullParams  start = {};
+//////////        start.agents = 1000;
+//////////        start.iterations = 1000;
+//////////        start.density = 0.1f;
+//////////        start.interactionRad = 2.0f;
+//////////        start.seed = 0;
+//////////        //Init model arg end
+//////////        NullParams end = start;
+//////////        end.agents = 100000;
+//////////        runCollated(start, end, steps, "NullProblemScaleLD");
+//////////    }
+//////////    //{//Density - ClusterCount//Re-assess, dumb slow around step 20
+//////////    //    const int steps = 100;
+//////////    //    //Init model arg start
+//////////    //    DensityParams  start = {};
+//////////    //    start.iterations = 1000;
+//////////    //    start.envWidth = 1000;
+//////////    //    start.agents = 10000;
+//////////    //    start.seed = 1;
+//////////    //    start.interactionRad = 1.0f;
+//////////    //    start.clusterRad = 5.0f;
+//////////    //    start.clusterCount = 1;
+//////////
+//////////    //    //Init model arg end
+//////////    //    DensityParams end = start;
+//////////    //    end.clusterCount = 200;
+//////////
+//////////    //    runCollated(start, end, steps, "ClusterCount 10k");
+//////////    //}
+////////////completed
+//////////    {//Null - Neighbour scale 100k
+//////////        const int steps = 100;
+//////////        //Init model arg start
+//////////        NullParams  start = {};
+//////////        start.agents = 100000;
+//////////        start.iterations = 1000;
+//////////        start.density = 1.0f;
+//////////        start.interactionRad = 0.5f;
+//////////        start.seed = 0;
+//////////        //Init model arg end
+//////////        NullParams end = start;
+//////////        end.interactionRad = 10.0f;
+//////////        runCollated(start, end, steps, "NullNeighbourhoodScale100k");
+//////////    }
 //Collected
 {//Null - Problem scale
 const int steps = 101;
@@ -196,124 +196,124 @@ start.seed = 0;
 //Init model arg end
 NullParams end = start;
 end.agents = 100000;
-run(start, end, steps, "NullProblemScaleHD");
+runCollated(start, end, steps, "NullProblemScaleHD");
 }
-//completed
-    {//Null - Neighbour scale 25k
-        const int steps = 100;
-        //Init model arg start
-        NullParams  start = {};
-        start.agents = 25000;
-        start.iterations = 1000;
-        start.density = 1.0f;
-        start.interactionRad = 0.5f;
-        start.seed = 0;
-        //Init model arg end
-        NullParams end = start;
-        end.interactionRad = 10.0f;
-        run(start, end, steps, "NullNeighbourhoodScale25k");
-    }
-//completed
-    {//Null - Neighbour scale 50k
-        const int steps = 100;
-        //Init model arg start
-        NullParams  start = {};
-        start.agents = 50000;
-        start.iterations = 1000;
-        start.density = 1.0f;
-        start.interactionRad = 0.5f;
-        start.seed = 0;
-        //Init model arg end
-        NullParams end = start;
-        end.interactionRad = 10.0f;
-        run(start, end, steps, "NullNeighbourhoodScale50k");
-    }
-    {//Density - ClusterCount
-        const int steps = 100;
-        //Init model arg start
-        DensityParams  start = {};
-        start.iterations = 1000;
-        start.envWidth = 1000;
-        start.agents = 10000;
-        start.seed = 1;
-        start.interactionRad = 1.0f;
-        start.clusterRad = 1.0f;
-        start.clusterCount = 1;
-
-        //Init model arg end
-        DensityParams end = start;
-        end.clusterCount = 200;
-
-        run(start, end, steps, "ClusterCount 10k");
-    }
-    {//Density - ClusterRad
-        const int steps = 100;
-        //Init model arg start
-        DensityParams  start = {};
-        start.iterations = 1000;
-        start.envWidth = 1000;
-        start.agents = 10000;
-        start.seed = 1;
-        start.interactionRad = 1.0f;
-        start.clusterRad = 0.1f;
-        start.clusterCount = 1;
-
-        //Init model arg end
-        DensityParams end = start;
-        end.clusterRad = 50.0f;
-
-        run(start, end, steps, "ClusterRad25-10k");
-    }
-    {//Density - ClusterRad
-        const int steps = 100;
-        //Init model arg start
-        DensityParams  start = {};
-        start.iterations = 1000;
-        start.envWidth = 100;
-        start.agents = 10000;
-        start.seed = 1;
-        start.interactionRad = 1.0f;
-        start.clusterRad = 0.1f;
-        start.clusterCount = 10;
-
-        //Init model arg end
-        DensityParams end = start;
-        end.clusterRad = 50.0f;
-
-        run(start, end, steps, "ClusterRad25-10k");
-    }
-    //Ones likely to TDR
-    //{//Neighbourhood Scale - Circles
-    //    const int steps = 97;
-    //    //Init model arg start
-    //    CirclesParams  start = {};
-    //    start.iterations = 1000;
-    //    start.density = 10.0f;
-    //    start.interactionRad = 1.0f;
-    //    start.width = 250;
-    //    start.seed = 0;
-    //    start.attractionForce = 0.2f;
-    //    start.repulsionForce = 0.2f;
-    //    //Init model arg end
-    //    CirclesParams end = start;
-    //    end.interactionRad = 15.0f;
-    //    //Init step count
-    //    run(start, end, steps, "CirclesNeighbourhoodScaleHD");
-    //}
-    {//Null - Neighbour scale
-        const int steps = 100;
-        //Init model arg start
-        NullParams  start = {};
-        start.agents = 10000;
-        start.iterations = 1000;
-        start.density = 10.0f;
-        start.interactionRad = 1.0f;
-        start.seed = 0;
-        //Init model arg end
-        NullParams end = start;
-        end.interactionRad = 15.0f;
-        run(start, end, steps, "NULLNeighbourhoodScaleHD");
-    }
+//////////completed
+////////    {//Null - Neighbour scale 25k
+////////        const int steps = 100;
+////////        //Init model arg start
+////////        NullParams  start = {};
+////////        start.agents = 25000;
+////////        start.iterations = 1000;
+////////        start.density = 1.0f;
+////////        start.interactionRad = 0.5f;
+////////        start.seed = 0;
+////////        //Init model arg end
+////////        NullParams end = start;
+////////        end.interactionRad = 10.0f;
+////////        runCollated(start, end, steps, "NullNeighbourhoodScale25k");
+////////    }
+//////////completed
+////////    {//Null - Neighbour scale 50k
+////////        const int steps = 100;
+////////        //Init model arg start
+////////        NullParams  start = {};
+////////        start.agents = 50000;
+////////        start.iterations = 1000;
+////////        start.density = 1.0f;
+////////        start.interactionRad = 0.5f;
+////////        start.seed = 0;
+////////        //Init model arg end
+////////        NullParams end = start;
+////////        end.interactionRad = 10.0f;
+////////        runCollated(start, end, steps, "NullNeighbourhoodScale50k");
+////////    }
+////////    {//Density - ClusterCount
+////////        const int steps = 100;
+////////        //Init model arg start
+////////        DensityParams  start = {};
+////////        start.iterations = 1000;
+////////        start.envWidth = 1000;
+////////        start.agents = 10000;
+////////        start.seed = 1;
+////////        start.interactionRad = 1.0f;
+////////        start.clusterRad = 1.0f;
+////////        start.clusterCount = 1;
+////////
+////////        //Init model arg end
+////////        DensityParams end = start;
+////////        end.clusterCount = 200;
+////////
+////////        runCollated(start, end, steps, "ClusterCount 10k");
+////////    }
+////////    {//Density - ClusterRad
+////////        const int steps = 100;
+////////        //Init model arg start
+////////        DensityParams  start = {};
+////////        start.iterations = 1000;
+////////        start.envWidth = 1000;
+////////        start.agents = 10000;
+////////        start.seed = 1;
+////////        start.interactionRad = 1.0f;
+////////        start.clusterRad = 0.1f;
+////////        start.clusterCount = 1;
+////////
+////////        //Init model arg end
+////////        DensityParams end = start;
+////////        end.clusterRad = 50.0f;
+////////
+////////        runCollated(start, end, steps, "ClusterRad25-10k");
+////////    }
+////////    {//Density - ClusterRad
+////////        const int steps = 100;
+////////        //Init model arg start
+////////        DensityParams  start = {};
+////////        start.iterations = 1000;
+////////        start.envWidth = 100;
+////////        start.agents = 10000;
+////////        start.seed = 1;
+////////        start.interactionRad = 1.0f;
+////////        start.clusterRad = 0.1f;
+////////        start.clusterCount = 10;
+////////
+////////        //Init model arg end
+////////        DensityParams end = start;
+////////        end.clusterRad = 50.0f;
+////////
+////////        runCollated(start, end, steps, "ClusterRad25-10k");
+////////    }
+////////    //Ones likely to TDR
+////////    //{//Neighbourhood Scale - Circles
+////////    //    const int steps = 97;
+////////    //    //Init model arg start
+////////    //    CirclesParams  start = {};
+////////    //    start.iterations = 1000;
+////////    //    start.density = 10.0f;
+////////    //    start.interactionRad = 1.0f;
+////////    //    start.width = 250;
+////////    //    start.seed = 0;
+////////    //    start.attractionForce = 0.2f;
+////////    //    start.repulsionForce = 0.2f;
+////////    //    //Init model arg end
+////////    //    CirclesParams end = start;
+////////    //    end.interactionRad = 15.0f;
+////////    //    //Init step count
+////////    //    run(start, end, steps, "CirclesNeighbourhoodScaleHD");
+////////    //}
+////////    {//Null - Neighbour scale
+////////        const int steps = 100;
+////////        //Init model arg start
+////////        NullParams  start = {};
+////////        start.agents = 10000;
+////////        start.iterations = 1000;
+////////        start.density = 10.0f;
+////////        start.interactionRad = 1.0f;
+////////        start.seed = 0;
+////////        //Init model arg end
+////////        NullParams end = start;
+////////        end.interactionRad = 15.0f;
+////////        runCollated(start, end, steps, "NULLNeighbourhoodScaleHD");
+////////    }
 #endif
 	printf("\nComplete\n");
 }
@@ -1042,6 +1042,7 @@ void logCollatedHeader(FILE *out, const CirclesParams &modelArgs)
         fputs("time", out);
         fputs(",", out);
     }
+    fputs("Agent Count,", out);
     //Neighbourhood stats
     fputs("First Min", out);
     fputs(",", out);
@@ -1055,8 +1056,6 @@ void logCollatedHeader(FILE *out, const CirclesParams &modelArgs)
     fputs(",", out);
     fputs("Last Avg", out);
     fputs(",", out);
-    fputs("Agent Count,", out);
-    fflush(out);
     //ModelArgs
     fputs("width", out);
     fputs(",", out);
@@ -1085,6 +1084,7 @@ void logCollatedHeader(FILE *out, const NullParams &modelArgs)
     fputs(",", out);//Agent count
     fputs(",,,,,,", out);//Neighbourhood stats
     fputs(",,,,,,", out);//Model Args
+    fputs("\n", out);
     //Row 2
     for (unsigned int i = 0; i < sizeof(TEST_NAMES) / sizeof(char*); ++i)
     {//9 columns per model
@@ -1095,7 +1095,7 @@ void logCollatedHeader(FILE *out, const NullParams &modelArgs)
         fputs("overall (s)", out);
         fputs(",", out);
     }
-    fputs("Agent Count,", out);
+    fputs(",", out);//Agent count
     fputs("Neighbourhood Stats", out);
     fputs(",,,,,,", out);
     fputs("Model", out);
@@ -1126,6 +1126,7 @@ void logCollatedHeader(FILE *out, const NullParams &modelArgs)
         fputs("time", out);
         fputs(",", out);
     }
+    fputs("Agent Count,", out);
     //Neighbourhood stats
     fputs("First Min", out);
     fputs(",", out);
@@ -1139,7 +1140,6 @@ void logCollatedHeader(FILE *out, const NullParams &modelArgs)
     fputs(",", out);
     fputs("Last Avg", out);
     fputs(",", out);
-    fputs("Agent Count,", out);
     fflush(out);
     //ModelArgs
     fputs("agents-in", out);
@@ -1165,6 +1165,7 @@ void logCollatedHeader(FILE *out, const DensityParams &modelArgs)
     fputs(",", out);//Agent count
     fputs(",,,,,,", out);//Neighbourhood stats
     fputs(",,,,,,,,", out);//Model Args
+    fputs("\n", out);
     //Row 2
     for (unsigned int i = 0; i < sizeof(TEST_NAMES) / sizeof(char*); ++i)
     {//9 columns per model
@@ -1175,7 +1176,7 @@ void logCollatedHeader(FILE *out, const DensityParams &modelArgs)
         fputs("overall (s)", out);
         fputs(",", out);
     }
-    fputs("Agent Count,", out);
+    fputs(",", out);//Agent count
     fputs("Neighbourhood Stats", out);
     fputs(",,,,,,", out);
     fputs("Model", out);
@@ -1206,6 +1207,7 @@ void logCollatedHeader(FILE *out, const DensityParams &modelArgs)
         fputs("time", out);
         fputs(",", out);
     }
+    fputs("Agent Count,", out);
     //Neighbourhood stats
     fputs("First Min", out);
     fputs(",", out);
@@ -1219,7 +1221,6 @@ void logCollatedHeader(FILE *out, const DensityParams &modelArgs)
     fputs(",", out);
     fputs("Last Avg", out);
     fputs(",", out);
-    fputs("Agent Count,", out);
     fflush(out);
     //ModelArgs
     fputs("agents-in", out);

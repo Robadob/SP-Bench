@@ -33,7 +33,9 @@ static void HandleCUDAError(const char *file,
             exit(1);
         }
         printf("%s(%i) CUDA Error Occurred;\n%s\n", file, line, cudaGetErrorString(status));
+#ifdef _DEBUG
         getchar();
+#endif
         exit(1);
     }
 }
