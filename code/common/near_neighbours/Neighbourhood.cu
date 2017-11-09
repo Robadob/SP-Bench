@@ -211,7 +211,6 @@ void SpatialPartition::assertSearch()
     unsigned int *PBM_raw = static_cast<unsigned int *>(malloc(sizeof(unsigned int)*outCount));
     memset(PBM_raw, 0, outCount * sizeof(unsigned int));
     CUDA_CALL(cudaMemcpy(PBM_raw, d_PBM, sizeof(unsigned int)*outCount, cudaMemcpyDeviceToHost));
-
     //Calculate the size of every bin
     unsigned int agtCount = 0;
     unsigned int *PBM_binSize = static_cast<unsigned int *>(malloc(sizeof(unsigned int)*this->binCountMax));
@@ -268,7 +267,6 @@ void SpatialPartition::assertSearch()
             }
 
     }
-
     //Copy every location and neighbour count from device to host
     float *d_bufferPtr;
     LocationMessages lm;
@@ -300,7 +298,7 @@ void SpatialPartition::assertSearch()
         assert(hash < this->binCountMax);
         if (glm::epsilonNotEqual(lm.count[i], PBM_neighbourhoodSize[hash] / (float)locationMessageCount, 0.5f))
         {
-            printf("%u=%u-%f=%f,", (unsigned int)(lm.count[i] * locationMessageCount), PBM_neighbourhoodSize[hash], lm.count[i], PBM_neighbourhoodSize[hash] / (float)locationMessageCount);
+            //printf("%u=%u-%f=%f,", (unsigned int)(lm.count[i] * locationMessageCount), PBM_neighbourhoodSize[hash], lm.count[i], PBM_neighbourhoodSize[hash] / (float)locationMessageCount);
             matchFails++;
         }
     }
@@ -727,8 +725,9 @@ void SpatialPartition::setBinCount()
 #endif
     this->binCount = (unsigned int)pow(this->binCount, DIMENSIONS);
 
-//#if defined(MORTON) || defined(HILBERT) ||defined(PEANO)
+//#if defined(_DEBUG) &&(defined(MORTON) || defined(HILBERT) ||defined(PEANO))
 //    printf("Space-filling grid exponent set to: %u\n", this->gridExponent);
+//    printf("Bin Count Max %u\n", this->binCountMax);
 //#endif
 }
 void SpatialPartition::setLocationCount(unsigned int t_locationMessageCount)
@@ -798,7 +797,11 @@ void SpatialPartition::buildPBM()
     //If no messages, or instances, don't bother
     if (locationMessageCount<1) return;
 #ifdef _DEBUG
-    assertSearch();
+    static bool __first = true;
+    if (!__first)
+        assertSearch();
+    if (__first)
+        __first = false;
 #endif
     //Fill primitive key/val arrays for sort
     launchHashLocationMessages();

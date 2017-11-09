@@ -59,7 +59,7 @@ __host__ __device__ DIMENSIONS_IVEC mortonComputeDecode(const int &d) {
     {
         int dim = (i % DIMENSIONS);//Dimension of shiftN (x,y)
         int shift = i / DIMENSIONS;//Which bit position within the return val
-        ret[DIMENSIONS - 1 - dim] += (d&(1 << i)) >> (i - shift);
+        ret[dim] += (d&(1 << i)) >> (i - shift);
     }
     return ret;
 }

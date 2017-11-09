@@ -473,8 +473,7 @@ for (unsigned int i = 0; i<27; ++i)
     //Get PBM bounds
     int next_bin_first_hash = getHash(next_bin_first);
 #ifdef _DEBUG
-    assert(next_bin_first_hash < 100000);//arbitrary max
-    assert(next_bin_first_hash >= 0);
+    assert(next_bin_first_hash >= 0);//Hash must be positive
 #endif
     //use the hash to calculate the start index (pbm stores location of 1st item)
     sm_message->state.binIndex = tex1Dfetch<unsigned int>(d_tex_PBM, next_bin_first_hash);
