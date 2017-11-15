@@ -38,10 +38,10 @@ void log(FILE *out, const NullParams *modelArgs);
 void log(FILE *out, const DensityParams *modelArgs);
 void log(FILE *out, const Time_Init *initRes, const Time_Step_dbl *stepRes, const float totalTime);
 void log(FILE *out, const unsigned int agentCount);
-//const char *TEST_NAMES[] = { "Default", "Strips", "Modular", "Morton", "MortonCompute", "Hilbert", "Peano" };
-//const char *TEST_EXECUTABLES[] = { "Release-Mod-Default.exe", "Release-Mod-Strips.exe", "Release-Mod-Modular.exe", "Release-Mod-Morton.exe", "Release-Mod-MortonCompute.exe", "Release-Mod-Hilbert.exe", "Release-Mod-Peano.exe" };
-const char *TEST_NAMES[] = { "Default", "Modular" };
-const char *TEST_EXECUTABLES[] = { "Release-Mod-Default.exe", "Release-Mod-Modular.exe" };
+const char *TEST_NAMES[] = { "Default", "Strips", "Modular", "Morton", "MortonCompute", "Hilbert", "Peano" };
+const char *TEST_EXECUTABLES[] = { "Release-Mod-Default.exe", "Release-Mod-Strips.exe", "Release-Mod-Modular.exe", "Release-Mod-Morton.exe", "Release-Mod-MortonCompute.exe", "Release-Mod-Hilbert.exe", "Release-Mod-Peano.exe" };
+//const char *TEST_NAMES[] = { "Default", "Modular" };
+//const char *TEST_EXECUTABLES[] = { "Release-Mod-Default.exe", "Release-Mod-Modular.exe" };
 const char *DIR_X64 = "..\\bin\\x64\\";
 int main(int argc, char* argv[])
 {
@@ -183,21 +183,21 @@ int main(int argc, char* argv[])
 //////////        end.interactionRad = 10.0f;
 //////////        runCollated(start, end, steps, "NullNeighbourhoodScale100k");
 //////////    }
-//Collected
-{//Null - Problem scale
-const int steps = 101;
-//Init model arg start
-NullParams  start = {};
-start.agents = 1000;
-start.iterations = 1000;
-start.density = 1.0f;
-start.interactionRad = 2.0f;
-start.seed = 0;
-//Init model arg end
-NullParams end = start;
-end.agents = 100000;
-runCollated(start, end, steps, "NullProblemScaleHD");
-}
+////////////Collected
+//////////{//Null - Problem scale
+//////////const int steps = 101;
+////////////Init model arg start
+//////////NullParams  start = {};
+//////////start.agents = 1000;
+//////////start.iterations = 1000;
+//////////start.density = 1.0f;
+//////////start.interactionRad = 2.0f;
+//////////start.seed = 0;
+////////////Init model arg end
+//////////NullParams end = start;
+//////////end.agents = 100000;
+//////////runCollated(start, end, steps, "NullProblemScaleHD");
+//////////}
 //////////completed
 ////////    {//Null - Neighbour scale 25k
 ////////        const int steps = 100;
@@ -228,24 +228,42 @@ runCollated(start, end, steps, "NullProblemScaleHD");
 ////////        end.interactionRad = 10.0f;
 ////////        runCollated(start, end, steps, "NullNeighbourhoodScale50k");
 ////////    }
-////////    {//Density - ClusterCount
-////////        const int steps = 100;
-////////        //Init model arg start
-////////        DensityParams  start = {};
-////////        start.iterations = 1000;
-////////        start.envWidth = 1000;
-////////        start.agents = 10000;
-////////        start.seed = 1;
-////////        start.interactionRad = 1.0f;
-////////        start.clusterRad = 1.0f;
-////////        start.clusterCount = 1;
-////////
-////////        //Init model arg end
-////////        DensityParams end = start;
-////////        end.clusterCount = 200;
-////////
-////////        runCollated(start, end, steps, "ClusterCount 10k");
-////////    }
+    //////{//Density - ClusterCount
+    //////    const int steps = 100;
+    //////    //Init model arg start
+    //////    DensityParams  start = {};
+    //////    start.iterations = 1000;
+    //////    start.envWidth = 1000;
+    //////    start.agents = 10000;
+    //////    start.seed = 1;
+    //////    start.interactionRad = 1.0f;
+    //////    start.clusterRad = 1.0f;
+    //////    start.clusterCount = 1;
+
+    //////    //Init model arg end
+    //////    DensityParams end = start;
+    //////    end.clusterCount = 200;
+
+    //////    runCollated(start, end, steps, "ClusterCount 10k");
+    //////}
+    {//Density - ClusterCount
+        const int steps = 100;
+        //Init model arg start
+        DensityParams  start = {};
+        start.iterations = 1000;
+        start.envWidth = 1000;
+        start.agents = 100000;
+        start.seed = 1;
+        start.interactionRad = 1.0f;
+        start.clusterRad = 1.0f;
+        start.clusterCount = 200;
+
+        //Init model arg end
+        DensityParams end = start;
+        end.clusterCount = 1;
+
+        runCollated(start, end, steps, "ClusterCount 100k");
+    }
 ////////    {//Density - ClusterRad
 ////////        const int steps = 100;
 ////////        //Init model arg start
@@ -262,26 +280,26 @@ runCollated(start, end, steps, "NullProblemScaleHD");
 ////////        DensityParams end = start;
 ////////        end.clusterRad = 50.0f;
 ////////
-////////        runCollated(start, end, steps, "ClusterRad25-10k");
+////////        runCollated(start, end, steps, "ClusterRad25-10k 100");
 ////////    }
-////////    {//Density - ClusterRad
-////////        const int steps = 100;
-////////        //Init model arg start
-////////        DensityParams  start = {};
-////////        start.iterations = 1000;
-////////        start.envWidth = 100;
-////////        start.agents = 10000;
-////////        start.seed = 1;
-////////        start.interactionRad = 1.0f;
-////////        start.clusterRad = 0.1f;
-////////        start.clusterCount = 10;
-////////
-////////        //Init model arg end
-////////        DensityParams end = start;
-////////        end.clusterRad = 50.0f;
-////////
-////////        runCollated(start, end, steps, "ClusterRad25-10k");
-////////    }
+    ////////{//Density - ClusterRad
+    ////////    const int steps = 100;
+    ////////    //Init model arg start
+    ////////    DensityParams  start = {};
+    ////////    start.iterations = 1000;
+    ////////    start.envWidth = 100;
+    ////////    start.agents = 100000;
+    ////////    start.seed = 1;
+    ////////    start.interactionRad = 1.0f;
+    ////////    start.clusterRad = 0.1f;
+    ////////    start.clusterCount = 50;
+
+    ////////    //Init model arg end
+    ////////    DensityParams end = start;
+    ////////    end.clusterRad = 50.0f;
+
+    ////////    runCollated(start, end, steps, "ClusterRad50-100k");
+    ////////}
 ////////    //Ones likely to TDR
 ////////    //{//Neighbourhood Scale - Circles
 ////////    //    const int steps = 97;
@@ -503,7 +521,7 @@ DensityParams interpolateParams(const DensityParams &start, const DensityParams 
     modelArgs.agents = start.agents + (unsigned int)((step / stepsM1)*((unsigned int)end.agents - (unsigned int)start.agents));
     modelArgs.envWidth = start.envWidth + ((step / stepsM1)*(end.envWidth - start.envWidth));
     modelArgs.interactionRad = start.interactionRad + ((step / stepsM1)*(end.interactionRad - start.interactionRad));
-    modelArgs.clusterCount = start.clusterCount + (unsigned int)((step / stepsM1)*(end.clusterCount - start.clusterCount));
+    modelArgs.clusterCount = start.clusterCount + (unsigned int)((step / stepsM1)*((int)end.clusterCount - (int)start.clusterCount));
     modelArgs.clusterRad = start.clusterRad + ((step / stepsM1)*(end.clusterRad - start.clusterRad));
     modelArgs.iterations = start.iterations + (long long)((step / stepsM1)*((int)end.iterations - (int)start.iterations));
     return modelArgs;
