@@ -189,18 +189,27 @@ private:
 	const unsigned int maxAgents;
     float interactionRad;//Radius of agent interaction
     //Kernel launchers
-    void launchHashLocationMessages();
     void launchReorderLocationMessages();
+#ifdef ATOMIC_PBM
+    void launchAtomicHistogram();
+#else
+    void launchHashLocationMessages();
+#endif
     //Device pointers
     unsigned int *d_PBM; //Each int points to the first message index of the relevant bin index
     LocationMessages *d_locationMessages, *d_locationMessages_swap;
     LocationMessages hd_locationMessages, hd_locationMessages_swap;
-    //Device primitive pointers (used by thrust/CUB methods)
-    unsigned int *d_keys;
-    unsigned int *d_vals;
+    //Device primitive pointers (used when building PBM)
+    unsigned int *d_keys;//Atomic PBM uses this as bin index
+    unsigned int *d_vals;//Atomic PBM uses this as bin sub-index
+#ifdef ATOMIC_PBM
+    unsigned int *d_PBM_counts;
+#endif
 #ifndef THRUST
+#ifndef ATOMIC_PBM
     unsigned int *d_keys_swap;
     unsigned int *d_vals_swap;
+#endif
 	void *d_CUB_temp_storage;
 	size_t d_CUB_temp_storage_bytes;
 #endif

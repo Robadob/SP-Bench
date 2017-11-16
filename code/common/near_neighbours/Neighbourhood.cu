@@ -55,8 +55,13 @@ SpatialPartition::SpatialPartition(DIMENSIONS_VEC  environmentMin, DIMENSIONS_VE
     deviceAllocatePBM(&d_PBM);
     //Allocate primitive structures
     deviceAllocatePrimitives(&d_keys, &d_vals);
+#ifdef ATOMIC_PBM
+    deviceAllocatePBM(&d_PBM_counts);
+#endif
 #ifndef THRUST
+#ifndef ATOMIC_PBM
     deviceAllocatePrimitives(&d_keys_swap, &d_vals_swap);
+#endif
     deviceAllocateCUBTemp(&d_CUB_temp_storage, d_CUB_temp_storage_bytes);
 #endif
     //Allocate tex
@@ -101,8 +106,13 @@ SpatialPartition::~SpatialPartition()
     deviceDeallocatePBM(d_PBM);
     //Deallocated primitive structures
     deviceDeallocatePrimitives(d_keys, d_vals);
+#ifdef ATOMIC_PBM
+    deviceDeallocatePBM(d_PBM_counts);
+#endif
 #ifndef THRUST
+#ifndef ATOMIC_PBM
     deviceDeallocatePrimitives(d_keys_swap, d_vals_swap);
+#endif
     deviceDeallocateCUBTemp(d_CUB_temp_storage);
 #endif
     //Deallocate tex
@@ -492,7 +502,11 @@ void SpatialPartition::deviceAllocateCUBTemp(void **d_CUB_temp, size_t &d_cub_te
     // Determine temporary device storage requirements
     d_cub_temp_bytes = 0;
     *d_CUB_temp = NULL;
+#ifdef ATOMIC_PBM
+    cub::DeviceScan::ExclusiveSum(*d_CUB_temp, d_cub_temp_bytes, d_PBM_counts, d_PBM, binCountMax + 1);
+#else
     cub::DeviceRadixSort::SortPairs(*d_CUB_temp, d_cub_temp_bytes, d_keys, d_keys_swap, d_vals, d_vals_swap, maxAgents);
+#endif
     // Allocate temporary storage
     CUDA_CALL(cudaMalloc(d_CUB_temp, d_cub_temp_bytes));
 }
@@ -738,6 +752,33 @@ void SpatialPartition::setLocationCount(unsigned int t_locationMessageCount)
     CUDA_CALL(cudaMemcpyToSymbol(d_locationMessageCount, &locationMessageCount, sizeof(unsigned int)));
 }
 
+#ifdef ATOMIC_PBM
+void SpatialPartition::launchAtomicHistogram()
+{
+    int blockSize;   // The launch configurator returned block size 
+    CUDA_CALL(cudaOccupancyMaxActiveBlocksPerMultiprocessor(&blockSize, atomicHistogram, 32, 0));//Randomly 32
+    // Round up according to array size
+    int gridSize = (locationMessageCount + blockSize - 1) / blockSize;
+    //Keys = bin_index
+    //Vals = bin_sub_index
+    //Histogram into
+    atomicHistogram<<<gridSize, blockSize>>>(d_keys, d_vals, d_PBM_counts, d_locationMessages);
+    CUDA_CALL(cudaDeviceSynchronize());
+}
+void SpatialPartition::launchReorderLocationMessages()
+{
+    int blockSize;   // The launch configurator returned block size 
+    CUDA_CALL(cudaOccupancyMaxActiveBlocksPerMultiprocessor(&blockSize, reorderLocationMessages, 32, 0));//Randomly 32
+    // Round up according to array size
+    int gridSize = (locationMessageCount + blockSize - 1) / blockSize;
+    //Copy messages from d_messages to d_messages_swap, in hash order
+    reorderLocationMessages<<<gridSize, blockSize>>>(d_keys, d_vals, d_PBM, d_locationMessages, d_locationMessages_swap);
+    CUDA_CHECK();
+    swap();
+    //Wait for return
+    CUDA_CALL(cudaDeviceSynchronize());
+}
+#else
 void SpatialPartition::launchHashLocationMessages()
 {
     int blockSize;   // The launch configurator returned block size 
@@ -751,18 +792,6 @@ int requiredSM_reorderLocationMessages(int blockSize)
 {
     return sizeof(unsigned int)*blockSize;
 }
-#ifdef _DEBUG
-void SpatialPartition::launchAssertPBMIntegerity()
-{
-    int blockSize;   // The launch configurator returned block size 
-    CUDA_CALL(cudaOccupancyMaxActiveBlocksPerMultiprocessor(&blockSize, hashLocationMessages, 32, 0));//Randomly 32
-    // Round up according to array size
-    int gridSize = (this->binCountMax + blockSize - 1) / blockSize;
-    //Copy messages from d_messages to d_messages_swap, in hash order
-    assertPBMIntegrity << <gridSize, blockSize >> >();
-    //No sync, called directly after textures have been updated
-}
-#endif
 void SpatialPartition::launchReorderLocationMessages()
 {
     int minGridSize, blockSize;   // The launch configurator returned block size 
@@ -776,6 +805,19 @@ void SpatialPartition::launchReorderLocationMessages()
     //Wait for return
     CUDA_CALL(cudaDeviceSynchronize());
 }
+#endif
+#ifdef _DEBUG
+void SpatialPartition::launchAssertPBMIntegerity()
+{
+    int blockSize;   // The launch configurator returned block size 
+    CUDA_CALL(cudaOccupancyMaxActiveBlocksPerMultiprocessor(&blockSize, assertPBMIntegrity, 32, 0));//Randomly 32
+    // Round up according to array size
+    int gridSize = (this->binCountMax + blockSize - 1) / blockSize;
+    //Copy messages from d_messages to d_messages_swap, in hash order
+    assertPBMIntegrity << <gridSize, blockSize >> >();
+    //No sync, called directly after textures have been updated
+}
+#endif
 void SpatialPartition::swap()
 {
     //Switch d_locationMessages and d_locationMessages_swap
@@ -803,6 +845,23 @@ void SpatialPartition::buildPBM()
     if (__first)
         __first = false;
 #endif
+#ifdef ATOMIC_PBM
+    //Reset PBM
+    CUDA_CALL(cudaMemset(d_PBM_counts, 0x00000000, (this->binCountMax + 1) * sizeof(unsigned int)));
+    //Build histogram using atomics
+    launchAtomicHistogram();
+    //prefix sum PBM to convert counts to indices
+#ifndef THRUST
+    // Run exclusive prefix min-scan
+    cub::DeviceScan::ExclusiveSum(d_CUB_temp_storage, d_CUB_temp_storage_bytes, d_PBM_counts, d_PBM, this->binCountMax + 1);
+#else
+#error Thrust prefix sum not implemented/tested
+    //If we do implement this, make sure we exclusive scan from d_PBM_counts into d_PBM, else use of d_PBM_counts will be incorrect
+    thrust::device_ptr<int> ptr_count = thrust::device_pointer_cast(d_location_partition_matrix->end_or_count);
+    thrust::device_ptr<int> ptr_index = thrust::device_pointer_cast(d_location_partition_matrix->start);
+    thrust::exclusive_scan(thrust::cuda::par.on(stream), ptr_count, ptr_count + xmachine_message_location_grid_size, ptr_index); // scan
+#endif
+#else
     //Fill primitive key/val arrays for sort
     launchHashLocationMessages();
     //Sort key val arrays using thrust/CUB
@@ -842,6 +901,8 @@ void SpatialPartition::buildPBM()
     //Fill pbm end coords with known value 0x00000000 (this should mean if the mysterious bug does occur, the cell is just dropped, not large loop created)
     unsigned int binCount = this->binCountMax;
     CUDA_CALL(cudaMemset(d_PBM, 0x00000000, (binCount + 1) * sizeof(unsigned int)));
+#endif //ifdef-else-ATOMIC_PBM
+    //Reorder messages
     launchReorderLocationMessages();
     //Clone data to textures ready for neighbourhood search
     fillTextures();

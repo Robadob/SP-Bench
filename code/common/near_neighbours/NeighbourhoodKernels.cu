@@ -79,6 +79,52 @@ __device__ unsigned int getHash(DIMENSIONS_IVEC gridPos)
         gridPos.x); 	                            //x
 #endif
 }
+
+#ifdef ATOMIC_PBM
+__global__ void atomicHistogram(unsigned int* bin_index, unsigned int* bin_sub_index, unsigned int *pbm_counts, LocationMessages* messageBuffer)
+{
+    unsigned int index = (blockIdx.x * blockDim.x) + threadIdx.x;
+    //Kill excess threads
+    if (index >= d_locationMessageCount) return;
+
+    DIMENSIONS_IVEC gridPos;
+    DIMENSIONS_VEC worldPos(
+        messageBuffer->locationX[index]
+        , messageBuffer->locationY[index]
+#ifdef _3D
+        , messageBuffer->locationZ[index]
+#endif
+        );
+    gridPos = getGridPosition(worldPos);
+
+    unsigned int hash = getHash(gridPos);
+    bin_index[index] = hash;
+    unsigned int bin_idx = atomicInc((unsigned int*)&pbm_counts[hash], 0xFFFFFFFF);
+    bin_sub_index[index] = bin_idx;
+}
+__global__ void reorderLocationMessages(
+    unsigned int* bin_index, 
+    unsigned int* bin_sub_index,
+    unsigned int *pbm,
+    LocationMessages *unordered_messages,
+    LocationMessages *ordered_messages
+    )
+{
+    unsigned int index = (blockIdx.x * blockDim.x) + threadIdx.x;
+    //Kill excess threads
+    if (index >= d_locationMessageCount) return;
+
+    unsigned int i = bin_index[index];
+    unsigned int sorted_index = pbm[i] + bin_sub_index[index];
+
+    //Order messages into swap space
+    ordered_messages->locationX[sorted_index] = unordered_messages->locationX[index];
+    ordered_messages->locationY[sorted_index] = unordered_messages->locationY[index];
+#ifdef _3D
+    ordered_messages->locationZ[sorted_index] = unordered_messages->locationZ[index];
+#endif
+}
+#else //ifdef-ATOMIC_PBM
 __global__ void hashLocationMessages(unsigned int* keys, unsigned int* vals, LocationMessages* messageBuffer)
 {
     int index = (blockIdx.x * blockDim.x) + threadIdx.x;
@@ -98,37 +144,6 @@ __global__ void hashLocationMessages(unsigned int* keys, unsigned int* vals, Loc
     keys[index] = hash;
     vals[index] = index;
 }
-#ifdef _DEBUG
-__global__ void assertPBMIntegrity()
-{
-    int index = (blockIdx.x * blockDim.x) + threadIdx.x;
-
-    unsigned int prev = 0, me = 0, next = d_locationMessageCount;
-    // (tex->local)x3, is faster than (tex->local)x1 (local->shared)x1 (shared->local)x2 right?
-    if (index <= d_binCount)
-    {
-        if (index > 0)
-            prev = tex1Dfetch<unsigned int>(d_tex_PBM, index-1);
-
-        me = tex1Dfetch<unsigned int>(d_tex_PBM, index);
-        if (index < d_binCount)
-            next = tex1Dfetch<unsigned int>(d_tex_PBM, index+1);
-    }
-
-    //Assert Order
-    if (prev>me||me>next)
-    {
-		printf("ERROR: PBM contains values which are out of order.\nid:%i, prev:%i, me:%i, next:%i, count:%i\n", index, prev, me, next, d_binCount);
-		assert(0);
-    }
-    //Assert Range
-    if (me > d_locationMessageCount)
-    {
-        printf("ERROR: PBM contains out of range values.\nid:%i, prev:%i, me:%i, next:%i, count:%i\n", index, prev, me, next, d_binCount);
-		assert(0);
-    }
-}
-#endif
 __global__ void reorderLocationMessages(
     unsigned int *keys,
     unsigned int *vals,
@@ -211,7 +226,38 @@ __global__ void reorderLocationMessages(
     }
 #endif
 }
+#endif //ifdef-else-ATOMIC_PBM
+#ifdef _DEBUG
+__global__ void assertPBMIntegrity()
+{
+    int index = (blockIdx.x * blockDim.x) + threadIdx.x;
 
+    unsigned int prev = 0, me = 0, next = d_locationMessageCount;
+    // (tex->local)x3, is faster than (tex->local)x1 (local->shared)x1 (shared->local)x2 right?
+    if (index <= d_binCount)
+    {
+        if (index > 0)
+            prev = tex1Dfetch<unsigned int>(d_tex_PBM, index - 1);
+
+        me = tex1Dfetch<unsigned int>(d_tex_PBM, index);
+        if (index < d_binCount)
+            next = tex1Dfetch<unsigned int>(d_tex_PBM, index + 1);
+    }
+
+    //Assert Order
+    if (prev>me || me>next)
+    {
+        printf("ERROR: PBM contains values which are out of order.\nid:%i, prev:%i, me:%i, next:%i, count:%i\n", index, prev, me, next, d_binCount);
+        assert(0);
+    }
+    //Assert Range
+    if (me > d_locationMessageCount)
+    {
+        printf("ERROR: PBM contains out of range values.\nid:%i, prev:%i, me:%i, next:%i, count:%i\n", index, prev, me, next, d_binCount);
+        assert(0);
+    }
+}
+#endif
 
 __device__ LocationMessage *LocationMessages::getNextNeighbour(LocationMessage *sm_message)
 {

@@ -2,6 +2,7 @@
 #define __BuildAll_cuh__
 
 #define _2D
+#define ATOMIC_PBM
 
 //Build the data-structure
 #include "near_neighbours/Neighbourhood.cu"
