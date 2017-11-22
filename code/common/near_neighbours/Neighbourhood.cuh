@@ -158,7 +158,10 @@ private:
 	void deviceAllocateCUBTemp(void **d_CUB_temp, size_t &d_cub_temp_bytes);
 #endif
     void deviceAllocateTextures();
+
+#if !defined(GLOBAL_MESSAGES) && !defined(LDG_MESSAGES)
     void deviceAllocateTexture_float(unsigned int i);
+#endif
     void deviceAllocateTexture_int();//allocate pbm tex
 #ifdef _GL
     void deviceAllocateGLTexture_float(unsigned int i);
@@ -223,8 +226,10 @@ private:
     unsigned int PBM_isBuilt;
 #endif
     //Textures
+#if defined(_GL) ||(!defined(GLOBAL_MESSAGES) && !defined(LDG_MESSAGES))
     cudaTextureObject_t tex_location[DIMENSIONS];
     float* tex_loc_ptr[DIMENSIONS];
+#endif
     cudaTextureObject_t tex_PBM;
     unsigned int* tex_PBM_ptr;
     //GL Textures
@@ -252,7 +257,15 @@ extern __device__ __constant__ unsigned int d_PBM_isBuilt;
 extern __device__ __constant__ LocationMessages *d_locationMessagesA;
 extern __device__ __constant__ LocationMessages *d_locationMessagesB;
 #endif
+
+#if defined(GLOBAL_MESSAGES) ||defined(LDG_MESSAGES)
+extern __device__ __constant__ LocationMessages *d_messages;
+#endif
+//We need tex storage if using opengl for rendering
+#if defined(_GL) || !(defined(GLOBAL_MESSAGES) ||defined(LDG_MESSAGES))
 extern __device__ __constant__ cudaTextureObject_t d_tex_location[DIMENSIONS];
+#endif
+
 extern __device__ __constant__ cudaTextureObject_t d_tex_PBM;
 
 #endif

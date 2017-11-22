@@ -39,6 +39,7 @@ SpatialPartition::SpatialPartition(DIMENSIONS_VEC  environmentMin, DIMENSIONS_VE
     , PBM_isBuilt(0)
 #endif
 {
+    assert(interactionRad > 0);
 #ifdef _DEBUG
 //#if defined(_2D)
 //    printf("Spatial Partition: Interaction Rad(%.3f), Grid Dims(%d,%d)\n", interactionRad, gridDim.x, gridDim.y);
@@ -190,27 +191,6 @@ bool SpatialPartition::isValid(DIMENSIONS_IVEC bin) const
     return true;
 }
 #ifdef _DEBUG
-
-//DIMENSIONS_IVEC SpatialPartition::getGridPosition(DIMENSIONS_VEC worldPos)
-//{
-//#ifndef SP_NO_CLAMP_GRID
-//    //Clamp each grid coord to 0<=x<dim
-//    return clamp(floor(((worldPos - environmentMin) / (environmentMax - environmentMin))*glm::vec3(gridDim)), glm::vec3(0), glm::vec3(gridDim)-glm::vec3(1));
-//#else
-//    return floor(((worldPos - environmentMin) / (environmentMax - environmentMin))*glm::vec3(gridDim));
-//#endif
-//}
-//
-//unsigned int SpatialPartition::getHash(DIMENSIONS_IVEC gridPos)
-//{
-//    gridPos = clamp(gridPos, DIMENSIONS_IVEC(0), gridDim - DIMENSIONS_IVEC(1));
-//    return
-//#ifdef _3D
-//        (gridPos.z * gridDim.y * gridDim.x) +   //z
-//#endif
-//        (gridPos.y * gridDim.x) +					//y
-//        gridPos.x; 	                                //x
-//}
 void SpatialPartition::assertSearch()
 {
     //return;//
@@ -233,22 +213,6 @@ void SpatialPartition::assertSearch()
     {
         printf("%i PBM records exist for %i agents.\n", agtCount, maxAgents);
     }
-
-//#if defined(MORTON) || defined(HILBERT) || defined(PEANO) || defined(MORTON_COMPUTE)
-//    //In the case of morton coding, we sort PBM back into our regular order to compare
-//    unsigned int *PBM_coded = PBM_binSize;
-//    PBM_binSize = static_cast<unsigned int *>(malloc(sizeof(unsigned int)*outCount));
-//    memset(PBM_binSize, 0, tableSize * sizeof(unsigned int));
-//    for (int i = 0; i < this->binCount; i++)
-//    {
-//#if defined(_3D)
-//        PBM_binSize[i] = PBM_coded[getHash(glm::ivec3((i % (gridDim.y * gridDim.x)) % gridDim.x, (i % (gridDim.y * gridDim.x)) / gridDim.x, (i / (gridDim.y * gridDim.x))))];
-//#elif defined(_2D)
-//        PBM_binSize[i] = PBM_coded[getHash(glm::ivec2(i % gridDim.x, i / gridDim.x))];
-//#endif
-//    }
-//    free(PBM_coded);
-//#endif
     //Calculate the size of each bin's neighbourhood
     unsigned int *PBM_neighbourhoodSize = static_cast<unsigned int *>(malloc(sizeof(unsigned int)*this->binCountMax));
     for (unsigned int i = 0; i < this->binCountMax; i++)
@@ -415,21 +379,6 @@ NeighbourhoodStats SpatialPartition::getNeighbourhoodStats()
     {
         printf("%i PBM records exist for %i agents.\n", agtCount, maxAgents);
     }
-//#if defined(MORTON) || defined(HILBERT) || defined(PEANO) || defined(MORTON_COMPUTE)
-//    //In the case of morton coding, we sort PBM back into our regular order to compare
-//    unsigned int *PBM_coded = PBM_binSize;
-//    PBM_binSize = static_cast<unsigned int *>(malloc(sizeof(unsigned int)*this->binCountMax));
-//    memset(PBM_binSize, 0, this->binCountMax * sizeof(unsigned int));
-//    for (int i = 0; i < this->binCount; i++)
-//    {
-//#if defined(_3D)
-//        PBM_binSize[i] = PBM_coded[getHash(glm::ivec3((i % (gridDim.y * gridDim.x)) % gridDim.x, (i % (gridDim.y * gridDim.x)) / gridDim.x, (i / (gridDim.y * gridDim.x))))];
-//#elif defined(_2D)
-//        PBM_binSize[i] = PBM_coded[getHash(glm::ivec2(i % gridDim.x, i / gridDim.x))];
-//#endif
-//    }
-//    free(PBM_coded);
-//#endif
     //Calculate the size of each bin's neighbourhood
     unsigned int *PBM_neighbourhoodSize = static_cast<unsigned int *>(malloc(sizeof(unsigned int)*this->binCountMax));
     for (unsigned int i = 0; i < this->binCountMax; i++)
@@ -520,19 +469,23 @@ void SpatialPartition::deviceAllocateTextures()
         deviceAllocateGLTexture_float(i);
     deviceAllocateGLTexture_float2();//Allocate a texture to store counting info in (Used to colour the visualisation
 #else
+#if !defined(GLOBAL_MESSAGES) && !defined(LDG_MESSAGES)
 #pragma unroll 3
     for (unsigned int i = 0; i < DIMENSIONS; i++)
         deviceAllocateTexture_float(i);
+#endif
 #endif
     //PBM
     deviceAllocateTexture_int();
 }
 void SpatialPartition::fillTextures()
 {
+#if defined(_GL) ||(!defined(GLOBAL_MESSAGES) && !defined(LDG_MESSAGES))
     CUDA_CALL(cudaMemcpy(tex_loc_ptr[0], hd_locationMessages.locationX, locationMessageCount*sizeof(float), cudaMemcpyDeviceToDevice));
     CUDA_CALL(cudaMemcpy(tex_loc_ptr[1], hd_locationMessages.locationY, locationMessageCount*sizeof(float), cudaMemcpyDeviceToDevice));
 #ifdef _3D
     CUDA_CALL(cudaMemcpy(tex_loc_ptr[2], hd_locationMessages.locationZ, locationMessageCount*sizeof(float), cudaMemcpyDeviceToDevice));
+#endif
 #endif
 #ifdef _GL
     CUDA_CALL(cudaMemcpy(tex_location_ptr_count, hd_locationMessages.count, locationMessageCount*sizeof(float), cudaMemcpyDeviceToDevice));
@@ -540,6 +493,7 @@ void SpatialPartition::fillTextures()
     CUDA_CALL(cudaMemcpy(tex_PBM_ptr, d_PBM, (this->binCountMax + 1)*sizeof(unsigned int), cudaMemcpyDeviceToDevice));
 }
 
+#if !defined(GLOBAL_MESSAGES) && !defined(LDG_MESSAGES)
 void SpatialPartition::deviceAllocateTexture_float(unsigned int i)
 {
     if (i >= DIMENSIONS)
@@ -563,6 +517,8 @@ void SpatialPartition::deviceAllocateTexture_float(unsigned int i)
     //Copy obj to const memory
     CUDA_CALL(cudaMemcpyToSymbol(d_tex_location, &tex_location[i], sizeof(cudaTextureObject_t), i*sizeof(cudaTextureObject_t)));
 }
+#endif
+
 #ifdef _GL
 void SpatialPartition::deviceAllocateGLTexture_float(unsigned int i)//GLuint *glTex, GLuint *glTbo, cudaGraphicsResource_t *cuGres, cudaArray_t *cuArr, cudaTextureObject_t *tex, cudaTextureObject_t *d_const, const unsigned int size)
 {
@@ -695,6 +651,7 @@ void SpatialPartition::deviceDeallocateCUBTemp(void *d_CUB_temp)
 void SpatialPartition::deviceDeallocateTextures()
 {
 
+#if defined(_GL) ||(!defined(GLOBAL_MESSAGES) && !defined(LDG_MESSAGES))
 #pragma unroll
     for (unsigned int i = 0; i < DIMENSIONS; i++)
     {
@@ -707,6 +664,7 @@ void SpatialPartition::deviceDeallocateTextures()
         cudaFree(tex_loc_ptr[i]);
 #endif
     }
+#endif
     cudaDestroyTextureObject(tex_PBM);
     cudaFree(tex_PBM_ptr);
 #ifdef _GL
@@ -828,6 +786,11 @@ void SpatialPartition::swap()
     LocationMessages hd_locationmessages_temp = hd_locationMessages;
     hd_locationMessages = hd_locationMessages_swap;
     hd_locationMessages_swap = hd_locationmessages_temp;
+
+//Update active message list
+#if defined(GLOBAL_MESSAGES) || defined(LDG_MESSAGES)
+    CUDA_CALL(cudaMemcpyToSymbol(d_messages, &d_locationMessages, sizeof(LocationMessages*)));
+#endif
 
 #ifdef _DEBUG
     PBM_isBuilt = 0;

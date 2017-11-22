@@ -564,10 +564,24 @@ __device__ LocationMessage *LocationMessages::loadNextMessage(LocationMessage *s
     d_locationMessagesB->count[id] += 1.0;
 #endif
     sm_message->id = sm_message->state.binIndex;//Duplication of data TODO remove stateBinIndex
+#if defined(GLOBAL_MESSAGES)
+    sm_message->location.x = d_messages->locationX[sm_message->state.binIndex];
+    sm_message->location.y = d_messages->locationY[sm_message->state.binIndex];
+#ifdef _3D
+    sm_message->location. = d_messages->locationZ[sm_message->state.binIndex];
+#endif
+#elif defined(LDG_MESSAGES)
+    sm_message->location.x = __ldg(&d_messages->locationX[sm_message->state.binIndex]);
+    sm_message->location.y = __ldg(&d_messages->locationY[sm_message->state.binIndex]);
+#ifdef _3D
+    sm_message->location. = __ldg(&d_messages->locationZ[sm_message->state.binIndex]);
+#endif
+#else//Read message data from tex cache (default)
     sm_message->location.x = tex1Dfetch<float>(d_tex_location[0], sm_message->state.binIndex);
     sm_message->location.y = tex1Dfetch<float>(d_tex_location[1], sm_message->state.binIndex);
 #ifdef _3D
     sm_message->location.z = tex1Dfetch<float>(d_tex_location[2], sm_message->state.binIndex);
+#endif
 #endif
 
     sm_message->state.binIndex++;
