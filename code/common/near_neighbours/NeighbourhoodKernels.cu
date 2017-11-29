@@ -358,8 +358,10 @@ for (unsigned int i = 0; i<27; ++i)
             blockRelative->x++;
         }
     }
+#ifndef NO_SYNC
     //Wait for all threads to finish previous bin
     __syncthreads();
+#endif
     if(!*blockContinue)
     {
 #if defined(_GL) || defined(_DEBUG)
@@ -485,11 +487,17 @@ for (unsigned int i = 0; i<27; ++i)
 
     int next_bin_first_hash = getHash(next_bin_first);
     int next_bin_last_hash = next_bin_first_hash + (next_bin_last.x - next_bin_first.x);//Strips are at most length 3
-
     //use the hash to calculate the start index (pbm stores location of 1st item)
+#if defined(GLOBAL_PBM)
+    sm_message->state.binIndex = d_pbm[next_bin_first_hash];
+    sm_message->state.binIndexMax = d_pbm[next_bin_last_hash + 1];
+#elif defined(LDG_PBM)
+    sm_message->state.binIndex = __ldg(&d_pbm[next_bin_first_hash]);
+    sm_message->state.binIndexMax = __ldg(&d_pbm[next_bin_last_hash + 1]);
+#else
     sm_message->state.binIndex = tex1Dfetch<unsigned int>(d_tex_PBM, next_bin_first_hash);
     sm_message->state.binIndexMax = tex1Dfetch<unsigned int>(d_tex_PBM, next_bin_last_hash + 1);
-
+#endif
     if (sm_message->state.binIndex < sm_message->state.binIndexMax)//(bin_index_min != 0xffffffff)
     {
         return true;//Bin strip has items!
@@ -522,9 +530,16 @@ for (unsigned int i = 0; i<27; ++i)
     assert(next_bin_first_hash >= 0);//Hash must be positive
 #endif
     //use the hash to calculate the start index (pbm stores location of 1st item)
+#if defined(GLOBAL_PBM)
+    sm_message->state.binIndex = d_pbm[next_bin_first_hash];
+    sm_message->state.binIndexMax = d_pbm[next_bin_first_hash + 1];
+#elif defined(LDG_PBM)
+    sm_message->state.binIndex = __ldg(&d_pbm[next_bin_first_hash]);
+    sm_message->state.binIndexMax = __ldg(&d_pbm[next_bin_first_hash + 1]);
+#else
     sm_message->state.binIndex = tex1Dfetch<unsigned int>(d_tex_PBM, next_bin_first_hash);
     sm_message->state.binIndexMax = tex1Dfetch<unsigned int>(d_tex_PBM, next_bin_first_hash + 1);
-
+#endif
 #if !defined(MODULAR)
     if (sm_message->state.binIndex < sm_message->state.binIndexMax)//(bin_index_min != 0xffffffff)
     {

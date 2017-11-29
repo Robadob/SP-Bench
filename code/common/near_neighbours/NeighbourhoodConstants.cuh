@@ -26,7 +26,12 @@ __device__ __constant__ LocationMessages *d_messages;
 #if defined(_GL) || !(defined(GLOBAL_MESSAGES) ||defined(LDG_MESSAGES))
 __device__ __constant__ cudaTextureObject_t d_tex_location[DIMENSIONS];
 #endif
+
+#if defined(GLOBAL_PBM) || defined(LDG_PBM)
+__device__ __constant__  unsigned int *d_pbm;
+#else
 __device__ __constant__ cudaTextureObject_t d_tex_PBM;
+#endif
 //    __constant__ int d_tex_pbm_offset;
 
 

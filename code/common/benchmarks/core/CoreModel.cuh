@@ -1,3 +1,4 @@
+#include <cuda_surface_types.h>
 #ifndef __CoreModel_cuh__
 #define __CoreModel_cuh__
 
@@ -14,7 +15,7 @@ public:
     //Returns the time taken
     virtual const Time_Init initPopulation(const unsigned long long rngSeed = 12);
     virtual const Time_Init initPopulationUniform();
-    virtual const Time_Init initPopulationClusters(const unsigned int clusterCount, const float clusterRad, const unsigned long long rngSeed = 12);
+    virtual const Time_Init initPopulationClusters(const unsigned int clusterCount, const float clusterRad, const unsigned int agentsPerCluster, const unsigned long long rngSeed = 12);
     virtual const Time_Step step()=0;
     virtual std::shared_ptr<SpatialPartition> getPartition() = 0;
     const unsigned int agentMax;
@@ -46,7 +47,7 @@ const Time_Init CoreModel::initPopulation(const unsigned long long rngSeed)
     getPartition()->setLocationCount(agentMax);
     if (rngSeed != 0)
     {
-        init_curand << <initBlocks, initThreads >> >(d_rng, rngSeed);//Defined in CircleKernels.cuh
+        init_curand << <initBlocks, initThreads >> >(d_rng, agentMax, rngSeed);//Defined in CircleKernels.cuh
         CUDA_CALL(cudaDeviceSynchronize());
     }
 
@@ -61,10 +62,11 @@ const Time_Init CoreModel::initPopulation(const unsigned long long rngSeed)
     }
     else
     {
+        //Adding +1 here will misalign uniform particles slightly, otherwise they are placed in bin centres only and can't touch other particles.
 #if DIMENSIONS==3
-        int particlesPerDim = (int)cbrt(agentMax)+1;
+        int particlesPerDim = (int)cbrt(agentMax);
 #elif DIMENSIONS==2
-        int particlesPerDim = (int)sqrt(agentMax)+1;
+        int particlesPerDim = (int)sqrt(agentMax);
 #else
 #error Invalid DIMENSIONS value, only 2 and 3 are suitable
 #endif
@@ -115,8 +117,11 @@ const Time_Init CoreModel::initPopulation(const unsigned long long rngSeed)
     return rtn;
 }
 
-const Time_Init CoreModel::initPopulationClusters(const unsigned int clusterCount, const float clusterRad, const unsigned long long rngSeed)
+const Time_Init CoreModel::initPopulationClusters(const unsigned int clusterCount, const float clusterRad, const unsigned int agentsPerCluster, const unsigned long long rngSeed)
 {
+    //Are the count values valid?
+    assert(clusterCount*agentsPerCluster <= agentMax);
+
     cudaEvent_t start_overall, start_kernel, start_pbm, start_free, stop_overall;
     cudaEventCreate(&start_overall);
     cudaEventCreate(&start_kernel);
@@ -127,45 +132,67 @@ const Time_Init CoreModel::initPopulationClusters(const unsigned int clusterCoun
     //Start overall timer
     cudaEventRecord(start_overall);
 
+    getPartition()->setLocationCount(agentMax);
+    LocationMessages *d_lm = getPartition()->d_getLocationMessages();
+
     //Generate curand
     curandState *d_rng;
-    CUDA_CALL(cudaMalloc(&d_rng, agentMax*sizeof(curandState)));
+    CUDA_CALL(cudaMalloc(&d_rng, agentsPerCluster*sizeof(curandState)));
     //Arbitrary thread block sizes (speed not too important during one off initialisation)
-    unsigned int initThreads = 512;
-    unsigned int initBlocks = (agentMax / initThreads) + 1;
-    getPartition()->setLocationCount(agentMax);
-    if (rngSeed != 0)
+    unsigned int cinitThreads = 512;
+    unsigned int cinitBlocks = (agentsPerCluster / cinitThreads) + 1;
+    //if (rngSeed != 0)//Clusters doesn't currently support rng 0
     {
-        init_curand << <initBlocks, initThreads >> >(d_rng, rngSeed);//Defined in CircleKernels.cuh
+        init_curand << <cinitBlocks, cinitThreads >> >(d_rng, agentsPerCluster, rngSeed);//Defined in CircleKernels.cuh
         CUDA_CALL(cudaDeviceSynchronize());
     }
 
     //End curand timer/start kernel timer
     cudaEventRecord(start_kernel);
 
-    //Generate initial states, and store in location messages
-    LocationMessages *d_lm = getPartition()->d_getLocationMessages();
-    const unsigned int agentsPerCluster = (agentMax / clusterCount) + 1;
-    const DIMENSIONS_VEC envMin = getPartition()->getEnvironmentMin() + DIMENSIONS_VEC(clusterRad);
-    const DIMENSIONS_VEC envMax = getPartition()->getEnvironmentMax() - DIMENSIONS_VEC(clusterRad);
-    std::default_random_engine rng((unsigned int)rngSeed);
-    std::uniform_real_distribution<float> rng_x(envMin.x, envMax.x);
-    std::uniform_real_distribution<float> rng_y(envMin.y, envMax.y);
-#ifdef _3D
-    std::uniform_real_distribution<float> rng_z(envMin.z, envMax.z);
-#endif
-    initBlocks = (agentsPerCluster / initThreads) + 1;
-    const float clusterWidth = 2 * clusterRad;
-    for (unsigned int i = 0; i < clusterCount;++i)
+    const unsigned int uniformAgents = agentMax - (clusterCount*agentsPerCluster);
+    //Init uniform agents
+    if (uniformAgents)
     {
-        //startIndex, limit, clusterCenter, clusterRad
-        DIMENSIONS_VEC clusterCenter;
-        clusterCenter.x = rng_x(rng);
-        clusterCenter.y = rng_y(rng); 
-#ifdef _3D
-        clusterCenter.z = rng_z(rng);
+        //Adding +1 here will misalign uniform particles slightly, otherwise they are placed in bin centres only and can't touch other particles.
+#if DIMENSIONS==3
+        int particlesPerDim = (int)cbrt(uniformAgents) + 1;
+#elif DIMENSIONS==2
+        int particlesPerDim = (int)sqrt(uniformAgents) + 1;
+#else
+#error Invalid DIMENSIONS value, only 2 and 3 are suitable
 #endif
-        init_particles_clusters << <initBlocks, initThreads >> >(d_rng, d_lm, i*agentsPerCluster, agentsPerCluster, clusterCenter, clusterWidth);
+        //Arbitrary thread block sizes (speed not too important during one off initialisation)
+        unsigned int initThreads = 512;
+        unsigned int initBlocks = (uniformAgents / initThreads) + 1;
+        DIMENSIONS_VEC offset = getPartition()->getEnvironmentDimensions() / (float)particlesPerDim;
+        init_particles_uniform << <initBlocks, initThreads >> >(d_lm, particlesPerDim, offset);
+        CUDA_CALL(cudaDeviceSynchronize());
+    }
+
+    //Init remaining agents to clusters clusters
+    {
+        //Generate initial states, and store in location messages
+        const DIMENSIONS_VEC envMin = getPartition()->getEnvironmentMin() + DIMENSIONS_VEC(clusterRad);
+        const DIMENSIONS_VEC envMax = getPartition()->getEnvironmentMax() - DIMENSIONS_VEC(clusterRad);
+        std::default_random_engine rng((unsigned int)rngSeed);
+        std::uniform_real_distribution<float> rng_x(envMin.x, envMax.x);
+        std::uniform_real_distribution<float> rng_y(envMin.y, envMax.y);
+#ifdef _3D
+        std::uniform_real_distribution<float> rng_z(envMin.z, envMax.z);
+#endif
+        const float clusterWidth = 2 * clusterRad;
+        for (unsigned int i = 0; i < clusterCount; ++i)
+        {
+            //startIndex, limit, clusterCenter, clusterRad
+            DIMENSIONS_VEC clusterCenter;
+            clusterCenter.x = rng_x(rng);
+            clusterCenter.y = rng_y(rng);
+#ifdef _3D
+            clusterCenter.z = rng_z(rng);
+#endif
+            init_particles_clusters << <cinitBlocks, cinitThreads >> >(d_rng, d_lm, uniformAgents+(i*agentsPerCluster), agentsPerCluster, clusterCenter, clusterWidth);
+        }        
     }
     CUDA_CALL(cudaDeviceSynchronize());
 

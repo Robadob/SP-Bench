@@ -19,7 +19,9 @@ public:
     NullModel(
         const float envWidth,
         const float interactionRad,
-        const unsigned int agents
+        const unsigned int clusterCount,
+        const unsigned int agentsPerCluster,
+        const float uniformDensity = 0
         );
     ~NullModel();
     //Returns the time taken
@@ -60,7 +62,7 @@ NullModel::NullModel(
     const float density,
     const float interactionRad
     )
-    : CoreModel(toAgents(toWidth(agents, density), density))
+    : CoreModel(toAgents(toWidth(agents, density)/interactionRad, density))
     , spatialPartition(std::make_shared<SpatialPartition>(DIMENSIONS_VEC(0.0f), DIMENSIONS_VEC(toWidth(agents, density)), agentMax, interactionRad))
     , d_result(nullptr)
     , h_result(nullptr)
@@ -78,9 +80,11 @@ NullModel::NullModel(
 NullModel::NullModel(
     const float envWidth,
     const float interactionRad,
-    const unsigned int agents
+    const unsigned int clusterCount,
+    const unsigned int agentsPerCluster,
+    const float uniformDensity
     )
-    : CoreModel(agents)
+    : CoreModel((clusterCount*agentsPerCluster)+toAgents(envWidth/interactionRad, uniformDensity))//Calculate total agents
     , spatialPartition(std::make_shared<SpatialPartition>(DIMENSIONS_VEC(0.0f), DIMENSIONS_VEC(envWidth), agentMax, interactionRad))
     , d_result(nullptr)
     , h_result(nullptr)

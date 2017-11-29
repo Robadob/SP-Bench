@@ -73,18 +73,19 @@ ArgData parseArgs(int argc, char * argv[])
            mdl->iterations = strtoul(argv[++i], nullptr, 0);
            data.model = mdl;
         }
-        //-density <uint> <float> <float> <uint> <float>
+        //-density <uint> <float> <float> <float> <uint> <float>
         //Enables null model with density initialisation
-        //Sets the agentCount, envWidth, interactionRad, clusterCount, clusterRad and iterations
+        //Sets the agentPerCluster, envWidth, clusterCount, clusterRad, interactionRad, uniformDensity and iterations
         else if (arg.compare("-density") == 0)
         {
             assert(!data.model);//Two model params passed at runtime?
             std::shared_ptr<DensityParams> mdl = std::make_shared<DensityParams>();
-            mdl->agents = (unsigned int)strtoul(argv[++i], nullptr, 0);
+            mdl->agentsPerCluster = (unsigned int)strtoul(argv[++i], nullptr, 0);
             mdl->envWidth = (float)atof(argv[++i]);
             mdl->clusterCount = (unsigned int)strtoul(argv[++i], nullptr, 0);
             mdl->clusterRad = (float)atof(argv[++i]);
             mdl->interactionRad = (float)atof(argv[++i]);
+            mdl->uniformDensity = (float)atof(argv[++i]);
             mdl->iterations = strtoul(argv[++i], nullptr, 0);
             data.model = mdl;
         }
@@ -110,7 +111,9 @@ ArgData parseArgs(int argc, char * argv[])
             }
             if (arg.compare("density") == 0)
             {
-                data.model = std::make_shared<DensityParams>();
+                auto a = std::make_shared<DensityParams>();
+                data.model = a;
+                a->uniformDensity = 0.1;//Enough to show, but they wont interact
                 continue;
             }
 #endif
@@ -197,7 +200,7 @@ int main(int argc, char * argv[])
         case Density:
         {
             std::shared_ptr<DensityParams> _model = std::dynamic_pointer_cast<DensityParams>(args.model);
-            model = std::make_shared<NullModel>(_model->envWidth, _model->interactionRad, _model->agents);
+            model = std::make_shared<NullModel>(_model->envWidth, _model->interactionRad, _model->clusterCount, _model->agentsPerCluster, _model->uniformDensity);
             break;
         }
 #endif
@@ -207,9 +210,11 @@ int main(int argc, char * argv[])
     //Arkward def, to ensure we keep initTimes const
     std::shared_ptr<DensityParams> _model = std::dynamic_pointer_cast<DensityParams>(args.model);
     //Need to init textures before creating the scene
+    //Temp disable cluster init
     const Time_Init initTimes = _model
-        ? model->initPopulationClusters(_model->clusterCount, _model->clusterRad, _model->seed)
+        ? model->initPopulationClusters(_model->clusterCount, _model->clusterRad, _model->agentsPerCluster, _model->seed)
         : model->initPopulation(args.model->seed);
+    //const Time_Init initTimes = model->initPopulation(args.model->seed);
 #ifdef _GL
 	std::shared_ptr<ParticleScene> scene = std::make_shared<ParticleScene>(v, model);
 #endif

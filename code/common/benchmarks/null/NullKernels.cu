@@ -30,6 +30,8 @@ do
         {
             //Sum neighbours
             averageLoc += lm->location;
+            //averageLoc += glm::vec2(lm->location.x, lm->location.y);
+            //averageLoc += glm::vec2(sqrt(pow(lm->location.x, 2.0f)), sqrt(pow(lm->location.y, 2.0f)));
             ct++;
         }
 #if !defined(MODULAR)
@@ -44,7 +46,9 @@ do
 
     //Export newLoc
     if (ct)
+    {
         averageLoc /= ct;
+    }
 #ifdef _DEBUG
     //if (isnan(averageLoc.x) || isnan(averageLoc.y))
     //{

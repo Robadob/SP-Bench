@@ -5,6 +5,8 @@
 #define ATOMIC_PBM
 //#define GLOBAL_MESSAGES
 #define LDG_MESSAGES
+//#define GLOBAL_PBM
+//#define LDG_PBM
 
 //Build the data-structure
 #include "near_neighbours/Neighbourhood.cu"

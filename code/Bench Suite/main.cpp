@@ -38,8 +38,17 @@ void log(FILE *out, const NullParams *modelArgs);
 void log(FILE *out, const DensityParams *modelArgs);
 void log(FILE *out, const Time_Init *initRes, const Time_Step_dbl *stepRes, const float totalTime);
 void log(FILE *out, const unsigned int agentCount);
-const char *TEST_NAMES[] = { "Default", "Strips", "Modular", "Morton", "MortonCompute", "Hilbert", "Peano" };
-const char *TEST_EXECUTABLES[] = { "Release-Mod-Default.exe", "Release-Mod-Strips.exe", "Release-Mod-Modular.exe", "Release-Mod-Morton.exe", "Release-Mod-MortonCompute.exe", "Release-Mod-Hilbert.exe", "Release-Mod-Peano.exe" };
+//const char *TEST_NAMES[] = { "Default", "Strips", "Modular", "Morton", "MortonCompute", "Hilbert", "Peano" };
+//const char *TEST_EXECUTABLES[] = { "Release-Mod-Default.exe", "Release-Mod-Strips.exe", "Release-Mod-Modular.exe", "Release-Mod-Morton.exe", "Release-Mod-MortonCompute.exe", "Release-Mod-Hilbert.exe", "Release-Mod-Peano.exe" };
+const char *TEST_NAMES[] = { 
+    "Default", "Strips", "Modular", 
+    "Default_GLOBAL", "Strips_GLOBAL", "Modular_GLOBAL", 
+    "Default_LDG", "Strips_LDG", "Modular_LDG" 
+};
+const char *TEST_EXECUTABLES[] = { 
+    "Release-Mod-Default.exe", "Release-Mod-Strips.exe", "Release-Mod-Modular.exe", 
+    "Release-Mod-Default_GLOBAL_PBM.exe", "Release-Mod-Strips_GLOBAL_PBM.exe", "Release-Mod-Modular_GLOBAL_PBM.exe", 
+    "Release-Mod-Default_LDG_PBM.exe", "Release-Mod-Strips_LDG_PBM.exe", "Release-Mod-Modular_LDG_PBM.exe" };
 //const char *TEST_NAMES[] = { "Default", "Modular" };
 //const char *TEST_EXECUTABLES[] = { "Release-Mod-Default.exe", "Release-Mod-Modular.exe" };
 const char *DIR_X64 = "..\\bin\\x64\\";
@@ -83,6 +92,24 @@ int main(int argc, char* argv[])
         run(start, end, steps, "CirclesNeighbourhoodScale");
     }
 #elif defined(_2D)
+    {//Space filling curve environment test
+        const int steps = 100;
+        //Init model arg start
+        DensityParams  start = {};
+        start.iterations = 1000;
+        start.envWidth = 243;
+        start.agentsPerCluster = 59049;
+        start.seed = 0;
+        start.interactionRad = 1.0f;
+        start.clusterRad = 0.0f;//Irrelevant, currently disabled in code
+        start.clusterCount = 0;//Irrelevant, currently disabled in code
+
+        //Init model arg end
+        DensityParams end = start;
+        end.agentsPerCluster = 59049 * 100;
+
+        runCollated(start, end, steps, "PBM_FIRST_TEST");
+    }
     //Collected
     //{//Problem Scale - Circles
     //    //Init step count
@@ -245,25 +272,25 @@ int main(int argc, char* argv[])
     //////    end.clusterCount = 200;
 
     //////    runCollated(start, end, steps, "ClusterCount 10k");
+    ////////////}
+    //////{//Density - ClusterCount
+    //////    const int steps = 100;
+    //////    //Init model arg start
+    //////    DensityParams  start = {};
+    //////    start.iterations = 1000;
+    //////    start.envWidth = 1000;
+    //////    start.agents = 100000;
+    //////    start.seed = 1;
+    //////    start.interactionRad = 1.0f;
+    //////    start.clusterRad = 1.0f;
+    //////    start.clusterCount = 200;
+
+    //////    //Init model arg end
+    //////    DensityParams end = start;
+    //////    end.clusterCount = 1;
+
+    //////    runCollated(start, end, steps, "ClusterCount 100k");
     //////}
-    {//Density - ClusterCount
-        const int steps = 100;
-        //Init model arg start
-        DensityParams  start = {};
-        start.iterations = 1000;
-        start.envWidth = 1000;
-        start.agents = 100000;
-        start.seed = 1;
-        start.interactionRad = 1.0f;
-        start.clusterRad = 1.0f;
-        start.clusterCount = 200;
-
-        //Init model arg end
-        DensityParams end = start;
-        end.clusterCount = 1;
-
-        runCollated(start, end, steps, "ClusterCount 100k");
-    }
 ////////    {//Density - ClusterRad
 ////////        const int steps = 100;
 ////////        //Init model arg start
@@ -463,7 +490,7 @@ bool runCollated(const T &start, const T &end, const unsigned int steps, const c
         //For each mod
         for (unsigned int j = 0; j < sizeof(TEST_EXECUTABLES) / sizeof(char*); ++j)
         {
-            printf("\rExecuting run %s %i/%i %i/%llu      ", runName, i, (int)stepsM1, j, sizeof(TEST_EXECUTABLES) / sizeof(char*));
+            printf("\rExecuting run %s %i/%i %i/%llu      ", runName, i + 1, (int)steps, j+1, sizeof(TEST_EXECUTABLES) / sizeof(char*));
             agentCount = 0;
             totalTime = 0;
             //executeBenchmark
@@ -518,11 +545,12 @@ DensityParams interpolateParams(const DensityParams &start, const DensityParams 
     const float stepsM1 = (float)totalSteps - 1.0f;
     DensityParams modelArgs;
     modelArgs.seed = start.seed + (long long)((step / stepsM1)*((long long)end.seed - (long long)start.seed));
-    modelArgs.agents = start.agents + (unsigned int)((step / stepsM1)*((unsigned int)end.agents - (unsigned int)start.agents));
+    modelArgs.agentsPerCluster = start.agentsPerCluster + (unsigned int)((step / stepsM1)*((unsigned int)end.agentsPerCluster - (unsigned int)start.agentsPerCluster));
     modelArgs.envWidth = start.envWidth + ((step / stepsM1)*(end.envWidth - start.envWidth));
     modelArgs.interactionRad = start.interactionRad + ((step / stepsM1)*(end.interactionRad - start.interactionRad));
     modelArgs.clusterCount = start.clusterCount + (unsigned int)((step / stepsM1)*((int)end.clusterCount - (int)start.clusterCount));
     modelArgs.clusterRad = start.clusterRad + ((step / stepsM1)*(end.clusterRad - start.clusterRad));
+    modelArgs.uniformDensity = start.uniformDensity + ((step / stepsM1)*(end.uniformDensity - start.uniformDensity));
     modelArgs.iterations = start.iterations + (long long)((step / stepsM1)*((int)end.iterations - (int)start.iterations));
     return modelArgs;
 }
@@ -659,7 +687,7 @@ void execString(const char* executable, DensityParams modelArgs, char **rtn)
     buffer = buffer.append(" ");
     buffer = buffer.append("-density");
     buffer = buffer.append(" ");
-    buffer = buffer.append(std::to_string(modelArgs.agents));
+    buffer = buffer.append(std::to_string(modelArgs.agentsPerCluster));
     buffer = buffer.append(" ");
     buffer = buffer.append(std::to_string(modelArgs.envWidth));
     buffer = buffer.append(" ");
@@ -668,6 +696,8 @@ void execString(const char* executable, DensityParams modelArgs, char **rtn)
     buffer = buffer.append(std::to_string(modelArgs.clusterRad));
     buffer = buffer.append(" ");
     buffer = buffer.append(std::to_string(modelArgs.interactionRad));
+    buffer = buffer.append(" ");
+    buffer = buffer.append(std::to_string(modelArgs.uniformDensity));
     buffer = buffer.append(" ");
     buffer = buffer.append(std::to_string(modelArgs.iterations));
     if (modelArgs.seed != 12)
@@ -911,7 +941,7 @@ void logHeader(FILE *out, const DensityParams &modelArgs)
     fputs(",,,,,,", out);
     fputs("\n", out);
     //ModelArgs
-    fputs("agents-in", out);
+    fputs("agents per cluster", out);
     fputs(",", out);
     fputs("envWidth", out);
     fputs(",", out);
@@ -920,6 +950,8 @@ void logHeader(FILE *out, const DensityParams &modelArgs)
     fputs("clusterCount", out);
     fputs(",", out);
     fputs("clusterRad", out);
+    fputs(",", out);
+    fputs("uniformDensity", out);
     fputs(",", out);
     fputs("iterations", out);
     fputs(",", out);
@@ -966,12 +998,13 @@ void logHeader(FILE *out, const DensityParams &modelArgs)
 }
 void logResult(FILE *out, const DensityParams* modelArgs, const unsigned int agentCount, const Time_Init *initRes, const Time_Step_dbl *stepRes, const float totalTime, const NeighbourhoodStats *nsFirst, const NeighbourhoodStats *nsLast)
 {	//ModelArgs
-    fprintf(out, "%u,%f,%f,%u,%f,%llu,%llu,",
-        modelArgs->agents,
+    fprintf(out, "%u,%f,%f,%u,%f,%f,%llu,%llu,",
+        modelArgs->agentsPerCluster,
         modelArgs->envWidth,
         modelArgs->interactionRad,
         modelArgs->clusterCount,
         modelArgs->clusterRad,
+        modelArgs->uniformDensity,
         modelArgs->iterations,
         modelArgs->seed
         );
@@ -1182,7 +1215,7 @@ void logCollatedHeader(FILE *out, const DensityParams &modelArgs)
     }
     fputs(",", out);//Agent count
     fputs(",,,,,,", out);//Neighbourhood stats
-    fputs(",,,,,,,,", out);//Model Args
+    fputs(",,,,,,,,,", out);//Model Args
     fputs("\n", out);
     //Row 2
     for (unsigned int i = 0; i < sizeof(TEST_NAMES) / sizeof(char*); ++i)
@@ -1198,7 +1231,7 @@ void logCollatedHeader(FILE *out, const DensityParams &modelArgs)
     fputs("Neighbourhood Stats", out);
     fputs(",,,,,,", out);
     fputs("Model", out);
-    fputs(",,,,,,,,", out);
+    fputs(",,,,,,,,,", out);
     fputs("\n", out);
     //Row 3
     for (unsigned int i = 0; i < sizeof(TEST_NAMES) / sizeof(char*); ++i)
@@ -1241,7 +1274,7 @@ void logCollatedHeader(FILE *out, const DensityParams &modelArgs)
     fputs(",", out);
     fflush(out);
     //ModelArgs
-    fputs("agents-in", out);
+    fputs("agentsPerCluster", out);
     fputs(",", out);
     fputs("envWidth", out);
     fputs(",", out);
@@ -1250,6 +1283,8 @@ void logCollatedHeader(FILE *out, const DensityParams &modelArgs)
     fputs("clusterCount", out);
     fputs(",", out);
     fputs("clusterRad", out);
+    fputs(",", out);
+    fputs("uniformDensity", out);
     fputs(",", out);
     fputs("iterations", out);
     fputs(",", out);
@@ -1292,12 +1327,13 @@ void log(FILE *out, const NullParams *modelArgs)
 void log(FILE *out, const DensityParams *modelArgs)
 {	
     //ModelArgs
-    fprintf(out, "%u,%f,%f,%u,%f,%llu,%llu,",
-        modelArgs->agents,
+    fprintf(out, "%u,%f,%f,%u,%f,%f,%llu,%llu,",
+        modelArgs->agentsPerCluster,
         modelArgs->envWidth,
         modelArgs->interactionRad,
         modelArgs->clusterCount,
         modelArgs->clusterRad,
+        modelArgs->uniformDensity,
         modelArgs->iterations,
         modelArgs->seed
         );

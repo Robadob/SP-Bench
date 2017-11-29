@@ -75,7 +75,9 @@ SpatialPartition::SpatialPartition(DIMENSIONS_VEC  environmentMin, DIMENSIONS_VE
 
     CUDA_CALL(cudaMemcpyToSymbol(d_environmentMin, &environmentMin, sizeof(DIMENSIONS_VEC)));
     CUDA_CALL(cudaMemcpyToSymbol(d_environmentMax, &environmentMax, sizeof(DIMENSIONS_VEC)));
-
+#if defined(GLOBAL_PBM) || defined(LDG_PBM)
+    CUDA_CALL(cudaMemcpyToSymbol(d_pbm, &d_PBM, sizeof(unsigned int *)));
+#endif
 #ifdef _DEBUG
     CUDA_CALL(cudaMemcpyToSymbol(d_PBM_isBuilt, &PBM_isBuilt, sizeof(unsigned int)));
 #endif
@@ -476,7 +478,9 @@ void SpatialPartition::deviceAllocateTextures()
 #endif
 #endif
     //PBM
+#if !(defined(GLOBAL_PBM) || defined(LDG_PBM))
     deviceAllocateTexture_int();
+#endif
 }
 void SpatialPartition::fillTextures()
 {
@@ -490,7 +494,9 @@ void SpatialPartition::fillTextures()
 #ifdef _GL
     CUDA_CALL(cudaMemcpy(tex_location_ptr_count, hd_locationMessages.count, locationMessageCount*sizeof(float), cudaMemcpyDeviceToDevice));
 #endif
+#if !(defined(GLOBAL_PBM) || defined(LDG_PBM))
     CUDA_CALL(cudaMemcpy(tex_PBM_ptr, d_PBM, (this->binCountMax + 1)*sizeof(unsigned int), cudaMemcpyDeviceToDevice));
+#endif
 }
 
 #if !defined(GLOBAL_MESSAGES) && !defined(LDG_MESSAGES)
@@ -564,6 +570,7 @@ void SpatialPartition::deviceAllocateGLTexture_float(unsigned int i)//GLuint *gl
     delete data;
 }
 #endif
+#if !(defined(GLOBAL_PBM) || defined(LDG_PBM))
 /*
 Allocates the PBM texture, which is only accessed via CUDA & memcpy
 */
@@ -589,6 +596,7 @@ void SpatialPartition::deviceAllocateTexture_int()
     CUDA_CALL(cudaCreateTextureObject(&tex_PBM, &resDesc, &texDesc, NULL));
     CUDA_CALL(cudaMemcpyToSymbol(d_tex_PBM, &tex_PBM, sizeof(cudaTextureObject_t)));
 }
+#endif
 #ifdef _GL
 /*
 Allocates the count texture, which is only accessed via memcpy & GL
@@ -665,8 +673,10 @@ void SpatialPartition::deviceDeallocateTextures()
 #endif
     }
 #endif
+#if !(defined(GLOBAL_PBM) || defined(LDG_PBM))
     cudaDestroyTextureObject(tex_PBM);
     cudaFree(tex_PBM_ptr);
+#endif
 #ifdef _GL
     cudaGraphicsUnregisterResource(gl_gRes_count);
     GL_CALL(glDeleteBuffers(1, &gl_tbo_count));

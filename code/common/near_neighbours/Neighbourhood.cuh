@@ -1,3 +1,4 @@
+#include <host_defines.h>
 #ifndef __Neighbourhood_cuh__
 #define __Neighbourhood_cuh__
 
@@ -162,7 +163,9 @@ private:
 #if !defined(GLOBAL_MESSAGES) && !defined(LDG_MESSAGES)
     void deviceAllocateTexture_float(unsigned int i);
 #endif
+#if !(defined(GLOBAL_PBM) || defined(LDG_PBM))
     void deviceAllocateTexture_int();//allocate pbm tex
+#endif
 #ifdef _GL
     void deviceAllocateGLTexture_float(unsigned int i);
     void deviceAllocateGLTexture_float2();//Allocate float to be passed to shader
@@ -230,8 +233,10 @@ private:
     cudaTextureObject_t tex_location[DIMENSIONS];
     float* tex_loc_ptr[DIMENSIONS];
 #endif
+#if !(defined(GLOBAL_PBM) || defined(LDG_PBM))
     cudaTextureObject_t tex_PBM;
     unsigned int* tex_PBM_ptr;
+#endif
     //GL Textures
 #ifdef _GL
     GLuint gl_tex[DIMENSIONS];
@@ -250,6 +255,12 @@ extern __device__ __constant__ DIMENSIONS_VEC d_gridDim_float;
 extern __device__ __constant__ DIMENSIONS_VEC  d_environmentMin;
 extern __device__ __constant__ DIMENSIONS_VEC  d_environmentMax;
 
+#if defined(GLOBAL_PBM) || defined(LDG_PBM)
+extern __device__ __constant__  unsigned int *d_pbm;
+#else
+extern __device__ __constant__ cudaTextureObject_t d_tex_PBM;
+#endif
+
 #ifdef _DEBUG
 extern __device__ __constant__ unsigned int d_PBM_isBuilt;
 #endif
@@ -265,7 +276,5 @@ extern __device__ __constant__ LocationMessages *d_messages;
 #if defined(_GL) || !(defined(GLOBAL_MESSAGES) ||defined(LDG_MESSAGES))
 extern __device__ __constant__ cudaTextureObject_t d_tex_location[DIMENSIONS];
 #endif
-
-extern __device__ __constant__ cudaTextureObject_t d_tex_PBM;
 
 #endif

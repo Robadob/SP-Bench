@@ -1,8 +1,8 @@
 #include "CoreKernels.cuh"
 
-__global__ void init_curand(curandState *state, unsigned long long seed) {
+__global__ void init_curand(curandState *state, unsigned long threadCount, unsigned long long seed) {
     int id = blockIdx.x * blockDim.x + threadIdx.x;
-    if (id < d_locationMessageCount)
+    if (id < threadCount)
         curand_init(seed, id, 0, &state[id]);
 }
 __global__ void init_particles(curandState *state, LocationMessages *locationMessages) {
@@ -55,19 +55,19 @@ __global__ void init_particles_uniform(LocationMessages *locationMessages, int p
 
 __global__ void init_particles_clusters(curandState *state, LocationMessages *locationMessages, unsigned int startIndex, unsigned int clusterSize, DIMENSIONS_VEC clusterCenter, float clusterWidth)
 {
-    int id = blockIdx.x * blockDim.x + threadIdx.x;
-    if (id >= clusterSize)
+    const int tid = blockIdx.x * blockDim.x + threadIdx.x;
+    if (tid >= clusterSize)
         return;
-    id += startIndex;
+    const int id = tid + startIndex;
     if (id >= d_locationMessageCount)
         return;
     DIMENSIONS_VEC newPos;
     do
     {
-        newPos.x = clusterCenter.x + ((curand_uniform(&state[id]) - 0.5f) * clusterWidth);
-        newPos.y = clusterCenter.y + ((curand_uniform(&state[id]) - 0.5f) * clusterWidth);
+        newPos.x = clusterCenter.x + ((curand_uniform(&state[tid]) - 0.5f) * clusterWidth);
+        newPos.y = clusterCenter.y + ((curand_uniform(&state[tid]) - 0.5f) * clusterWidth);
 #ifdef _3D
-        newPos.z = clusterCenter.z + ((curand_uniform(&state[id]) - 0.5f) * clusterWidth);
+        newPos.z = clusterCenter.z + ((curand_uniform(&state[tid]) - 0.5f) * clusterWidth);
 #endif
     } while (2*distance(clusterCenter, newPos)>clusterWidth);
     locationMessages->locationX[id] = newPos.x;
