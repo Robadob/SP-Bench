@@ -64,9 +64,9 @@ const Time_Init CoreModel::initPopulation(const unsigned long long rngSeed)
     {
         //Adding +1 here will misalign uniform particles slightly, otherwise they are placed in bin centres only and can't touch other particles.
 #if DIMENSIONS==3
-        int particlesPerDim = (int)cbrt(agentMax);
+        int particlesPerDim = (int)cbrt(agentMax)+1;
 #elif DIMENSIONS==2
-        int particlesPerDim = (int)sqrt(agentMax);
+        int particlesPerDim = (int)sqrt(agentMax)+1;
 #else
 #error Invalid DIMENSIONS value, only 2 and 3 are suitable
 #endif

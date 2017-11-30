@@ -5,6 +5,7 @@
 #define ATOMIC_PBM
 //#define GLOBAL_MESSAGES
 #define LDG_MESSAGES
+//#define STRIDED_MESSAGES
 //#define GLOBAL_PBM
 //#define LDG_PBM
 

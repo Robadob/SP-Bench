@@ -500,6 +500,12 @@ for (unsigned int i = 0; i<27; ++i)
 #endif
     if (sm_message->state.binIndex < sm_message->state.binIndexMax)//(bin_index_min != 0xffffffff)
     {
+#ifdef STRIDED_MESSAGES
+        //Adjust bin state for strided access
+        sm_message->state.binOffset = sm_message->state.binIndex;
+        sm_message->state.binIndexMax -= sm_message->state.binIndex;
+        sm_message->state.binIndex = 0;
+#endif
         return true;//Bin strip has items!
     }
 #else
@@ -543,6 +549,12 @@ for (unsigned int i = 0; i<27; ++i)
 #if !defined(MODULAR)
     if (sm_message->state.binIndex < sm_message->state.binIndexMax)//(bin_index_min != 0xffffffff)
     {
+#ifdef STRIDED_MESSAGES
+        //Adjust bin state for strided access
+        sm_message->state.binOffset = sm_message->state.binIndex;
+        sm_message->state.binIndexMax -= sm_message->state.binIndex;
+        sm_message->state.binIndex = 0;
+#endif
         return true;//Bin has items!
     }
 #endif
@@ -559,8 +571,7 @@ __device__ LocationMessage *LocationMessages::loadNextMessage(LocationMessage *s
 {
     //extern __shared__ LocationMessage sm_messages[];
     //LocationMessage *sm_message = &(sm_messages[threadIdx.x]);
-
-    
+  
     if(sm_message->state.binIndex >= sm_message->state.binIndexMax)//Do we need to change bin?
     {
 #if defined(MODULAR)
@@ -578,24 +589,28 @@ __device__ LocationMessage *LocationMessages::loadNextMessage(LocationMessage *s
     d_locationMessagesA->count[id] += 1.0;
     d_locationMessagesB->count[id] += 1.0;
 #endif
-    sm_message->id = sm_message->state.binIndex;//Duplication of data TODO remove stateBinIndex
+#ifdef STRIDED_MESSAGES
+    sm_message->id = sm_message->state.binOffset + ((sm_message->state.binIndex + threadIdx.x)%sm_message->state.binIndexMax);
+#else
+    sm_message->id = sm_message->state.binIndex;
+#endif
 #if defined(GLOBAL_MESSAGES)
-    sm_message->location.x = d_messages->locationX[sm_message->state.binIndex];
-    sm_message->location.y = d_messages->locationY[sm_message->state.binIndex];
+    sm_message->location.x = d_messages->locationX[sm_message->id];
+    sm_message->location.y = d_messages->locationY[sm_message->id];
 #ifdef _3D
-    sm_message->location. = d_messages->locationZ[sm_message->state.binIndex];
+    sm_message->location. = d_messages->locationZ[sm_message->id];
 #endif
 #elif defined(LDG_MESSAGES)
-    sm_message->location.x = __ldg(&d_messages->locationX[sm_message->state.binIndex]);
-    sm_message->location.y = __ldg(&d_messages->locationY[sm_message->state.binIndex]);
+    sm_message->location.x = __ldg(&d_messages->locationX[sm_message->id]);
+    sm_message->location.y = __ldg(&d_messages->locationY[sm_message->id]);
 #ifdef _3D
-    sm_message->location. = __ldg(&d_messages->locationZ[sm_message->state.binIndex]);
+    sm_message->location. = __ldg(&d_messages->locationZ[sm_message->id]);
 #endif
 #else//Read message data from tex cache (default)
-    sm_message->location.x = tex1Dfetch<float>(d_tex_location[0], sm_message->state.binIndex);
-    sm_message->location.y = tex1Dfetch<float>(d_tex_location[1], sm_message->state.binIndex);
+    sm_message->location.x = tex1Dfetch<float>(d_tex_location[0], sm_message->id);
+    sm_message->location.y = tex1Dfetch<float>(d_tex_location[1], sm_message->id);
 #ifdef _3D
-    sm_message->location.z = tex1Dfetch<float>(d_tex_location[2], sm_message->state.binIndex);
+    sm_message->location.z = tex1Dfetch<float>(d_tex_location[2], sm_message->id);
 #endif
 #endif
 

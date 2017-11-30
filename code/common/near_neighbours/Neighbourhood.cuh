@@ -43,6 +43,9 @@ struct BinState
     DIMENSIONS_IVEC location;
     unsigned int binIndexMax;//Last pbm index
     unsigned int binIndex;//Current loaded message pbm index
+#ifdef STRIDED_MESSAGES
+    unsigned int binOffset;//Temp for testing
+#endif
 };
 
 /**
