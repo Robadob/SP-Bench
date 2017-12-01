@@ -40,15 +40,17 @@ void log(FILE *out, const Time_Init *initRes, const Time_Step_dbl *stepRes, cons
 void log(FILE *out, const unsigned int agentCount);
 //const char *TEST_NAMES[] = { "Default", "Strips", "Modular", "Morton", "MortonCompute", "Hilbert", "Peano" };
 //const char *TEST_EXECUTABLES[] = { "Release-Mod-Default.exe", "Release-Mod-Strips.exe", "Release-Mod-Modular.exe", "Release-Mod-Morton.exe", "Release-Mod-MortonCompute.exe", "Release-Mod-Hilbert.exe", "Release-Mod-Peano.exe" };
-const char *TEST_NAMES[] = { 
-    "Default", "Strips", "Modular", 
-    "Default_GLOBAL", "Strips_GLOBAL", "Modular_GLOBAL", 
-    "Default_LDG", "Strips_LDG", "Modular_LDG" 
-};
-const char *TEST_EXECUTABLES[] = { 
-    "Release-Mod-Default.exe", "Release-Mod-Strips.exe", "Release-Mod-Modular.exe", 
-    "Release-Mod-Default_GLOBAL_PBM.exe", "Release-Mod-Strips_GLOBAL_PBM.exe", "Release-Mod-Modular_GLOBAL_PBM.exe", 
-    "Release-Mod-Default_LDG_PBM.exe", "Release-Mod-Strips_LDG_PBM.exe", "Release-Mod-Modular_LDG_PBM.exe" };
+const char *TEST_NAMES[] = { "Default", "Strips", "Modular", "Default-Strided", "Strips-Strided", "Modular-Strided" };
+const char *TEST_EXECUTABLES[] = { "Release-Mod-Default.exe", "Release-Mod-Strips.exe", "Release-Mod-Modular.exe", "Release-Mod-Default-Strided.exe", "Release-Mod-Strips-Strided.exe", "Release-Mod-Modular-Strided.exe" };
+//const char *TEST_NAMES[] = { 
+//    "Default", "Strips", "Modular", 
+//    "Default_GLOBAL", "Strips_GLOBAL", "Modular_GLOBAL", 
+//    "Default_LDG", "Strips_LDG", "Modular_LDG" 
+//};
+//const char *TEST_EXECUTABLES[] = { 
+//    "Release-Mod-Default.exe", "Release-Mod-Strips.exe", "Release-Mod-Modular.exe", 
+//    "Release-Mod-Default_GLOBAL_PBM.exe", "Release-Mod-Strips_GLOBAL_PBM.exe", "Release-Mod-Modular_GLOBAL_PBM.exe", 
+//    "Release-Mod-Default_LDG_PBM.exe", "Release-Mod-Strips_LDG_PBM.exe", "Release-Mod-Modular_LDG_PBM.exe" };
 //const char *TEST_NAMES[] = { "Default", "Modular" };
 //const char *TEST_EXECUTABLES[] = { "Release-Mod-Default.exe", "Release-Mod-Modular.exe" };
 const char *DIR_X64 = "..\\bin\\x64\\";
@@ -92,24 +94,24 @@ int main(int argc, char* argv[])
         run(start, end, steps, "CirclesNeighbourhoodScale");
     }
 #elif defined(_2D)
-    {//Space filling curve environment test
-        const int steps = 100;
-        //Init model arg start
-        DensityParams  start = {};
-        start.iterations = 1000;
-        start.envWidth = 243;
-        start.agentsPerCluster = 59049;
-        start.seed = 0;
-        start.interactionRad = 1.0f;
-        start.clusterRad = 0.0f;//Irrelevant, currently disabled in code
-        start.clusterCount = 0;//Irrelevant, currently disabled in code
+    //{//Space filling curve environment test
+    //    const int steps = 100;
+    //    //Init model arg start
+    //    DensityParams  start = {};
+    //    start.iterations = 1000;
+    //    start.envWidth = 243;
+    //    start.agentsPerCluster = 59049;
+    //    start.seed = 0;
+    //    start.interactionRad = 1.0f;
+    //    start.clusterRad = 0.0f;//Irrelevant, currently disabled in code
+    //    start.clusterCount = 0;//Irrelevant, currently disabled in code
 
-        //Init model arg end
-        DensityParams end = start;
-        end.agentsPerCluster = 59049 * 100;
+    //    //Init model arg end
+    //    DensityParams end = start;
+    //    end.agentsPerCluster = 59049 * 100;
 
-        runCollated(start, end, steps, "PBM_FIRST_TEST");
-    }
+    //    runCollated(start, end, steps, "PBM_FIRST_TEST");
+    //}
     //Collected
     //{//Problem Scale - Circles
     //    //Init step count
@@ -162,21 +164,21 @@ int main(int argc, char* argv[])
     //    //Init step count
     //    runCollated(start, end, steps, "CirclesNeighbourhoodScaleLD");
     //}
-//////////    //Collected
-//////////    {//Null - Problem scale
-//////////        const int steps = 101;
-//////////        //Init model arg start
-//////////        NullParams  start = {};
-//////////        start.agents = 1000;
-//////////        start.iterations = 1000;
-//////////        start.density = 0.1f;
-//////////        start.interactionRad = 2.0f;
-//////////        start.seed = 0;
-//////////        //Init model arg end
-//////////        NullParams end = start;
-//////////        end.agents = 100000;
-//////////        runCollated(start, end, steps, "NullProblemScaleLD");
-//////////    }
+    //Collected
+    {//Null - Problem scale
+        const int steps = 101;
+        //Init model arg start
+        NullParams  start = {};
+        start.agents = 200000;
+        start.iterations = 1000;
+        start.density = 1.0f;
+        start.interactionRad = 2.0f;
+        start.seed = 1;
+        //Init model arg end
+        NullParams end = start;
+        end.density = 50.0f;
+        runCollated(start, end, steps, "Strided-Neighbourhood");
+    }
 //////////    //{//Density - ClusterCount//Re-assess, dumb slow around step 20
 //////////    //    const int steps = 100;
 //////////    //    //Init model arg start
