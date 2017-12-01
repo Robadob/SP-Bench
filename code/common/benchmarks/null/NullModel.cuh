@@ -12,8 +12,7 @@ class NullModel : public CoreModel
 public:
     NullModel(
         const unsigned int agents = 16384,
-        const float density = 0.125f,
-        const float interactionRad=10.0f
+        const float density = 0.125f
         );
     //Density alt constructor
     NullModel(
@@ -59,16 +58,15 @@ inline unsigned int NullModel::toAgents(unsigned int width, float density)
 }
 NullModel::NullModel(
     const unsigned int agents,
-    const float density,
-    const float interactionRad
+    const float density
     )
-    : CoreModel(toAgents(toWidth(agents, density)/interactionRad, density))
-    , spatialPartition(std::make_shared<SpatialPartition>(DIMENSIONS_VEC(0.0f), DIMENSIONS_VEC(toWidth(agents, density)), agentMax, interactionRad))
+    : CoreModel(toAgents(toWidth(agents, density), density))
+    , spatialPartition(std::make_shared<SpatialPartition>(DIMENSIONS_VEC(0.0f), DIMENSIONS_VEC(toWidth(agents, density)), agentMax, 1.0f))
     , d_result(nullptr)
     , h_result(nullptr)
     , width(toWidth(agents, density))
     , density(density)
-    , interactionRad(interactionRad)
+    , interactionRad(1.0f)
 {
 #ifdef _DEBUG
     printf("Null Model: Agent Count(%d), Width(%d)\n", agentMax, width);

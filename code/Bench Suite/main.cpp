@@ -40,8 +40,8 @@ void log(FILE *out, const Time_Init *initRes, const Time_Step_dbl *stepRes, cons
 void log(FILE *out, const unsigned int agentCount);
 //const char *TEST_NAMES[] = { "Default", "Strips", "Modular", "Morton", "MortonCompute", "Hilbert", "Peano" };
 //const char *TEST_EXECUTABLES[] = { "Release-Mod-Default.exe", "Release-Mod-Strips.exe", "Release-Mod-Modular.exe", "Release-Mod-Morton.exe", "Release-Mod-MortonCompute.exe", "Release-Mod-Hilbert.exe", "Release-Mod-Peano.exe" };
-const char *TEST_NAMES[] = { "Default", "Strips", "Modular", "Default-Strided", "Strips-Strided", "Modular-Strided" };
-const char *TEST_EXECUTABLES[] = { "Release-Mod-Default.exe", "Release-Mod-Strips.exe", "Release-Mod-Modular.exe", "Release-Mod-Default-Strided.exe", "Release-Mod-Strips-Strided.exe", "Release-Mod-Modular-Strided.exe" };
+const char *TEST_NAMES[] = { "Default", "Strips", "Modular" };
+const char *TEST_EXECUTABLES[] = { "Release-Mod-Default.exe", "Release-Mod-Strips.exe", "Release-Mod-Modular.exe" };
 //const char *TEST_NAMES[] = { 
 //    "Default", "Strips", "Modular", 
 //    "Default_GLOBAL", "Strips_GLOBAL", "Modular_GLOBAL", 
@@ -172,12 +172,11 @@ int main(int argc, char* argv[])
         start.agents = 200000;
         start.iterations = 1000;
         start.density = 1.0f;
-        start.interactionRad = 2.0f;
-        start.seed = 1;
+        start.seed = 0;
         //Init model arg end
         NullParams end = start;
         end.density = 50.0f;
-        runCollated(start, end, steps, "Strided-Neighbourhood");
+        runCollated(start, end, steps, "Strided-Neighbourhood-Uniform");
     }
 //////////    //{//Density - ClusterCount//Re-assess, dumb slow around step 20
 //////////    //    const int steps = 100;
@@ -538,7 +537,6 @@ NullParams interpolateParams(const NullParams &start, const NullParams &end, con
     modelArgs.seed = start.seed + (long long)((step / stepsM1)*((long long)end.seed - (long long)start.seed));
     modelArgs.agents = start.agents + (unsigned int)((step / stepsM1)*((unsigned int)end.agents - (unsigned int)start.agents));
     modelArgs.density = start.density + ((step / stepsM1)*(end.density - start.density));
-    modelArgs.interactionRad = start.interactionRad + ((step / stepsM1)*(end.interactionRad - start.interactionRad));
     modelArgs.iterations = start.iterations + (long long)((step / stepsM1)*((int)end.iterations - (int)start.iterations));
     return modelArgs;
 }
@@ -658,8 +656,6 @@ void execString(const char* executable, NullParams modelArgs, char **rtn)
     buffer = buffer.append(std::to_string(modelArgs.agents));
     buffer = buffer.append(" ");
     buffer = buffer.append(std::to_string(modelArgs.density));
-    buffer = buffer.append(" ");
-    buffer = buffer.append(std::to_string(modelArgs.interactionRad));
     buffer = buffer.append(" ");
     buffer = buffer.append(std::to_string(modelArgs.iterations));
     if (modelArgs.seed != 12)
@@ -829,7 +825,7 @@ void logResult(FILE *out, const CirclesParams* modelArgs, const unsigned int age
 void logHeader(FILE *out, const NullParams &modelArgs)
 {
     fputs("model", out);
-    fputs(",,,,,,", out);
+    fputs(",,,,,", out);
     fputs("init (s)", out);
     fputs(",,,,,", out);
     fputs("step avg (s)", out);
@@ -843,8 +839,6 @@ void logHeader(FILE *out, const NullParams &modelArgs)
     fputs("agents-in", out);
     fputs(",", out);
     fputs("density", out);
-    fputs(",", out);
-    fputs("interactionRad", out);
     fputs(",", out);
     fputs("iterations", out);
     fputs(",", out);
@@ -891,10 +885,9 @@ void logHeader(FILE *out, const NullParams &modelArgs)
 }
 void logResult(FILE *out, const NullParams* modelArgs, const unsigned int agentCount, const Time_Init *initRes, const Time_Step_dbl *stepRes, const float totalTime, const NeighbourhoodStats *nsFirst, const NeighbourhoodStats *nsLast)
 {	//ModelArgs
-    fprintf(out, "%u,%f,%f,%llu,%llu,",
+    fprintf(out, "%u,%f,%llu,%llu,",
         modelArgs->agents,
         modelArgs->density,
-        modelArgs->interactionRad,
         modelArgs->iterations,
         modelArgs->seed
         );
@@ -1136,7 +1129,7 @@ void logCollatedHeader(FILE *out, const NullParams &modelArgs)
     }
     fputs(",", out);//Agent count
     fputs(",,,,,,", out);//Neighbourhood stats
-    fputs(",,,,,,", out);//Model Args
+    fputs(",,,,,", out);//Model Args
     fputs("\n", out);
     //Row 2
     for (unsigned int i = 0; i < sizeof(TEST_NAMES) / sizeof(char*); ++i)
@@ -1152,7 +1145,7 @@ void logCollatedHeader(FILE *out, const NullParams &modelArgs)
     fputs("Neighbourhood Stats", out);
     fputs(",,,,,,", out);
     fputs("Model", out);
-    fputs(",,,,,,", out);
+    fputs(",,,,,", out);
     fputs("\n", out);
     //Row 3
     for (unsigned int i = 0; i < sizeof(TEST_NAMES) / sizeof(char*); ++i)
@@ -1198,8 +1191,6 @@ void logCollatedHeader(FILE *out, const NullParams &modelArgs)
     fputs("agents-in", out);
     fputs(",", out);
     fputs("density", out);
-    fputs(",", out);
-    fputs("interactionRad", out);
     fputs(",", out);
     fputs("iterations", out);
     fputs(",", out);
@@ -1318,10 +1309,9 @@ void log(FILE *out, const CirclesParams *modelArgs)
 void log(FILE *out, const NullParams *modelArgs)
 {	
     //ModelArgs
-    fprintf(out, "%u,%f,%f,%llu,%llu,",
+    fprintf(out, "%u,%f,%llu,%llu,",
         modelArgs->agents,
         modelArgs->density,
-        modelArgs->interactionRad,
         modelArgs->iterations,
         modelArgs->seed
         );

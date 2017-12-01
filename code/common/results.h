@@ -85,11 +85,9 @@ struct NullParams : ModelParams
     NullParams()
         : agents(16384)
         , density(0.125f)
-        , interactionRad(5.0f)
     { }
     unsigned int agents;
     float density;
-    float interactionRad;
 
     const char *modelName() override { return MODEL_NAME; };
     const char *modelFlag() override { return MODEL_FLAG; };

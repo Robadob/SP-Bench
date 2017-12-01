@@ -69,7 +69,6 @@ ArgData parseArgs(int argc, char * argv[])
            std::shared_ptr<NullParams> mdl = std::make_shared<NullParams>();
            mdl->agents = (unsigned int)strtoul(argv[++i], nullptr, 0);
            mdl->density = (float)atof(argv[++i]);
-           mdl->interactionRad = (float)atof(argv[++i]);
            mdl->iterations = strtoul(argv[++i], nullptr, 0);
            data.model = mdl;
         }
@@ -194,7 +193,7 @@ int main(int argc, char * argv[])
         case Null:
         {
             std::shared_ptr<NullParams> _model = std::dynamic_pointer_cast<NullParams>(args.model);
-            model = std::make_shared<NullModel>(_model->agents, _model->density, _model->interactionRad);
+            model = std::make_shared<NullModel>(_model->agents, _model->density);
             break;
         }
         case Density:
