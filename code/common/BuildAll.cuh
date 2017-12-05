@@ -3,12 +3,23 @@
 
 #define _2D
 #define ATOMIC_PBM
+
+/**
+ * Config
+ */
 //#define GLOBAL_MESSAGES
 #define LDG_MESSAGES
-//#define STRIDED_MESSAGES
-//#define GLOBAL_PBM
-//#define LDG_PBM
 
+//#define STRIDED_MESSAGES //Harmful to perf
+
+//#define GLOBAL_PBM //Negligible effect to perf
+//#define LDG_PBM //Negligible effect to perf
+
+//#define AOS_MESSAGES //This is how the CUDA_Particles example operates, also makes larger messages easier to do in a templated manner
+
+/**
+ * Build includes
+ */
 //Build the data-structure
 #include "near_neighbours/Neighbourhood.cu"
 #include "near_neighbours/NeighbourhoodKernels.cu"

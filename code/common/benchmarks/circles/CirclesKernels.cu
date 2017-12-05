@@ -12,10 +12,14 @@ __global__ void step_circles_model(LocationMessages *locationMessagesIn, Locatio
         return;
 
     //Get my local location
-#ifdef _3D
-	DIMENSIONS_VEC myLoc(locationMessagesIn->locationX[id], locationMessagesIn->locationY[id], locationMessagesIn->locationZ[id]), toLoc, newLoc;
+#ifdef AOS_MESSAGES
+    const DIMENSIONS_VEC myLoc = locationMessagesIn->location[id];
 #else
-	DIMENSIONS_VEC myLoc(locationMessagesIn->locationX[id], locationMessagesIn->locationY[id]), toLoc, newLoc;
+#ifdef _3D
+    const DIMENSIONS_VEC myLoc(locationMessagesIn->locationX[id], locationMessagesIn->locationY[id], locationMessagesIn->locationZ[id]);
+#else
+    const DIMENSIONS_VEC myLoc(locationMessagesIn->locationX[id], locationMessagesIn->locationY[id]);
+#endif
 #endif
 	newLoc =  DIMENSIONS_VEC(0);//myLoc;//
 	//Get first message
@@ -75,10 +79,14 @@ __global__ void step_circles_model(LocationMessages *locationMessagesIn, Locatio
         return;
 
     //Get my local location
+#ifdef AOS_MESSAGES
+    const DIMENSIONS_VEC myLoc = locationMessagesIn->location[id];
+#else
 #ifdef _3D
     const DIMENSIONS_VEC myLoc(locationMessagesIn->locationX[id], locationMessagesIn->locationY[id], locationMessagesIn->locationZ[id]);
 #else
     const DIMENSIONS_VEC myLoc(locationMessagesIn->locationX[id], locationMessagesIn->locationY[id]);
+#endif
 #endif
     DIMENSIONS_VEC toLoc, newLoc = DIMENSIONS_VEC(0);//myLoc;//
     //Get first message
@@ -146,10 +154,15 @@ do
     assert(!isnan(myLoc.z));
 #endif
 #endif
+
+#ifdef AOS_MESSAGES
+    locationMessagesOut->location[id] = glm::clamp(newLoc, d_environmentMin, d_environmentMax);
+#else
     newLoc = glm::clamp(newLoc, d_environmentMin, d_environmentMax);
     locationMessagesOut->locationX[id] = newLoc.x;
     locationMessagesOut->locationY[id] = newLoc.y;
 #ifdef _3D
     locationMessagesOut->locationZ[id] = newLoc.z;
+#endif
 #endif
 }

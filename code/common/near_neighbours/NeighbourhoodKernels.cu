@@ -1,8 +1,11 @@
 #include "NeighbourhoodKernels.cuh"
+#if defined(AOS_MESSAGES) && defined(LDG_MESSAGES)
+#include "generics/ldg.h"
+#endif
 //getHash already clamps.
 //#define SP_NO_CLAMP_GRID //Clamp grid coords to within grid (if it's possible for model to go out of bounds)
 
-__device__ DIMENSIONS_IVEC getGridPosition(DIMENSIONS_VEC worldPos)
+__device__ __forceinline__ DIMENSIONS_IVEC getGridPosition(DIMENSIONS_VEC worldPos)
 {
 #ifndef SP_NO_CLAMP_GRID
     //Clamp each grid coord to 0<=x<dim
@@ -57,7 +60,7 @@ __device__ DIMENSIONS_IVEC getGridPosition(DIMENSIONS_VEC worldPos)
 //}
 //#endif
 
-__device__ unsigned int getHash(DIMENSIONS_IVEC gridPos)
+__device__ __forceinline__ unsigned int getHash(DIMENSIONS_IVEC gridPos)
 {
     //Bound gridPos to gridDimensions
     gridPos = clamp(gridPos, DIMENSIONS_IVEC(0), d_gridDim - DIMENSIONS_IVEC(1));
@@ -87,7 +90,9 @@ __global__ void atomicHistogram(unsigned int* bin_index, unsigned int* bin_sub_i
     //Kill excess threads
     if (index >= d_locationMessageCount) return;
 
-    DIMENSIONS_IVEC gridPos;
+#ifdef AOS_MESSAGES
+    DIMENSIONS_IVEC gridPos = getGridPosition(messageBuffer->location[index]);
+#else
     DIMENSIONS_VEC worldPos(
         messageBuffer->locationX[index]
         , messageBuffer->locationY[index]
@@ -95,7 +100,8 @@ __global__ void atomicHistogram(unsigned int* bin_index, unsigned int* bin_sub_i
         , messageBuffer->locationZ[index]
 #endif
         );
-    gridPos = getGridPosition(worldPos);
+    DIMENSIONS_IVEC gridPos = getGridPosition(worldPos);
+#endif
 
     unsigned int hash = getHash(gridPos);
     bin_index[index] = hash;
@@ -118,10 +124,14 @@ __global__ void reorderLocationMessages(
     unsigned int sorted_index = pbm[i] + bin_sub_index[index];
 
     //Order messages into swap space
+#ifdef AOS_MESSAGES
+    ordered_messages->location[sorted_index] = unordered_messages->location[index];
+#else
     ordered_messages->locationX[sorted_index] = unordered_messages->locationX[index];
     ordered_messages->locationY[sorted_index] = unordered_messages->locationY[index];
 #ifdef _3D
     ordered_messages->locationZ[sorted_index] = unordered_messages->locationZ[index];
+#endif
 #endif
 }
 #else //ifdef-ATOMIC_PBM
@@ -206,11 +216,15 @@ __global__ void reorderLocationMessages(
     }
 #endif
 
+#ifdef AOS_MESSAGES
+    ordered_messages->location[index] = unordered_messages->location[old_pos];
+#else
     //Order messages into swap space
     ordered_messages->locationX[index] = unordered_messages->locationX[old_pos];
     ordered_messages->locationY[index] = unordered_messages->locationY[old_pos];
 #ifdef _3D
     ordered_messages->locationZ[index] = unordered_messages->locationZ[old_pos];
+#endif
 #endif
 
 #ifdef _DEBUG
@@ -259,11 +273,11 @@ __global__ void assertPBMIntegrity()
 }
 #endif
 
-__device__ LocationMessage *LocationMessages::getNextNeighbour(LocationMessage *sm_message)
+__device__ __forceinline__ LocationMessage *LocationMessages::getNextNeighbour(LocationMessage *sm_message)
 {
 	return loadNextMessage(sm_message);
 }
-__device__ bool invalidBinXYZ(DIMENSIONS_IVEC bin)
+__device__ __forceinline__ bool invalidBinXYZ(DIMENSIONS_IVEC bin)
 {
 	if (
 		bin.x<0 || bin.x >= d_gridDim.x
@@ -277,7 +291,7 @@ __device__ bool invalidBinXYZ(DIMENSIONS_IVEC bin)
 	}
 	return false;
 }
-__device__ bool invalidBinYZ(DIMENSIONS_IVEC bin)
+__device__ __forceinline__ bool invalidBinYZ(DIMENSIONS_IVEC bin)
 {
     if (
         bin.y<0 || bin.y >= d_gridDim.y
@@ -290,7 +304,7 @@ __device__ bool invalidBinYZ(DIMENSIONS_IVEC bin)
     }
     return false;
 }
-__device__ bool invalidBinX(DIMENSIONS_IVEC bin)
+__device__ __forceinline__ bool invalidBinX(DIMENSIONS_IVEC bin)
 {
     if (
         bin.x<0 || bin.x >= d_gridDim.x 
@@ -595,22 +609,39 @@ __device__ LocationMessage *LocationMessages::loadNextMessage(LocationMessage *s
     sm_message->id = sm_message->state.binIndex;
 #endif
 #if defined(GLOBAL_MESSAGES)
+#ifdef AOS_MESSAGES
+    sm_message->location = d_messages->location[sm_message->id];
+#else
     sm_message->location.x = d_messages->locationX[sm_message->id];
     sm_message->location.y = d_messages->locationY[sm_message->id];
 #ifdef _3D
-    sm_message->location. = d_messages->locationZ[sm_message->id];
+    sm_message->location.z = d_messages->locationZ[sm_message->id];
+#endif
 #endif
 #elif defined(LDG_MESSAGES)
+#ifdef AOS_MESSAGES
+    sm_message->location = __ldg(&d_messages->location[sm_message->id]);
+    //sm_message->location.x = __ldg(&d_messages->location[sm_message->id].x);
+    //sm_message->location.y = __ldg(&d_messages->location[sm_message->id].y);
+#ifdef _3D
+    //sm_message->location. = __ldg(&d_messages->location[sm_message->id].z);
+#endif
+#else
     sm_message->location.x = __ldg(&d_messages->locationX[sm_message->id]);
     sm_message->location.y = __ldg(&d_messages->locationY[sm_message->id]);
 #ifdef _3D
     sm_message->location. = __ldg(&d_messages->locationZ[sm_message->id]);
 #endif
+#endif
 #else//Read message data from tex cache (default)
+#ifdef AOS_MESSAGES
+#error TODO Read AOS Messages from explicit texture
+#else
     sm_message->location.x = tex1Dfetch<float>(d_tex_location[0], sm_message->id);
     sm_message->location.y = tex1Dfetch<float>(d_tex_location[1], sm_message->id);
 #ifdef _3D
     sm_message->location.z = tex1Dfetch<float>(d_tex_location[2], sm_message->id);
+#endif
 #endif
 #endif
 

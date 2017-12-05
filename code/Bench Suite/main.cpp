@@ -40,8 +40,10 @@ void log(FILE *out, const Time_Init *initRes, const Time_Step_dbl *stepRes, cons
 void log(FILE *out, const unsigned int agentCount);
 //const char *TEST_NAMES[] = { "Default", "Strips", "Modular", "Morton", "MortonCompute", "Hilbert", "Peano" };
 //const char *TEST_EXECUTABLES[] = { "Release-Mod-Default.exe", "Release-Mod-Strips.exe", "Release-Mod-Modular.exe", "Release-Mod-Morton.exe", "Release-Mod-MortonCompute.exe", "Release-Mod-Hilbert.exe", "Release-Mod-Peano.exe" };
-const char *TEST_NAMES[] = { "Default", "Strips", "Modular" };
-const char *TEST_EXECUTABLES[] = { "Release-Mod-Default.exe", "Release-Mod-Strips.exe", "Release-Mod-Modular.exe" };
+//const char *TEST_NAMES[] = { "Default", "Strips", "Modular" };
+//const char *TEST_EXECUTABLES[] = { "Release-Mod-Default.exe", "Release-Mod-Strips.exe", "Release-Mod-Modular.exe" };
+const char *TEST_NAMES[] = { "Default", "Strips", "Modular", "Default-AOS", "Strips-AOS", "Modular-AOS" };
+const char *TEST_EXECUTABLES[] = { "Release-Mod-Default.exe", "Release-Mod-Strips.exe", "Release-Mod-Modular.exe", "Release-Mod-Default-AOS.exe", "Release-Mod-Strips-AOS.exe", "Release-Mod-Modular-AOS.exe" };
 //const char *TEST_NAMES[] = { 
 //    "Default", "Strips", "Modular", 
 //    "Default_GLOBAL", "Strips_GLOBAL", "Modular_GLOBAL", 
@@ -165,6 +167,84 @@ int main(int argc, char* argv[])
     //    runCollated(start, end, steps, "CirclesNeighbourhoodScaleLD");
     //}
     //Collected
+    //{//Null - Problem scale
+    //    const int steps = 101;
+    //    //Init model arg start
+    //    NullParams  start = {};
+    //    start.agents = 50000;
+    //    start.iterations = 1000;
+    //    start.density = 2.0f;
+    //    start.seed = 0;
+    //    //Init model arg end
+    //    NullParams end = start;
+    //    end.density = 50.0f;
+    //    runCollated(start, end, steps, "Strided-Neighbourhood-Uniform");
+    //}
+    //{//Null - Problem scale
+    //    const int steps = 101;
+    //    //Init model arg start
+    //    NullParams  start = {};
+    //    start.agents = 50000;
+    //    start.iterations = 1000;
+    //    start.density = 2.0f;
+    //    start.seed = 1;
+    //    //Init model arg end
+    //    NullParams end = start;
+    //    end.density = 50.0f;
+    //    runCollated(start, end, steps, "Strided-Neighbourhood-NonUniform");
+    //}
+    //{//Null - Problem scale
+    //    const int steps = 101;
+    //    //Init model arg start
+    //    NullParams  start = {};
+    //    start.agents = 50000;
+    //    start.iterations = 1000;
+    //    start.density = 1.0f;
+    //    start.seed = 2;
+    //    //Init model arg end
+    //    NullParams end = start;
+    //    end.density = 50.0f;
+    //    runCollated(start, end, steps, "Strided-Neighbourhood-NonUniform2");
+    //}
+    //{//Null - Problem scale
+    //    const int steps = 101;
+    //    //Init model arg start
+    //    NullParams  start = {};
+    //    start.agents = 100000;
+    //    start.iterations = 1000;
+    //    start.density = 2.0f;
+    //    start.seed = 0;
+    //    //Init model arg end
+    //    NullParams end = start;
+    //    end.density = 50.0f;
+    //    runCollated(start, end, steps, "Strided-Neighbourhood-Uniform");
+    //}
+    {//Null - Problem scale
+        const int steps = 101;
+        //Init model arg start
+        NullParams  start = {};
+        start.agents = 100000;
+        start.iterations = 1000;
+        start.density = 1.0f;
+        start.seed = 1;
+        //Init model arg end
+        NullParams end = start;
+        end.density = 50.0f;
+        runCollated(start, end, steps, "Strided-Neighbourhood-NonUniform");
+    }
+    //{//Null - Problem scale
+    //    const int steps = 101;
+    //    //Init model arg start
+    //    NullParams  start = {};
+    //    start.agents = 100000;
+    //    start.iterations = 1000;
+    //    start.density = 1.0f;
+    //    start.seed = 2;
+    //    //Init model arg end
+    //    NullParams end = start;
+    //    end.density = 50.0f;
+    //    runCollated(start, end, steps, "Strided-Neighbourhood-NonUniform2");
+    //}
     {//Null - Problem scale
         const int steps = 101;
         //Init model arg start
@@ -178,6 +258,32 @@ int main(int argc, char* argv[])
         end.density = 50.0f;
         runCollated(start, end, steps, "Strided-Neighbourhood-Uniform");
     }
+    //{//Null - Problem scale
+    //    const int steps = 101;
+    //    //Init model arg start
+    //    NullParams  start = {};
+    //    start.agents = 200000;
+    //    start.iterations = 1000;
+    //    start.density = 1.0f;
+    //    start.seed = 1;
+    //    //Init model arg end
+    //    NullParams end = start;
+    //    end.density = 50.0f;
+    //    runCollated(start, end, steps, "Strided-Neighbourhood-NonUniform");
+    //}
+    //{//Null - Problem scale
+    //    const int steps = 101;
+    //    //Init model arg start
+    //    NullParams  start = {};
+    //    start.agents = 200000;
+    //    start.iterations = 1000;
+    //    start.density = 1.0f;
+    //    start.seed = 2;
+    //    //Init model arg end
+    //    NullParams end = start;
+    //    end.density = 50.0f;
+    //    runCollated(start, end, steps, "Strided-Neighbourhood-NonUniform2");
+    //}
 //////////    //{//Density - ClusterCount//Re-assess, dumb slow around step 20
 //////////    //    const int steps = 100;
 //////////    //    //Init model arg start

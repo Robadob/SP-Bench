@@ -422,6 +422,10 @@ NeighbourhoodStats SpatialPartition::getNeighbourhoodStats()
 void SpatialPartition::deviceAllocateLocationMessages(LocationMessages **d_locMessage, LocationMessages *hd_locMessage)
 {
     CUDA_CALL(cudaMalloc(d_locMessage, sizeof(LocationMessages)));
+#ifdef AOS_MESSAGES
+    CUDA_CALL(cudaMalloc(&hd_locMessage->location, sizeof(DIMENSIONS_VEC)*maxAgents));
+    CUDA_CALL(cudaMemcpy(&((*d_locMessage)->location), &(hd_locMessage->location), sizeof(DIMENSIONS_VEC*), cudaMemcpyHostToDevice));
+#else
     CUDA_CALL(cudaMalloc(&hd_locMessage->locationX, sizeof(float)*maxAgents));
     CUDA_CALL(cudaMemcpy(&((*d_locMessage)->locationX), &(hd_locMessage->locationX), sizeof(float*), cudaMemcpyHostToDevice));
     CUDA_CALL(cudaMalloc(&hd_locMessage->locationY, sizeof(float)*maxAgents));
@@ -429,6 +433,7 @@ void SpatialPartition::deviceAllocateLocationMessages(LocationMessages **d_locMe
 #ifdef _3D
     CUDA_CALL(cudaMalloc(&hd_locMessage->locationZ, sizeof(float)*maxAgents));
     CUDA_CALL(cudaMemcpy(&((*d_locMessage)->locationZ), &(hd_locMessage->locationZ), sizeof(float*), cudaMemcpyHostToDevice));
+#endif
 #endif
 #if defined(_GL) || defined(_DEBUG)
     CUDA_CALL(cudaMalloc(&hd_locMessage->count, sizeof(float)*maxAgents));
@@ -466,15 +471,23 @@ void SpatialPartition::deviceAllocateTextures()
 {
     //Locations
 #ifdef _GL
+#ifdef AOS_MESSAGES
+#error TODO Allocate AOS message texture
+#else
 #pragma unroll 3
     for (unsigned int i = 0; i < DIMENSIONS; i++)
         deviceAllocateGLTexture_float(i);
+#endif
     deviceAllocateGLTexture_float2();//Allocate a texture to store counting info in (Used to colour the visualisation
 #else
 #if !defined(GLOBAL_MESSAGES) && !defined(LDG_MESSAGES)
+#ifdef AOS_MESSAGES
+#error TODO Allocate AOS message texture
+#else
 #pragma unroll 3
     for (unsigned int i = 0; i < DIMENSIONS; i++)
         deviceAllocateTexture_float(i);
+#endif
 #endif
 #endif
     //PBM
@@ -485,10 +498,14 @@ void SpatialPartition::deviceAllocateTextures()
 void SpatialPartition::fillTextures()
 {
 #if defined(_GL) ||(!defined(GLOBAL_MESSAGES) && !defined(LDG_MESSAGES))
+#ifdef AOS_MESSAGES
+#error TODO Fill AOS message texture
+#else
     CUDA_CALL(cudaMemcpy(tex_loc_ptr[0], hd_locationMessages.locationX, locationMessageCount*sizeof(float), cudaMemcpyDeviceToDevice));
     CUDA_CALL(cudaMemcpy(tex_loc_ptr[1], hd_locationMessages.locationY, locationMessageCount*sizeof(float), cudaMemcpyDeviceToDevice));
 #ifdef _3D
     CUDA_CALL(cudaMemcpy(tex_loc_ptr[2], hd_locationMessages.locationZ, locationMessageCount*sizeof(float), cudaMemcpyDeviceToDevice));
+#endif
 #endif
 #endif
 #ifdef _GL
@@ -631,10 +648,14 @@ void SpatialPartition::deviceAllocateGLTexture_float2()
 #endif
 void SpatialPartition::deviceDeallocateLocationMessages(LocationMessages *d_locMessage, LocationMessages hd_locMessage)
 {
+#ifdef AOS_MESSAGES
+    CUDA_CALL(cudaFree(hd_locMessage.location));
+#else
     CUDA_CALL(cudaFree(hd_locMessage.locationX));
     CUDA_CALL(cudaFree(hd_locMessage.locationY));
 #ifdef _3D
     CUDA_CALL(cudaFree(hd_locMessage.locationZ));
+#endif
 #endif
 #ifdef _GL
     CUDA_CALL(cudaFree(hd_locMessage.count));
@@ -660,6 +681,9 @@ void SpatialPartition::deviceDeallocateTextures()
 {
 
 #if defined(_GL) ||(!defined(GLOBAL_MESSAGES) && !defined(LDG_MESSAGES))
+#ifdef AOS_MESSAGES
+#error TODO Deallocate AOS message texture
+#else
 #pragma unroll
     for (unsigned int i = 0; i < DIMENSIONS; i++)
     {
@@ -672,6 +696,7 @@ void SpatialPartition::deviceDeallocateTextures()
         cudaFree(tex_loc_ptr[i]);
 #endif
     }
+#endif
 #endif
 #if !(defined(GLOBAL_PBM) || defined(LDG_PBM))
     cudaDestroyTextureObject(tex_PBM);

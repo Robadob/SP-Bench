@@ -61,10 +61,14 @@ struct LocationMessage
 struct LocationMessages
 {
 public:
+#ifdef AOS_MESSAGES
+    DIMENSIONS_VEC *location;
+#else
     float *locationX;
 	float *locationY;
 #ifdef _3D
 	float *locationZ;
+#endif
 #endif
 #if defined(_GL) || defined(_DEBUG)
     float *count;

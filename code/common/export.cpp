@@ -50,6 +50,11 @@ void exportPopulation(std::shared_ptr<SpatialPartition> s, const ArgData &args, 
 	float *d_bufferPtr;
 	LocationMessages *d_lm = s->d_getLocationMessages();
 	LocationMessages lm;
+#ifdef AOS_MESSAGES
+    lm.location = (DIMENSIONS_VEC*)malloc(sizeof(DIMENSIONS_VEC)*count);
+    CUDA_CALL(cudaMemcpy(&d_bufferPtr, &d_lm->location, sizeof(DIMENSIONS_VEC*), cudaMemcpyDeviceToHost));
+    CUDA_CALL(cudaMemcpy(lm.location, d_bufferPtr, sizeof(DIMENSIONS_VEC)*count, cudaMemcpyDeviceToHost));
+#else
 	lm.locationX = (float*)malloc(sizeof(float)*count);
 	CUDA_CALL(cudaMemcpy(&d_bufferPtr, &d_lm->locationX, sizeof(float*), cudaMemcpyDeviceToHost));
 	CUDA_CALL(cudaMemcpy(lm.locationX, d_bufferPtr, sizeof(float)*count, cudaMemcpyDeviceToHost));
@@ -60,6 +65,7 @@ void exportPopulation(std::shared_ptr<SpatialPartition> s, const ArgData &args, 
 	lm.locationZ = (float*)malloc(sizeof(float)*count);
 	CUDA_CALL(cudaMemcpy(&d_bufferPtr, &d_lm->locationZ, sizeof(float*), cudaMemcpyDeviceToHost));
 	CUDA_CALL(cudaMemcpy(lm.locationZ, d_bufferPtr, sizeof(float)*count, cudaMemcpyDeviceToHost));
+#endif
 #endif
 	//states
 	rapidxml::xml_node<> *states_node = doc.allocate_node(rapidxml::node_element, states_node_str);
@@ -130,15 +136,27 @@ void exportPopulation(std::shared_ptr<SpatialPartition> s, const ArgData &args, 
 			rapidxml::xml_node<> *id_node = doc.allocate_node(rapidxml::node_element, id_node_str, doc.allocate_string(buffer));
 			xagent_node->append_node(id_node);
 
+#ifdef AOS_MESSAGES
+            sprintf(buffer, "%.*g", 9, lm.location[i].x);
+#else
 			sprintf(buffer, "%.*g", 9, lm.locationX[i]);
+#endif
 			rapidxml::xml_node<> *x_node = doc.allocate_node(rapidxml::node_element, x_node_str, doc.allocate_string(buffer));
 			xagent_node->append_node(x_node);
 
+#ifdef AOS_MESSAGES
+            sprintf(buffer, "%.*g", 9, lm.location[i].y);
+#else
 			sprintf(buffer, "%.*g", 9, lm.locationY[i]);
+#endif
 			rapidxml::xml_node<> *y_node = doc.allocate_node(rapidxml::node_element, y_node_str, doc.allocate_string(buffer));
 			xagent_node->append_node(y_node);
 #ifdef _3D
+#ifdef AOS_MESSAGES
+            sprintf(buffer, "%.*g", 9, lm.location[i].z);
+#else
 			sprintf(buffer, "%.*g", 9, lm.locationZ[i]);
+#endif
 			rapidxml::xml_node<> *z_node = doc.allocate_node(rapidxml::node_element, z_node_str, doc.allocate_string(buffer));
 			xagent_node->append_node(z_node);
 #endif
@@ -162,10 +180,14 @@ void exportPopulation(std::shared_ptr<SpatialPartition> s, const ArgData &args, 
 	f << doc;
 
 	f.close();
+#ifdef AOS_MESSAGES
+    free(lm.location);
+#else
 	free(lm.locationX);
     free(lm.locationY);
 #ifdef _3D
 	free(lm.locationZ);
+#endif
 #endif
 }
 
@@ -181,7 +203,12 @@ void exportAgents(std::shared_ptr<SpatialPartition> s, char *path)
 		//allocate
 		float *d_bufferPtr;
 		LocationMessages *d_lm = s->d_getLocationMessages();
-		LocationMessages lm;
+        LocationMessages lm;
+#ifdef AOS_MESSAGES
+        lm.location = (DIMENSIONS_VEC*)malloc(sizeof(DIMENSIONS_VEC)*len);
+        CUDA_CALL(cudaMemcpy(&d_bufferPtr, &d_lm->location, sizeof(DIMENSIONS_VEC*), cudaMemcpyDeviceToHost));
+        CUDA_CALL(cudaMemcpy(lm.location, d_bufferPtr, sizeof(DIMENSIONS_VEC)*len, cudaMemcpyDeviceToHost));
+#else
 		lm.locationX = (float*)malloc(sizeof(float)*len);
 		CUDA_CALL(cudaMemcpy(&d_bufferPtr, &d_lm->locationX, sizeof(float*), cudaMemcpyDeviceToHost));
 		CUDA_CALL(cudaMemcpy(lm.locationX, d_bufferPtr, sizeof(float)*len, cudaMemcpyDeviceToHost));
@@ -193,13 +220,22 @@ void exportAgents(std::shared_ptr<SpatialPartition> s, char *path)
 		CUDA_CALL(cudaMemcpy(&d_bufferPtr, &d_lm->locationZ, sizeof(float*), cudaMemcpyDeviceToHost));
 		CUDA_CALL(cudaMemcpy(lm.locationZ, d_bufferPtr, sizeof(float)*len, cudaMemcpyDeviceToHost));
 #endif
+#endif
 		oFile << len << "\n";
 		for (int i = 0; i < len; i++)
 		{
+#ifdef AOS_MESSAGES
+#if defined(_2D)
+            sprintf(&buffer[0], "%.9g,%.9g\n", lm.location[i].x, lm.location[i].y);
+#elif defined(_3D)
+            sprintf(&buffer[0], "%.9g,%.9g,%.9g\n", lm.location[i].x, lm.location[i].y, lm.location[i].z);
+#endif
+#else
 #if defined(_2D)
             sprintf(&buffer[0], "%.9g,%.9g\n", lm.locationX[i], lm.locationY[i]);
 #elif defined(_3D)
 			sprintf(&buffer[0], "%.9g,%.9g,%.9g\n", lm.locationX[i], lm.locationY[i], lm.locationZ[i]);
+#endif
 #endif
 			oFile << buffer;
 		}

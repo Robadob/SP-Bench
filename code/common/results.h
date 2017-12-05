@@ -84,7 +84,7 @@ struct NullParams : ModelParams
 {
     NullParams()
         : agents(16384)
-        , density(0.125f)
+        , density(1.5f)
     { }
     unsigned int agents;
     float density;

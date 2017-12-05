@@ -7,10 +7,14 @@ __global__ void step_null_model(LocationMessages *locationMessagesIn, LocationMe
         return;
 
     //Get my local location
+#ifdef AOS_MESSAGES
+    const DIMENSIONS_VEC myLoc = locationMessagesIn->location[id];
+#else
 #ifdef _3D
     const DIMENSIONS_VEC myLoc(locationMessagesIn->locationX[id], locationMessagesIn->locationY[id], locationMessagesIn->locationZ[id]);
 #else
     const DIMENSIONS_VEC myLoc(locationMessagesIn->locationX[id], locationMessagesIn->locationY[id]);
+#endif
 #endif
     DIMENSIONS_VEC averageLoc = DIMENSIONS_VEC(0);
     int ct = 0;

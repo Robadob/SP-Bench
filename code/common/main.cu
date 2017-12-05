@@ -105,7 +105,7 @@ ArgData parseArgs(int argc, char * argv[])
             if (arg.compare("null") == 0)
             {
                 data.model = std::make_shared<NullParams>();
-                data.model->seed = 12;
+                data.model->seed = 0;
                 continue;
             }
             if (arg.compare("density") == 0)

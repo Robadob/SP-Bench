@@ -11,10 +11,18 @@ __global__ void init_particles(curandState *state, LocationMessages *locationMes
         return;
     //curand_unform returns 0<x<=1.0, not much can really do about 0 exclusive
     //negate and  + 1.0, to make  0<=x<1.0
+#ifdef AOS_MESSAGES
+    locationMessages->location[id].x = d_environmentMin.x + ((-curand_uniform(&state[id]) + 1.0f)*d_environmentMax.x);
+    locationMessages->location[id].y = d_environmentMin.y + ((-curand_uniform(&state[id]) + 1.0f)*d_environmentMax.y);
+#ifdef _3D
+    locationMessages->location[id].z = d_environmentMin.z + ((-curand_uniform(&state[id]) + 1.0f)*d_environmentMax.z);
+#endif
+#else
     locationMessages->locationX[id] = d_environmentMin.x + ((-curand_uniform(&state[id]) + 1.0f)*d_environmentMax.x);
     locationMessages->locationY[id] = d_environmentMin.y + ((-curand_uniform(&state[id]) + 1.0f)*d_environmentMax.y);
 #ifdef _3D
     locationMessages->locationZ[id] = d_environmentMin.z + ((-curand_uniform(&state[id]) + 1.0f)*d_environmentMax.z);
+#endif
 #endif
 }
 __global__ void init_particles_uniform(LocationMessages *locationMessages, int particlesPerDim, DIMENSIONS_VEC offset) {
@@ -33,10 +41,18 @@ __global__ void init_particles_uniform(LocationMessages *locationMessages, int p
     int x = id % particlesPerDim;
 #endif
     //Distribute particles across that spread
-    locationMessages->locationX[id] = d_environmentMin.x + ((x * offset.x) + offset.x*0.5f);
-    locationMessages->locationY[id] = d_environmentMin.y + ((y * offset.y) +offset.y*0.5f);
+#ifdef AOS_MESSAGES
+    locationMessages->location[id].x = d_environmentMin.x + ((x * offset.x) + offset.x);
+    locationMessages->location[id].y = d_environmentMin.y + ((y * offset.y) + offset.y);
 #ifdef _3D
-    locationMessages->locationZ[id] = d_environmentMin.z + ((z * offset.z) + offset.z*0.5f);
+    locationMessages->location[id].z = d_environmentMin.z + ((z * offset.z) + offset.z);
+#endif
+#else
+    locationMessages->locationX[id] = d_environmentMin.x + ((x * offset.x) + offset.x);
+    locationMessages->locationY[id] = d_environmentMin.y + ((y * offset.y) + offset.y);
+#ifdef _3D
+    locationMessages->locationZ[id] = d_environmentMin.z + ((z * offset.z) + offset.z);
+#endif
 #endif
 //Distributes particles to center of each bin
 //    int hash = id % (glm::compMul(d_gridDim));
@@ -70,9 +86,14 @@ __global__ void init_particles_clusters(curandState *state, LocationMessages *lo
         newPos.z = clusterCenter.z + ((curand_uniform(&state[tid]) - 0.5f) * clusterWidth);
 #endif
     } while (2*distance(clusterCenter, newPos)>clusterWidth);
+
+#ifdef AOS_MESSAGES
+    locationMessages->location[id] = newPos;
+#else
     locationMessages->locationX[id] = newPos.x;
     locationMessages->locationY[id] = newPos.y;
 #ifdef _3D
     locationMessages->locationZ[id] = newPos.z;
+#endif
 #endif
 }
