@@ -923,7 +923,7 @@ DIMENSIONS_IVEC SpatialPartition::getGridPosition(DIMENSIONS_VEC worldPos)
 {
 #ifndef SP_NO_CLAMP_GRID
     //Clamp each grid coord to 0<=x<dim
-    return clamp(floor(((worldPos - environmentMin) / (environmentMax - environmentMin))*glm::vec2(gridDim)), DIMENSIONS_VEC(0), glm::vec2(gridDim) - DIMENSIONS_VEC(1));
+    return clamp(floor(((worldPos - environmentMin) / (environmentMax - environmentMin))*DIMENSIONS_VEC(gridDim)), DIMENSIONS_VEC(0), DIMENSIONS_VEC(gridDim) - DIMENSIONS_VEC(1));
 #else
     return floor(((worldPos - environmentMin) / (environmentMax - environmentMin))*gridDim);
     //#ifdef _3D

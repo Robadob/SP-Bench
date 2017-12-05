@@ -624,13 +624,13 @@ __device__ LocationMessage *LocationMessages::loadNextMessage(LocationMessage *s
     //sm_message->location.x = __ldg(&d_messages->location[sm_message->id].x);
     //sm_message->location.y = __ldg(&d_messages->location[sm_message->id].y);
 #ifdef _3D
-    //sm_message->location. = __ldg(&d_messages->location[sm_message->id].z);
+    //sm_message->location.z = __ldg(&d_messages->location[sm_message->id].z);
 #endif
 #else
     sm_message->location.x = __ldg(&d_messages->locationX[sm_message->id]);
     sm_message->location.y = __ldg(&d_messages->locationY[sm_message->id]);
 #ifdef _3D
-    sm_message->location. = __ldg(&d_messages->locationZ[sm_message->id]);
+    sm_message->location.z = __ldg(&d_messages->locationZ[sm_message->id]);
 #endif
 #endif
 #else//Read message data from tex cache (default)
