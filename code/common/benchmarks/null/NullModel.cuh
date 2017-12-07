@@ -40,14 +40,12 @@ public:
     static unsigned int NullModel::toWidth(unsigned int agents, float density);
     static unsigned int NullModel::toAgents(unsigned int width, float density);
 };
-
-
 inline unsigned int NullModel::toWidth(unsigned int agents, float density)
 {
 #if DIMENSIONS == 2
-    return (unsigned int)round(sqrt(agents/density));
+    return (unsigned int)ceil(sqrt(agents / density));
 #elif DIMENSIONS == 3
-    return (unsigned int) round(cbrt(agents / density));
+    return (unsigned int)ceil(cbrt(agents / density));
 #else
 #error DIMENSIONS must equal 2 or 3
 #endif
@@ -60,7 +58,7 @@ NullModel::NullModel(
     const unsigned int agents,
     const float density
     )
-    : CoreModel(toAgents(toWidth(agents, density), density))
+    : CoreModel(agents)
     , spatialPartition(std::make_shared<SpatialPartition>(DIMENSIONS_VEC(0.0f), DIMENSIONS_VEC(toWidth(agents, density)), agentMax, 1.0f))
     , d_result(nullptr)
     , h_result(nullptr)
