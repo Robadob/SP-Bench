@@ -29,6 +29,8 @@ void logHeader(FILE *out, const DensityParams &modelArgs);
 //Collated
 template<class T>
 bool runCollated(const T &start, const T &end, const unsigned int steps, const char *runName);
+template<class T>
+bool runCollated2D(const T &start, const T &end1, const T &end2, const unsigned int steps1, const unsigned int steps2, const char *runName);
 void logCollatedHeader(FILE *out, const CirclesParams &modelArgs);
 void logCollatedHeader(FILE *out, const NullParams &modelArgs);
 void logCollatedHeader(FILE *out, const DensityParams &modelArgs);
@@ -40,10 +42,10 @@ void log(FILE *out, const Time_Init *initRes, const Time_Step_dbl *stepRes, cons
 void log(FILE *out, const unsigned int agentCount);
 //const char *TEST_NAMES[] = { "Default", "Strips", "Modular", "Morton", "MortonCompute", "Hilbert", "Peano" };
 //const char *TEST_EXECUTABLES[] = { "Release-Mod-Default.exe", "Release-Mod-Strips.exe", "Release-Mod-Modular.exe", "Release-Mod-Morton.exe", "Release-Mod-MortonCompute.exe", "Release-Mod-Hilbert.exe", "Release-Mod-Peano.exe" };
-//const char *TEST_NAMES[] = { "Default", "Strips", "Modular" };
-//const char *TEST_EXECUTABLES[] = { "Release-Mod-Default.exe", "Release-Mod-Strips.exe", "Release-Mod-Modular.exe" };
-const char *TEST_NAMES[] = { "Default", "Strips", "Modular", "Default-AOS", "Strips-AOS", "Modular-AOS" };
-const char *TEST_EXECUTABLES[] = { "Release-Mod-Default.exe", "Release-Mod-Strips.exe", "Release-Mod-Modular.exe", "Release-Mod-Default-AOS.exe", "Release-Mod-Strips-AOS.exe", "Release-Mod-Modular-AOS.exe" };
+const char *TEST_NAMES[] = { "Default", "Strips", "Modular" };
+const char *TEST_EXECUTABLES[] = { "Release-Mod-Default.exe", "Release-Mod-Strips.exe", "Release-Mod-Modular.exe" };
+//const char *TEST_NAMES[] = { "Default", "Strips", "Modular", "Default-AOS", "Strips-AOS", "Modular-AOS" };
+//const char *TEST_EXECUTABLES[] = { "Release-Mod-Default.exe", "Release-Mod-Strips.exe", "Release-Mod-Modular.exe", "Release-Mod-Default-AOS.exe", "Release-Mod-Strips-AOS.exe", "Release-Mod-Modular-AOS.exe" };
 //const char *TEST_NAMES[] = { 
 //    "Default", "Strips", "Modular", 
 //    "Default_GLOBAL", "Strips_GLOBAL", "Modular_GLOBAL", 
@@ -166,123 +168,158 @@ int main(int argc, char* argv[])
     //    //Init step count
     //    runCollated(start, end, steps, "CirclesNeighbourhoodScaleLD");
     //}
-    //Collected
-    //{//Null - Problem scale
-    //    const int steps = 101;
-    //    //Init model arg start
-    //    NullParams  start = {};
-    //    start.agents = 50000;
-    //    start.iterations = 1000;
-    //    start.density = 2.0f;
-    //    start.seed = 0;
-    //    //Init model arg end
-    //    NullParams end = start;
-    //    end.density = 50.0f;
-    //    runCollated(start, end, steps, "Strided-Neighbourhood-Uniform");
-    //}
-    //{//Null - Problem scale
-    //    const int steps = 101;
-    //    //Init model arg start
-    //    NullParams  start = {};
-    //    start.agents = 50000;
-    //    start.iterations = 1000;
-    //    start.density = 2.0f;
-    //    start.seed = 1;
-    //    //Init model arg end
-    //    NullParams end = start;
-    //    end.density = 50.0f;
-    //    runCollated(start, end, steps, "Strided-Neighbourhood-NonUniform");
-    //}
-    //{//Null - Problem scale
-    //    const int steps = 101;
-    //    //Init model arg start
-    //    NullParams  start = {};
-    //    start.agents = 50000;
-    //    start.iterations = 1000;
-    //    start.density = 1.0f;
-    //    start.seed = 2;
-    //    //Init model arg end
-    //    NullParams end = start;
-    //    end.density = 50.0f;
-    //    runCollated(start, end, steps, "Strided-Neighbourhood-NonUniform2");
-    //}
-    //{//Null - Problem scale
-    //    const int steps = 101;
-    //    //Init model arg start
-    //    NullParams  start = {};
-    //    start.agents = 100000;
-    //    start.iterations = 1000;
-    //    start.density = 2.0f;
-    //    start.seed = 0;
-    //    //Init model arg end
-    //    NullParams end = start;
-    //    end.density = 50.0f;
-    //    runCollated(start, end, steps, "Strided-Neighbourhood-Uniform");
-    //}
-    {//Null - Problem scale
-        const int steps = 101;
-        //Init model arg start
-        NullParams  start = {};
-        start.agents = 100000;
-        start.iterations = 1000;
-        start.density = 1.0f;
-        start.seed = 1;
-        //Init model arg end
-        NullParams end = start;
-        end.density = 50.0f;
-        runCollated(start, end, steps, "Strided-Neighbourhood-NonUniform");
+    {//2D parameter sweep of problem scale, neighbourhood scale
+        {//Null
+            const int steps1 = 49;
+            const int steps2 = 15;
+            //Init model arg start
+            NullParams  start = {};
+            start.agents = 10000;
+            start.iterations = 1000;
+            start.density = 2.0f;
+            start.seed = 1;
+            //Init model arg end
+            NullParams end1 = start;
+            end1.density = 50.0f;
+            NullParams end2 = end1;
+            end2.agents = 300000;
+            runCollated2D(start, end1, end2, steps1, steps2, "2DSweep-Neighbourhood-NonUniform");
+        }
+        {//Null
+            const int steps1 = 49;
+            const int steps2 = 15;
+            //Init model arg start
+            NullParams  start = {};
+            start.agents = 10000;
+            start.iterations = 1000;
+            start.density = 2.0f;
+            start.seed = 0;
+            //Init model arg end
+            NullParams end1 = start;
+            end1.density = 50.0f;
+            NullParams end2 = end1;
+            end2.agents = 300000;
+            runCollated2D(start, end1, end2, steps1, steps2, "2DSweep-Neighbourhood-Uniform");
+        }
     }
-    //{//Null - Problem scale
-    //    const int steps = 101;
-    //    //Init model arg start
-    //    NullParams  start = {};
-    //    start.agents = 100000;
-    //    start.iterations = 1000;
-    //    start.density = 1.0f;
-    //    start.seed = 2;
-    //    //Init model arg end
-    //    NullParams end = start;
-    //    end.density = 50.0f;
-    //    runCollated(start, end, steps, "Strided-Neighbourhood-NonUniform2");
-    //}
-    {//Null - Problem scale
-        const int steps = 101;
-        //Init model arg start
-        NullParams  start = {};
-        start.agents = 200000;
-        start.iterations = 1000;
-        start.density = 1.0f;
-        start.seed = 0;
-        //Init model arg end
-        NullParams end = start;
-        end.density = 50.0f;
-        runCollated(start, end, steps, "Strided-Neighbourhood-Uniform");
-    }
-    //{//Null - Problem scale
-    //    const int steps = 101;
-    //    //Init model arg start
-    //    NullParams  start = {};
-    //    start.agents = 200000;
-    //    start.iterations = 1000;
-    //    start.density = 1.0f;
-    //    start.seed = 1;
-    //    //Init model arg end
-    //    NullParams end = start;
-    //    end.density = 50.0f;
-    //    runCollated(start, end, steps, "Strided-Neighbourhood-NonUniform");
-    //}
-    //{//Null - Problem scale
-    //    const int steps = 101;
-    //    //Init model arg start
-    //    NullParams  start = {};
-    //    start.agents = 200000;
-    //    start.iterations = 1000;
-    //    start.density = 1.0f;
-    //    start.seed = 2;
-    //    //Init model arg end
-    //    NullParams end = start;
-    //    end.density = 50.0f;
-    //    runCollated(start, end, steps, "Strided-Neighbourhood-NonUniform2");
+    //{//Neighbourhood scale 50k, 100k, 200k agents
+    //    {//Null - Problem scale
+    //        const int steps = 97;
+    //        //Init model arg start
+    //        NullParams  start = {};
+    //        start.agents = 50000;
+    //        start.iterations = 1000;
+    //        start.density = 2.0f;
+    //        start.seed = 0;
+    //        //Init model arg end
+    //        NullParams end = start;
+    //        end.density = 50.0f;
+    //        runCollated(start, end, steps, "3D-Neighbourhood-Uniform");
+    //    }
+    //    {//Null - Problem scale
+    //        const int steps = 97;
+    //        //Init model arg start
+    //        NullParams  start = {};
+    //        start.agents = 50000;
+    //        start.iterations = 1000;
+    //        start.density = 2.0f;
+    //        start.seed = 1;
+    //        //Init model arg end
+    //        NullParams end = start;
+    //        end.density = 50.0f;
+    //        runCollated(start, end, steps, "3D-Neighbourhood-NonUniform");
+    //    }
+    //    {//Null - Problem scale
+    //        const int steps = 97;
+    //        //Init model arg start
+    //        NullParams  start = {};
+    //        start.agents = 100000;
+    //        start.iterations = 1000;
+    //        start.density = 2.0f;
+    //        start.seed = 0;
+    //        //Init model arg end
+    //        NullParams end = start;
+    //        end.density = 50.0f;
+    //        runCollated(start, end, steps, "3D-Neighbourhood-Uniform");
+    //    }
+    //    {//Null - Problem scale
+    //        const int steps = 97;
+    //        //Init model arg start
+    //        NullParams  start = {};
+    //        start.agents = 100000;
+    //        start.iterations = 1000;
+    //        start.density = 2.0f;
+    //        start.seed = 1;
+    //        //Init model arg end
+    //        NullParams end = start;
+    //        end.density = 50.0f;
+    //        runCollated(start, end, steps, "3D-Neighbourhood-NonUniform");
+    //    }
+    //    {//Null - Problem scale
+    //        const int steps = 97;
+    //        //Init model arg start
+    //        NullParams  start = {};
+    //        start.agents = 200000;
+    //        start.iterations = 1000;
+    //        start.density = 2.0f;
+    //        start.seed = 0;
+    //        //Init model arg end
+    //        NullParams end = start;
+    //        end.density = 50.0f;
+    //        runCollated(start, end, steps, "3D-Neighbourhood-Uniform");
+    //    }
+    //    {//Null - Problem scale
+    //        const int steps = 97;
+    //        //Init model arg start
+    //        NullParams  start = {};
+    //        start.agents = 200000;
+    //        start.iterations = 1000;
+    //        start.density = 2.0f;
+    //        start.seed = 1;
+    //        //Init model arg end
+    //        NullParams end = start;
+    //        end.density = 50.0f;
+    //        runCollated(start, end, steps, "3D-Neighbourhood-NonUniform");
+    //    }
+    //    {//Null - Problem scale
+    //        const int steps = 97;
+    //        //Init model arg start
+    //        NullParams  start = {};
+    //        start.agents = 50000;
+    //        start.iterations = 1000;
+    //        start.density = 2.0f;
+    //        start.seed = 2;
+    //        //Init model arg end
+    //        NullParams end = start;
+    //        end.density = 50.0f;
+    //        runCollated(start, end, steps, "3D-Neighbourhood-NonUniform2");
+    //    }
+    //    {//Null - Problem scale
+    //        const int steps = 97;
+    //        //Init model arg start
+    //        NullParams  start = {};
+    //        start.agents = 100000;
+    //        start.iterations = 1000;
+    //        start.density = 2.0f;
+    //        start.seed = 2;
+    //        //Init model arg end
+    //        NullParams end = start;
+    //        end.density = 50.0f;
+    //        runCollated(start, end, steps, "3D-Neighbourhood-NonUniform2");
+    //    }
+    //    {//Null - Problem scale
+    //        const int steps = 97;
+    //        //Init model arg start
+    //        NullParams  start = {};
+    //        start.agents = 200000;
+    //        start.iterations = 1000;
+    //        start.density = 2.0f;
+    //        start.seed = 2;
+    //        //Init model arg end
+    //        NullParams end = start;
+    //        end.density = 50.0f;
+    //        runCollated(start, end, steps, "3D-Neighbourhood-NonUniform2");
+    //    }
     //}
 //////////    //{//Density - ClusterCount//Re-assess, dumb slow around step 20
 //////////    //    const int steps = 100;
@@ -621,6 +658,94 @@ bool runCollated(const T &start, const T &end, const unsigned int steps, const c
     }
     //Close log
     fclose(log_F);
+    //Print confirmation to console
+    printf("\rCompleted run %s %i/%i %llu/%llu         \n", runName, (int)steps, (int)steps, sizeof(TEST_EXECUTABLES) / sizeof(char*), sizeof(TEST_EXECUTABLES) / sizeof(char*));
+    return true;
+}
+template<class T>
+bool runCollated2D(const T &start, const T &end1, const T &end2, const unsigned int steps1, const unsigned int steps2, const char *runName)
+{
+    printf("Running %s\n", runName);
+    //Create objects for use within the loop
+    Time_Init initRes;
+    Time_Step_dbl stepRes;
+    NeighbourhoodStats nsFirst, nsLast;
+    T modelArgs1, modelArgs2;
+    T modelParamsOut;
+    unsigned int agentCount;
+    float totalTime;
+    //Create log
+    FILE *log_F = nullptr;
+    {
+        std::string logPath("./out/");
+#ifdef _MSC_BUILD
+        CreateDirectory(logPath.c_str(), NULL);
+#endif
+        logPath = logPath.append(runName);
+        logPath = logPath.append("/");
+#ifdef _MSC_BUILD
+        CreateDirectory(logPath.c_str(), NULL);
+#endif
+#ifndef _MSC_BUILD
+        if (!exists(logPath)) { // Check if folder exists
+            create_directory(logPath.c_str()); // create folder
+        }
+#endif
+        logPath = logPath.append("collated");
+        logPath = logPath.append(std::to_string(time(0)));
+        logPath = logPath.append(".csv");
+        log_F = fopen(logPath.c_str(), "w");
+        if (!log_F)
+        {
+            fprintf(stderr, "Collated benchmark '%s' failed to create log file '%s'\n", runName, logPath.c_str());
+            return false;
+        }
+    }
+    //Create log header
+    logCollatedHeader(log_F, start);
+    //For each step
+    for (unsigned int w = 0; w < steps1; w++)
+    {
+        //Interpolate model
+        modelArgs1 = interpolateParams(start, end1, w, steps1);
+        for (unsigned int v = 0; v < steps2; v++)
+        {
+            //Interpolate model
+            modelArgs2 = interpolateParams(modelArgs1, end2, v, steps2);
+            //Clear output structures
+            memset(&modelParamsOut, 0, sizeof(T));
+            memset(&stepRes, 0, sizeof(Time_Step_dbl));
+            memset(&initRes, 0, sizeof(Time_Init));
+            //For each mod
+            for (unsigned int j = 0; j < sizeof(TEST_EXECUTABLES) / sizeof(char*); ++j)
+            {
+                printf("\rExecuting run %s %d:%d/%d:%d %i/%llu      ", runName, w + 1, v+1, steps1, steps2, j + 1, sizeof(TEST_EXECUTABLES) / sizeof(char*));
+                agentCount = 0;
+                totalTime = 0;
+                //executeBenchmark
+                if (!executeBenchmark(TEST_EXECUTABLES[j], modelArgs2, &modelParamsOut, &agentCount, &initRes, &stepRes, &totalTime, &nsFirst, &nsLast))
+                {
+                    fprintf(stderr, "\rBenchmark '%s' '%s' execution failed on stage %d:%d/%d:%d, exiting early.\n", runName, TEST_NAMES[j], w + 1, v + 1, steps1, steps2);
+                    return false;
+                }
+                //logResult
+                log(log_F, &initRes, &stepRes, totalTime);
+            }
+            //AgentCount
+            log(log_F, agentCount);
+            //Neighbourhood stats
+            log(log_F, &nsFirst);
+            log(log_F, &nsLast);
+            //Model Args
+            log(log_F, &modelArgs2);
+            fputs("\n", log_F);
+            fflush(log_F);
+        }
+    }
+    //Close log
+    fclose(log_F);
+    //Print confirmation to console
+    printf("\rCompleted run %s %i/%i %llu/%llu         \n", runName, (int)steps1, (int)steps2, sizeof(TEST_EXECUTABLES) / sizeof(char*), sizeof(TEST_EXECUTABLES) / sizeof(char*));
     return true;
 }
 CirclesParams interpolateParams(const CirclesParams &start, const CirclesParams &end, const unsigned int step, const unsigned int totalSteps)
