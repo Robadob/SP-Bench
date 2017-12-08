@@ -11,6 +11,12 @@
 #include <filesystem>
 #endif
 
+CirclesParams reset(const CirclesParams &start, const CirclesParams &end);
+NullParams reset(const NullParams &start, const NullParams &end);
+DensityParams reset(const DensityParams &start, const DensityParams &end);
+CirclesParams interpolateParams2D(const CirclesParams &start, const CirclesParams &end1, const CirclesParams &end2, const unsigned int step1, const unsigned int totalSteps1, const unsigned int step2, const unsigned int totalSteps2);
+NullParams interpolateParams2D(const NullParams &start, const NullParams &end1, const NullParams &end2, const unsigned int step1, const unsigned int totalSteps1, const unsigned int step2, const unsigned int totalSteps2);
+DensityParams interpolateParams2D(const DensityParams &start, const DensityParams &end1, const DensityParams &end2, const unsigned int step1, const unsigned int totalSteps1, const unsigned int step2, const unsigned int totalSteps2);
 CirclesParams interpolateParams(const CirclesParams &start, const CirclesParams &end, const unsigned int step, const unsigned int totalSteps);
 NullParams interpolateParams(const NullParams &start, const NullParams &end, const unsigned int step, const unsigned int totalSteps);
 DensityParams interpolateParams(const DensityParams &start, const DensityParams &end, const unsigned int step, const unsigned int totalSteps);
@@ -175,14 +181,14 @@ int main(int argc, char* argv[])
             //Init model arg start
             NullParams  start = {};
             start.agents = 10000;
-            start.iterations = 1000;
+            start.iterations = 500;
             start.density = 2.0f;
             start.seed = 1;
             //Init model arg end
             NullParams end1 = start;
-            end1.density = 50.0f;
-            NullParams end2 = end1;
-            end2.agents = 300000;
+            end1.agents = 300000;
+            NullParams end2 = start;
+            end2.density = 50.0f;
             runCollated2D(start, end1, end2, steps1, steps2, "2DSweep-Neighbourhood-NonUniform");
         }
         {//Null
@@ -191,14 +197,14 @@ int main(int argc, char* argv[])
             //Init model arg start
             NullParams  start = {};
             start.agents = 10000;
-            start.iterations = 1000;
+            start.iterations = 500;
             start.density = 2.0f;
             start.seed = 0;
             //Init model arg end
             NullParams end1 = start;
-            end1.density = 50.0f;
-            NullParams end2 = end1;
-            end2.agents = 300000;
+            end1.agents = 300000;
+            NullParams end2 = start;
+            end2.density = 50.0f;
             runCollated2D(start, end1, end2, steps1, steps2, "2DSweep-Neighbourhood-Uniform");
         }
     }
@@ -670,7 +676,7 @@ bool runCollated2D(const T &start, const T &end1, const T &end2, const unsigned 
     Time_Init initRes;
     Time_Step_dbl stepRes;
     NeighbourhoodStats nsFirst, nsLast;
-    T modelArgs1, modelArgs2;
+    T modelArgs;
     T modelParamsOut;
     unsigned int agentCount;
     float totalTime;
@@ -707,11 +713,10 @@ bool runCollated2D(const T &start, const T &end1, const T &end2, const unsigned 
     for (unsigned int w = 0; w < steps1; w++)
     {
         //Interpolate model
-        modelArgs1 = interpolateParams(start, end1, w, steps1);
         for (unsigned int v = 0; v < steps2; v++)
         {
             //Interpolate model
-            modelArgs2 = interpolateParams(modelArgs1, end2, v, steps2);
+            modelArgs = interpolateParams2D(start, end1, end2, w, steps1, v, steps2);
             //Clear output structures
             memset(&modelParamsOut, 0, sizeof(T));
             memset(&stepRes, 0, sizeof(Time_Step_dbl));
@@ -759,6 +764,80 @@ CirclesParams interpolateParams(const CirclesParams &start, const CirclesParams 
     modelArgs.attractionForce = start.attractionForce + ((step / stepsM1)*(end.attractionForce - start.attractionForce));
     modelArgs.repulsionForce = start.repulsionForce + ((step / stepsM1)*(end.repulsionForce - start.repulsionForce));
     modelArgs.iterations = start.iterations + (long long)((step / stepsM1)*((int)end.iterations - (int)start.iterations));
+    return modelArgs;
+}
+CirclesParams reset(const CirclesParams &start, const CirclesParams &end)
+{
+    CirclesParams end1Reset;
+    end1Reset.seed = end.seed - start.seed;
+    end1Reset.width = end.width - start.width;
+    end1Reset.density = end.density - start.density;
+    end1Reset.interactionRad = end.interactionRad - start.interactionRad;
+    end1Reset.attractionForce = end.attractionForce - start.attractionForce;
+    end1Reset.repulsionForce = end.repulsionForce - start.repulsionForce;
+    end1Reset.iterations = end.iterations - start.iterations;
+    return end1Reset;
+}
+NullParams reset(const NullParams &start, const NullParams &end)
+{
+    NullParams end1Reset;
+    end1Reset.seed = end.seed - start.seed;
+    end1Reset.agents = end.agents - start.agents;
+    end1Reset.density = end.density - start.density;
+    end1Reset.iterations = end.iterations - start.iterations;
+    return end1Reset;
+}
+DensityParams reset(const DensityParams &start, const DensityParams &end)
+{
+    DensityParams end1Reset;
+    end1Reset.seed = end.seed - start.seed;
+    end1Reset.agentsPerCluster = end.agentsPerCluster - start.agentsPerCluster;
+    end1Reset.envWidth = end.envWidth - start.envWidth;
+    end1Reset.interactionRad = end.interactionRad - start.interactionRad;
+    end1Reset.clusterCount = end.clusterCount - start.clusterCount;
+    end1Reset.clusterRad = end.clusterRad - start.clusterRad;
+    end1Reset.uniformDensity = end.uniformDensity - start.uniformDensity;
+    end1Reset.iterations = end.iterations - start.iterations;
+    return end1Reset;
+}
+CirclesParams interpolateParams2D(const CirclesParams &start, const CirclesParams &end1, const CirclesParams &end2, const unsigned int step1, const unsigned int totalSteps1, const unsigned int step2, const unsigned int totalSteps2)
+{
+    CirclesParams end1Lerp = interpolateParams(CirclesParams::makeEmpty(), reset(start, end1), step1, totalSteps1);
+    CirclesParams end2Lerp = interpolateParams(CirclesParams::makeEmpty(), reset(start, end2), step2, totalSteps2);
+    CirclesParams modelArgs;
+    modelArgs.seed = start.seed + end1Lerp.seed + end2Lerp.seed;
+    modelArgs.width = start.width + end1Lerp.width + end2Lerp.width;
+    modelArgs.density = start.density + end1Lerp.density + end2Lerp.density;
+    modelArgs.interactionRad = start.interactionRad + end1Lerp.interactionRad + end2Lerp.interactionRad;
+    modelArgs.attractionForce = start.attractionForce + end1Lerp.attractionForce + end2Lerp.attractionForce;
+    modelArgs.repulsionForce = start.repulsionForce + end1Lerp.repulsionForce + end2Lerp.repulsionForce;
+    modelArgs.iterations = start.iterations + end1Lerp.iterations + end2Lerp.iterations;
+    return modelArgs;
+}
+NullParams interpolateParams2D(const NullParams &start, const NullParams &end1, const NullParams &end2, const unsigned int step1, const unsigned int totalSteps1, const unsigned int step2, const unsigned int totalSteps2)
+{
+    NullParams end1Lerp = interpolateParams(NullParams::makeEmpty(), reset(start, end1), step1, totalSteps1);
+    NullParams end2Lerp = interpolateParams(NullParams::makeEmpty(), reset(start, end2), step2, totalSteps2);
+    NullParams modelArgs;
+    modelArgs.seed = start.seed + end1Lerp.seed + end2Lerp.seed;
+    modelArgs.agents = start.agents + end1Lerp.agents + end2Lerp.agents;
+    modelArgs.density = start.density + end1Lerp.density + end2Lerp.density;
+    modelArgs.iterations = start.iterations + end1Lerp.iterations + end2Lerp.iterations;
+    return modelArgs;
+}
+DensityParams interpolateParams2D(const DensityParams &start, const DensityParams &end1, const DensityParams &end2, const unsigned int step1, const unsigned int totalSteps1, const unsigned int step2, const unsigned int totalSteps2)
+{
+    DensityParams end1Lerp = interpolateParams(DensityParams::makeEmpty(), reset(start, end1), step1, totalSteps1);
+    DensityParams end2Lerp = interpolateParams(DensityParams::makeEmpty(), reset(start, end2), step2, totalSteps2);
+    DensityParams modelArgs;
+    modelArgs.seed = start.seed + end1Lerp.seed + end2Lerp.seed;
+    modelArgs.agentsPerCluster = start.agentsPerCluster + end1Lerp.agentsPerCluster + end2Lerp.agentsPerCluster;
+    modelArgs.envWidth = start.envWidth + end1Lerp.envWidth + end2Lerp.envWidth;
+    modelArgs.interactionRad = start.interactionRad + end1Lerp.interactionRad + end2Lerp.interactionRad;
+    modelArgs.clusterCount = start.clusterCount + end1Lerp.clusterCount + end2Lerp.clusterCount;
+    modelArgs.clusterRad = start.clusterRad + end1Lerp.clusterRad + end2Lerp.clusterRad;
+    modelArgs.uniformDensity = start.uniformDensity + end1Lerp.uniformDensity + end2Lerp.uniformDensity;
+    modelArgs.iterations = start.iterations + end1Lerp.iterations + end2Lerp.iterations;
     return modelArgs;
 }
 NullParams interpolateParams(const NullParams &start, const NullParams &end, const unsigned int step, const unsigned int totalSteps)
