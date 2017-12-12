@@ -58,7 +58,7 @@ const Time_Init CoreModel::initPopulation(const unsigned long long rngSeed)
     LocationMessages *d_lm = getPartition()->d_getLocationMessages();
     if (rngSeed != 0)
     {
-        init_particles << <initBlocks, initThreads >> >(d_rng, d_lm);
+        init_particles <<<initBlocks, initThreads>>>(d_rng, d_lm);
     }
     else
     {

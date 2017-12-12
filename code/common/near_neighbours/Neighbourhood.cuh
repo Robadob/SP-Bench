@@ -30,6 +30,8 @@ struct BinState
 {
 #if defined(MODULAR)
     DIMENSIONS_IVEC offset;//The grid cells alignment offset, so we calculate once
+#elif defined(MODULAR_STRIPS_3D)
+    glm::ivec2 offset;//The grid cells alignment offset, so we calculate once
 #endif
 #if defined(STRIPS)
 #if defined (_3D)
@@ -37,6 +39,8 @@ struct BinState
 #elif defined (_2D)
     int relative;
 #endif
+#elif defined(MODULAR_STRIPS_3D)
+    glm::ivec2 relative;
 #else
     DIMENSIONS_IVEC relative;
 #endif
@@ -73,16 +77,16 @@ public:
 #if defined(_GL) || defined(_DEBUG)
     float *count;
 #endif
-#if !defined(MODULAR)
+#if !(defined(MODULAR) || defined(MODULAR_STRIPS_3D))
     __device__ LocationMessage *getFirstNeighbour(DIMENSIONS_VEC location);
 #endif
     __device__ LocationMessage *getNextNeighbour(LocationMessage *message);
-#if defined(MODULAR)
+#if defined(MODULAR) || defined(MODULAR_STRIPS_3D)
     __device__ LocationMessage *firstBin(DIMENSIONS_VEC location);
     __device__ bool nextBin(LocationMessage *sm_message);
 #endif
 private:
-#if !defined(MODULAR)
+#if !(defined(MODULAR) || defined(MODULAR_STRIPS_3D))
 	__device__ bool nextBin(LocationMessage *sm_message);
 #endif
     //Load the next desired message into shared memory

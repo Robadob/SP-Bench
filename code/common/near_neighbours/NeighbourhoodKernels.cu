@@ -1,7 +1,4 @@
 #include "NeighbourhoodKernels.cuh"
-#if defined(AOS_MESSAGES) && defined(LDG_MESSAGES)
-#include "generics/ldg.h"
-#endif
 //getHash already clamps.
 //#define SP_NO_CLAMP_GRID //Clamp grid coords to within grid (if it's possible for model to go out of bounds)
 
@@ -26,39 +23,6 @@ __device__ __forceinline__ DIMENSIONS_IVEC getGridPosition(DIMENSIONS_VEC worldP
 	//    return gridPos;
 #endif
 }
-
-//Moved to Morton.h
-//#if defined(MORTON) && defined(_3D)
-//// Expands a 10-bit integer into 30 bits
-//// by inserting 2 zeros after each bit.
-//__host__ __device__ unsigned int expandBits(unsigned int v)
-//{
-//	v = (v * 0x00010001u) & 0xFF0000FFu;
-//	v = (v * 0x00000101u) & 0x0F00F00Fu;
-//	v = (v * 0x00000011u) & 0xC30C30C3u;
-//	v = (v * 0x00000005u) & 0x49249249u;
-//	return v;
-//}
-//
-//// Calculates a 30-bit Morton code for the
-//__host__ __device__ unsigned int morton3D(const DIMENSIONS_IVEC &pos)
-//{
-//	//Pos should be clamped to 0<=x<1024
-//
-//#ifdef _DEBUG
-//	assert(pos.x >= 0);
-//	assert(pos.x < 1024);
-//	assert(pos.y >= 0);
-//	assert(pos.y < 1024);
-//	assert(pos.z >= 0);
-//	assert(pos.z < 1024);
-//#endif
-//	unsigned int xx = expandBits((unsigned int)pos.x);
-//	unsigned int yy = expandBits((unsigned int)pos.y);
-//	unsigned int zz = expandBits((unsigned int)pos.z);
-//	return xx * 4 + yy * 2 + zz;
-//}
-//#endif
 
 __device__ __forceinline__ unsigned int getHash(DIMENSIONS_IVEC gridPos)
 {
@@ -325,7 +289,7 @@ __device__ bool LocationMessages::nextBin(LocationMessage *sm_message)
 #elif defined(_3D)
     for (unsigned int i = 0; i<9; ++i)
 #endif
-#elif !defined(MODULAR) //Modular only checks if we have bin, not if bin is valid
+#elif !(defined(MODULAR)||defined(MODULAR_STRIPS_3D)) //Modular only checks if we have bin, not if bin is valid
 #if defined(_2D)
 for(unsigned int i = 0;i<9;++i)
 #elif defined(_3D)
@@ -427,6 +391,45 @@ for (unsigned int i = 0; i<27; ++i)
         sm_message->state.relative++;
     }
 #endif
+#elif defined(MODULAR_STRIPS_3D)
+    extern __shared__ LocationMessage sm_messages[];
+    glm::ivec2 *blockRelative = (glm::ivec2 *)(void*)(&(sm_messages[blockDim.x]));
+    bool *blockContinue = (bool *)(void*)&blockRelative[1];
+    //Thread 0 in block decide next relative block
+    if (threadIdx.x == 0)//&&threadIdx.y==0&&threadIdx.z==0)
+    {
+        if (blockRelative->x >= 1)
+        {
+            blockRelative->x = -1;
+
+            if (blockRelative->y >= 1)
+            {
+                *blockContinue = false;
+            }
+            else
+            {
+                blockRelative->y++;
+            }
+        }
+        else
+        {
+            blockRelative->x++;
+        }
+    }
+#ifndef NO_SYNC
+    //Wait for all threads to finish previous bin
+    __syncthreads();
+#endif
+    if (!*blockContinue)
+    {
+#if defined(_GL) || defined(_DEBUG)
+        //No more neighbours, finalise count by dividing by the number of messages.
+        int id = blockIdx.x * blockDim.x + threadIdx.x;
+        d_locationMessagesA->count[id] /= d_locationMessageCount;
+        d_locationMessagesB->count[id] /= d_locationMessageCount;
+#endif
+        return false;
+    }
 #else
     if (sm_message->state.relative.x >= 1)
     {
@@ -522,6 +525,60 @@ for (unsigned int i = 0; i<27; ++i)
 #endif
         return true;//Bin strip has items!
     }
+#elif defined(MODULAR_STRIPS_3D)
+//Find the start of the strip
+    //Find relative + offset
+    sm_message->state.relative = (*blockRelative)+sm_message->state.offset;
+    //For the modular axis, if new relative > 1, set -1
+    sm_message->state.relative.x = sm_message->state.relative.x>1 ? sm_message->state.relative.x - 3 : sm_message->state.relative.x;
+    sm_message->state.relative.y = sm_message->state.relative.y>1 ? sm_message->state.relative.y - 3 : sm_message->state.relative.y;
+    //Check the new bin is valid
+    glm::ivec3 next_bin_first = sm_message->state.location + glm::ivec3(-1, sm_message->state.relative.x, sm_message->state.relative.y);
+    glm::ivec3 next_bin_last = next_bin_first;
+    next_bin_last.x += 2;
+    bool firstInvalid = invalidBinX(next_bin_first);
+    bool lastInvalid = invalidBinX(next_bin_last);
+    if (invalidBinYZ(next_bin_first))
+    {//Whole strip invalid, skip
+        sm_message->state.binIndexMax = 0;
+        return true;
+    }
+    if (firstInvalid)
+    {
+        next_bin_first.x = 0;
+    }
+    if (lastInvalid)
+    {//If strip ends out of bounds only
+        next_bin_last.x = d_gridDim.x - 1;//Max x coord
+    }
+    //Get PBM bounds
+    int next_bin_first_hash = getHash(next_bin_first);
+    int next_bin_last_hash = next_bin_first_hash + (next_bin_last.x - next_bin_first.x);//Strips are at most length 3
+#ifdef _DEBUG
+    assert(next_bin_first_hash >= 0);//Hash must be positive
+    assert(next_bin_last_hash >= 0);//Hash must be positive
+#endif
+    //use the hash to calculate the start index (pbm stores location of 1st item)
+#if defined(GLOBAL_PBM)
+    sm_message->state.binIndex = d_pbm[next_bin_first_hash];
+    sm_message->state.binIndexMax = d_pbm[next_bin_last_hash + 1];
+#elif defined(LDG_PBM)
+    sm_message->state.binIndex = __ldg(&d_pbm[next_bin_first_hash]);
+    sm_message->state.binIndexMax = __ldg(&d_pbm[next_bin_last_hash + 1]);
+#else
+    sm_message->state.binIndex = tex1Dfetch<unsigned int>(d_tex_PBM, next_bin_first_hash);
+    sm_message->state.binIndexMax = tex1Dfetch<unsigned int>(d_tex_PBM, next_bin_last_hash + 1);
+#endif
+    if (sm_message->state.binIndex < sm_message->state.binIndexMax)//(bin_index_min != 0xffffffff)
+    {
+#ifdef STRIDED_MESSAGES
+        //Adjust bin state for strided access
+        sm_message->state.binOffset = sm_message->state.binIndex;
+        sm_message->state.binIndexMax -= sm_message->state.binIndex;
+        sm_message->state.binIndex = 0;
+#endif
+        return true;//Bin strip has items!
+    }
 #else
 #if defined(MODULAR)
     //Find relative + offset
@@ -574,7 +631,7 @@ for (unsigned int i = 0; i<27; ++i)
 #endif
 #endif
 }
-#if defined(MODULAR)
+#if defined(MODULAR) || defined(MODULAR_STRIPS_3D)
 return true;
 #else
 return false;
@@ -588,7 +645,7 @@ __device__ LocationMessage *LocationMessages::loadNextMessage(LocationMessage *s
   
     if(sm_message->state.binIndex >= sm_message->state.binIndexMax)//Do we need to change bin?
     {
-#if defined(MODULAR)
+#if defined(MODULAR)||defined(MODULAR_STRIPS_3D)
         return nullptr;
 #else
 		if (!nextBin(sm_message))
@@ -620,11 +677,11 @@ __device__ LocationMessage *LocationMessages::loadNextMessage(LocationMessage *s
 #endif
 #elif defined(LDG_MESSAGES)
 #ifdef AOS_MESSAGES
-    sm_message->location = __ldg(&d_messages->location[sm_message->id]);
-    //sm_message->location.x = __ldg(&d_messages->location[sm_message->id].x);
-    //sm_message->location.y = __ldg(&d_messages->location[sm_message->id].y);
+    //sm_message->location = __ldg(&d_messages->location[sm_message->id]);
+    sm_message->location.x = __ldg(&d_messages->location[sm_message->id].x);
+    sm_message->location.y = __ldg(&d_messages->location[sm_message->id].y);
 #ifdef _3D
-    //sm_message->location.z = __ldg(&d_messages->location[sm_message->id].z);
+    sm_message->location.z = __ldg(&d_messages->location[sm_message->id].z);
 #endif
 #else
     sm_message->location.x = __ldg(&d_messages->locationX[sm_message->id]);
@@ -649,7 +706,7 @@ __device__ LocationMessage *LocationMessages::loadNextMessage(LocationMessage *s
     return sm_message;
 }
 
-#if defined(MODULAR)
+#if defined(MODULAR) || defined(MODULAR_STRIPS_3D)
 __device__ LocationMessage *LocationMessages::firstBin(DIMENSIONS_VEC location)
 #else
 __device__ LocationMessage *LocationMessages::getFirstNeighbour(DIMENSIONS_VEC location)
@@ -669,6 +726,16 @@ __device__ LocationMessage *LocationMessages::getFirstNeighbour(DIMENSIONS_VEC l
 #else
         blockRelative[0] = glm::ivec2(-2, -1);
 #endif
+        //Init blockContinue true
+        ((bool*)(void*)&blockRelative[1])[0] = true;
+    }
+#elif defined(MODULAR_STRIPS_3D)
+    //Init global relative if block thread X
+    if (threadIdx.x == 0)//&&threadIdx.y==0&&threadIdx.z==0)
+    {
+        //Init blockRelative
+        glm::ivec2 *blockRelative = (glm::ivec2 *)(void*)(&(sm_messages[blockDim.x]));
+        blockRelative[0] = glm::ivec2(-2, -1);
         //Init blockContinue true
         ((bool*)(void*)&blockRelative[1])[0] = true;
     }
@@ -693,6 +760,12 @@ __device__ LocationMessage *LocationMessages::getFirstNeighbour(DIMENSIONS_VEC l
         sm_message->state.offset = (gridPos + DIMENSIONS_IVEC(1)) % 3;
         sm_message->state.location = gridPos;
     }
+#elif defined(MODULAR_STRIPS_3D)
+    {
+        DIMENSIONS_IVEC gridPos = getGridPosition(location);
+        sm_message->state.offset = (glm::ivec2(gridPos.y+1,gridPos.z+1)) % 3;
+        sm_message->state.location = gridPos;
+    }
 #else
     sm_message->state.location = getGridPosition(location);
 #endif
@@ -706,14 +779,14 @@ __device__ LocationMessage *LocationMessages::getFirstNeighbour(DIMENSIONS_VEC l
 #else
     sm_message->state.relative = -2;
 #endif
-#elif !defined(MODULAR) //No need to initialise this value for modular
+#elif !(defined(MODULAR)||defined(MODULAR_STRIPS_3D)) //No need to initialise this value for modular
 #ifdef _3D
 	sm_message->state.relative = glm::ivec3(-2, -1, -1);
 #else
 	sm_message->state.relative = glm::ivec2(-2, -1);
 #endif
 #endif
-#if defined(MODULAR)
+#if defined(MODULAR)||defined(MODULAR_STRIPS_3D)
     nextBin(sm_message);
     return sm_message;
 #else
