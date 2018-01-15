@@ -15,10 +15,12 @@
 #define DIMENSIONS 3
 #define DIMENSIONS_VEC glm::vec3
 #define DIMENSIONS_IVEC glm::ivec3
+#define DIMENSIONS_IVEC_MINUS1 glm::ivec2
 #elif defined(_2D) && !defined(DIMENSIONS)
 #define DIMENSIONS 2
 #define DIMENSIONS_VEC glm::vec2
 #define DIMENSIONS_IVEC glm::ivec2
+#define DIMENSIONS_IVEC_MINUS1 int
 #endif
 //#include "NeighbourhoodKernels.cuh"
 
@@ -30,17 +32,11 @@ struct BinState
 {
 #if defined(MODULAR)
     DIMENSIONS_IVEC offset;//The grid cells alignment offset, so we calculate once
-#elif defined(MODULAR_STRIPS_3D)
-    glm::ivec2 offset;//The grid cells alignment offset, so we calculate once
+#elif defined(MODULAR_STRIPS)
+    DIMENSIONS_IVEC_MINUS1 offset;//The grid cells alignment offset, so we calculate once
 #endif
-#if defined(STRIPS)
-#if defined (_3D)
-    glm::ivec2 relative;
-#elif defined (_2D)
-    int relative;
-#endif
-#elif defined(MODULAR_STRIPS_3D)
-    glm::ivec2 relative;
+#if defined(STRIPS) || defined(MODULAR_STRIPS)
+    DIMENSIONS_IVEC_MINUS1 relative;
 #else
     DIMENSIONS_IVEC relative;
 #endif
@@ -77,16 +73,16 @@ public:
 #if defined(_GL) || defined(_DEBUG)
     float *count;
 #endif
-#if !(defined(MODULAR) || defined(MODULAR_STRIPS_3D))
+#if !(defined(MODULAR) || defined(MODULAR_STRIPS))
     __device__ LocationMessage *getFirstNeighbour(DIMENSIONS_VEC location);
 #endif
     __device__ LocationMessage *getNextNeighbour(LocationMessage *message);
-#if defined(MODULAR) || defined(MODULAR_STRIPS_3D)
+#if defined(MODULAR) || defined(MODULAR_STRIPS)
     __device__ LocationMessage *firstBin(DIMENSIONS_VEC location);
     __device__ bool nextBin(LocationMessage *sm_message);
 #endif
 private:
-#if !(defined(MODULAR) || defined(MODULAR_STRIPS_3D))
+#if !(defined(MODULAR) || defined(MODULAR_STRIPS))
 	__device__ bool nextBin(LocationMessage *sm_message);
 #endif
     //Load the next desired message into shared memory

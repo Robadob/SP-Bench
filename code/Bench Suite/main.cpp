@@ -50,6 +50,10 @@ void log(FILE *out, const unsigned int agentCount);
 //const char *TEST_EXECUTABLES[] = { "Release-Mod-Default.exe", "Release-Mod-Strips.exe", "Release-Mod-Modular.exe", "Release-Mod-Morton.exe", "Release-Mod-MortonCompute.exe", "Release-Mod-Hilbert.exe", "Release-Mod-Peano.exe" };
 const char *TEST_NAMES[] = { "Default", "Strips", "Modular" };
 const char *TEST_EXECUTABLES[] = { "Release-Mod-Default.exe", "Release-Mod-Strips.exe", "Release-Mod-Modular.exe" };
+
+//const char *TEST_NAMES[] = { "Default3D", "Strips3D", "Modular3D", "StripsModularHybrid3D" };
+//const char *TEST_EXECUTABLES[] = { "Release-Mod-Default.exe", "Release-Mod-Strips.exe", "Release-Mod-Modular.exe", "Release-Mod-ModularStrips3D.exe" };
+
 //const char *TEST_NAMES[] = { "Default", "Strips", "Modular", "Default-AOS", "Strips-AOS", "Modular-AOS" };
 //const char *TEST_EXECUTABLES[] = { "Release-Mod-Default.exe", "Release-Mod-Strips.exe", "Release-Mod-Modular.exe", "Release-Mod-Default-AOS.exe", "Release-Mod-Strips-AOS.exe", "Release-Mod-Modular-AOS.exe" };
 //const char *TEST_NAMES[] = { 
@@ -104,110 +108,211 @@ int main(int argc, char* argv[])
         run(start, end, steps, "CirclesNeighbourhoodScale");
     }
 #elif defined(_2D)
-    //{//Space filling curve environment test
-    //    const int steps = 100;
-    //    //Init model arg start
-    //    DensityParams  start = {};
-    //    start.iterations = 1000;
-    //    start.envWidth = 243;
-    //    start.agentsPerCluster = 59049;
-    //    start.seed = 0;
-    //    start.interactionRad = 1.0f;
-    //    start.clusterRad = 0.0f;//Irrelevant, currently disabled in code
-    //    start.clusterCount = 0;//Irrelevant, currently disabled in code
-
-    //    //Init model arg end
-    //    DensityParams end = start;
-    //    end.agentsPerCluster = 59049 * 100;
-
-    //    runCollated(start, end, steps, "PBM_FIRST_TEST");
-    //}
-    //Collected
-    //{//Problem Scale - Circles
-    //    //Init step count
-    //    const int steps = 97;
-    //    //Init model arg start
-    //    CirclesParams start = {};
-    //    start.iterations = 1000;
-    //    start.density = 0.1f;
-    //    start.interactionRad = 2.0f;
-    //    start.seed = 0;
-    //    start.width = 40;//160 agents
-    //    start.attractionForce = 0.2f;
-    //    start.repulsionForce = 0.2f;
-    //    //Init model arg end
-    //    CirclesParams end = start;
-    //    end.width = 1000;//100k agents
-    //    runCollated(start, end, steps, "CirclesProblemScaleLD");
-    //}
-    //{//Problem Scale - Circles
-    //    //Init step count
-    //    const int steps = 97;
-    //    //Init model arg start
-    //    CirclesParams start = {};
-    //    start.iterations = 1000;
-    //    start.density = 1.0f;
-    //    start.interactionRad = 0.4f;
-    //    start.seed = 0;
-    //    start.width = 250;//25k agents
-    //    start.attractionForce = 0.2f;
-    //    start.repulsionForce = 0.2f;
-    //    //Init model arg end
-    //    CirclesParams end = start;
-    //    end.width = 100;//100k agents
-    //    runCollated(start, end, steps, "CirclesProblemScaleHD");
-    //}
-    //{//Neighbourhood Scale - Circles
-    //    const int steps = 100;
-    //    //Init model arg start
-    //    CirclesParams  start = {};
-    //    start.iterations = 1000;
-    //    start.density = 0.4f;
-    //    start.interactionRad = 1.0f;
-    //    start.width = 250;
-    //    start.seed = 0;
-    //    start.attractionForce = 0.2f;
-    //    start.repulsionForce = 0.2f;
-    //    //Init model arg end
-    //    CirclesParams end = start;
-    //    end.interactionRad = 15.0f;
-    //    //Init step count
-    //    runCollated(start, end, steps, "CirclesNeighbourhoodScaleLD");
-    //}
-    {//2D parameter sweep of problem scale, neighbourhood scale
-        {//Null
-            const int steps1 = 49;
-            const int steps2 = 15;
+        {//Null - Problem Scale 200
+            const int steps = 100;
             //Init model arg start
             NullParams  start = {};
             start.agents = 10000;
             start.iterations = 500;
-            start.density = 2.0f;
+            start.density = 24.0f; //~192 neighbours
             start.seed = 1;
             //Init model arg end
-            NullParams end1 = start;
-            end1.agents = 300000;
-            NullParams end2 = start;
-            end2.density = 50.0f;
-            runCollated2D(start, end1, end2, steps1, steps2, "2DSweep-Neighbourhood-NonUniform");
+            NullParams end = start;
+            end.agents = 300000;
+            runCollated(start, end, steps, "NullProblemScale200_uniformrng");
         }
-        {//Null
-            const int steps1 = 49;
-            const int steps2 = 15;
+        {//Null - Problem Scale 200
+            const int steps = 100;
             //Init model arg start
             NullParams  start = {};
             start.agents = 10000;
             start.iterations = 500;
-            start.density = 2.0f;
+            start.density = 24.0f; //~192 neighbours
             start.seed = 0;
             //Init model arg end
-            NullParams end1 = start;
-            end1.agents = 300000;
-            NullParams end2 = start;
-            end2.density = 50.0f;
-            runCollated2D(start, end1, end2, steps1, steps2, "2DSweep-Neighbourhood-Uniform");
+            NullParams end = start;
+            end.agents = 300000;
+            runCollated(start, end, steps, "NullProblemScale200_uniform");
         }
-    }
+        //{//Null - Neighbour scale 50k
+        //    const int steps = 100;
+        //    //Init model arg start
+        //    NullParams  start = {};
+        //    start.agents = 100000;
+        //    start.iterations = 500;
+        //    start.density = 2.0f;
+        //    start.seed = 1;
+        //    //Init model arg end
+        //    NullParams end = start;
+        //    end.density = 50.0f;
+        //    runCollated(start, end, steps, "NullNeighbourhoodScale100k_uniformrng");
+        //}
+        //{//Null - Neighbour scale 50k
+        //    const int steps = 100;
+        //    //Init model arg start
+        //    NullParams  start = {};
+        //    start.agents = 100000;
+        //    start.iterations = 500;
+        //    start.density = 2.0f;
+        //    start.seed = 0;
+        //    //Init model arg end
+        //    NullParams end = start;
+        //    end.density = 50.0f;
+        //    runCollated(start, end, steps, "NullNeighbourhoodScale100k_uniform");
+        //}
+/**
+ * 2D PARAM SWEEP of 2D Models
+ */
+    //{//2D parameter sweep of problem scale, neighbourhood scale
+    //    {//Null
+    //        const int steps1 = 30;
+    //        const int steps2 = 49;
+    //        //Init model arg start
+    //        NullParams  start = {};
+    //        start.agents = 10000;
+    //        start.iterations = 500;
+    //        start.density = 2.0f;
+    //        start.seed = 1;
+    //        //Init model arg end
+    //        NullParams end1 = start;
+    //        end1.agents = 300000;
+    //        NullParams end2 = start;
+    //        end2.density = 50.0f;
+    //        runCollated2D(start, end1, end2, steps1, steps2, "2DSweep-Neighbourhood-NonUniform");
+    //    }
+    //    {//Null
+    //        const int steps1 = 30;
+    //        const int steps2 = 49;
+    //        //Init model arg start
+    //        NullParams  start = {};
+    //        start.agents = 10000;
+    //        start.iterations = 500;
+    //        start.density = 2.0f;
+    //        start.seed = 0;
+    //        //Init model arg end
+    //        NullParams end1 = start;
+    //        end1.agents = 300000;
+    //        NullParams end2 = start;
+    //        end2.density = 50.0f;
+    //        runCollated2D(start, end1, end2, steps1, steps2, "2DSweep-Neighbourhood-Uniform");
+    //    }
+    //}
+    //{//XL Version: 2D parameter sweep of problem scale, neighbourhood scale
+    //    {//Null
+    //        const int steps1 = 300;
+    //        const int steps2 = 250;
+    //        //Init model arg start
+    //        NullParams  start = {};
+    //        start.agents = 10000;
+    //        start.iterations = 100;
+    //        start.density = 2.0f;
+    //        start.seed = 1;
+    //        //Init model arg end
+    //        NullParams end1 = start;
+    //        end1.agents = 300000;
+    //        NullParams end2 = start;
+    //        end2.density = 50.0f;
+    //        runCollated2D(start, end1, end2, steps1, steps2, "2DSweepXL-Neighbourhood-UniformRNG");
+    //    }
+    //    {//Null
+    //        const int steps1 = 300;
+    //        const int steps2 = 250;
+    //        //Init model arg start
+    //        NullParams  start = {};
+    //        start.agents = 10000;
+    //        start.iterations = 100;
+    //        start.density = 2.0f;
+    //        start.seed = 0;
+    //        //Init model arg end
+    //        NullParams end1 = start;
+    //        end1.agents = 300000;
+    //        NullParams end2 = start;
+    //        end2.density = 50.0f;
+    //        runCollated2D(start, end1, end2, steps1, steps2, "2DSweepXL-Neighbourhood-Uniform");
+    //    }
+    //}
+/**
+* 2D PARAM SWEEP of 3D Models with Hybrid
+*/
+//{//2D parameter sweep of problem scale, neighbourhood scale
+//    {//Null
+//        const int steps1 = 30;
+//        const int steps2 = 49;
+//        //Init model arg start
+//        NullParams  start = {};
+//        start.agents = 10000;
+//        start.iterations = 500;
+//        start.density = 2.0f;
+//        start.seed = 1;
+//        //Init model arg end
+//        NullParams end1 = start;
+//        end1.agents = 300000;
+//        NullParams end2 = start;
+//        end2.density = 50.0f;
+//        runCollated2D(start, end1, end2, steps1, steps2, "2DSweep-3DModels");
+//    }
+//    {//Null
+//        const int steps1 = 30;
+//        const int steps2 = 49;
+//        //Init model arg start
+//        NullParams  start = {};
+//        start.agents = 10000;
+//        start.iterations = 500;
+//        start.density = 2.0f;
+//        start.seed = 0;
+//        //Init model arg end
+//        NullParams end1 = start;
+//        end1.agents = 300000;
+//        NullParams end2 = start;
+//        end2.density = 50.0f;
+//        runCollated2D(start, end1, end2, steps1, steps2, "2DSweep-3DModels");
+//    }
+//}
+/**
+* 3D NON-UNIFORM WITH HYBRID
+*/
+    //{//Null - Problem scale
+    //    const int steps = 97;
+    //    //Init model arg start
+    //    NullParams  start = {};
+    //    start.agents = 100000;
+    //    start.iterations = 1000;
+    //    start.density = 2.0f;
+    //    start.seed = 1;
+    //    //Init model arg end
+    //    NullParams end = start;
+    //    end.density = 50.0f;
+    //    runCollated(start, end, steps, "AOS Neighbourhood");
+    //}
+    //{//Null - Problem scale
+    //    const int steps = 97;
+    //    //Init model arg start
+    //    NullParams  start = {};
+    //    start.agents = 100000;
+    //    start.iterations = 1000;
+    //    start.density = 2.0f;
+    //    start.seed = 0;
+    //    //Init model arg end
+    //    NullParams end = start;
+    //    end.density = 50.0f;
+    //    runCollated(start, end, steps, "AOS Neighbourhood");
+    //}
+/**
+ * 3D Uniform with hybrid
+ */
+    //{//Null - Problem scale
+    //    const int steps = 97;
+    //    //Init model arg start
+    //    NullParams  start = {};
+    //    start.agents = 100000;
+    //    start.iterations = 1000;
+    //    start.density = 2.0f;
+    //    start.seed = 0;
+    //    //Init model arg end
+    //    NullParams end = start;
+    //    end.density = 50.0f;
+    //    runCollated(start, end, steps, "3D-Neighbourhood-Uniform");
+    //}
     //{//Neighbourhood scale 50k, 100k, 200k agents
     //    {//Null - Problem scale
     //        const int steps = 97;
@@ -227,32 +332,6 @@ int main(int argc, char* argv[])
     //        //Init model arg start
     //        NullParams  start = {};
     //        start.agents = 50000;
-    //        start.iterations = 1000;
-    //        start.density = 2.0f;
-    //        start.seed = 1;
-    //        //Init model arg end
-    //        NullParams end = start;
-    //        end.density = 50.0f;
-    //        runCollated(start, end, steps, "3D-Neighbourhood-NonUniform");
-    //    }
-    //    {//Null - Problem scale
-    //        const int steps = 97;
-    //        //Init model arg start
-    //        NullParams  start = {};
-    //        start.agents = 100000;
-    //        start.iterations = 1000;
-    //        start.density = 2.0f;
-    //        start.seed = 0;
-    //        //Init model arg end
-    //        NullParams end = start;
-    //        end.density = 50.0f;
-    //        runCollated(start, end, steps, "3D-Neighbourhood-Uniform");
-    //    }
-    //    {//Null - Problem scale
-    //        const int steps = 97;
-    //        //Init model arg start
-    //        NullParams  start = {};
-    //        start.agents = 100000;
     //        start.iterations = 1000;
     //        start.density = 2.0f;
     //        start.seed = 1;
@@ -573,7 +652,7 @@ bool run(const T &start, const T &end, const unsigned int steps, const char *run
             //executeBenchmark
             if (!executeBenchmark(TEST_EXECUTABLES[j], modelArgs, &modelParamsOut, &agentCount, &initRes, &stepRes, &totalTime, &nsFirst, &nsLast))
             {
-                fprintf(stderr, "\rBenchmark '%s' '%s' execution failed on stage %d/%d, exiting early.\n", runName, TEST_NAMES[j], i+1,steps);
+                fprintf(stderr, "\rBenchmark '%s' '%s' execution failed on stage %d/%d, exiting early.\n", runName, TEST_NAMES[j], i + 1, steps);
                 return false;
             }
             //logResult
@@ -640,7 +719,7 @@ bool runCollated(const T &start, const T &end, const unsigned int steps, const c
         //For each mod
         for (unsigned int j = 0; j < sizeof(TEST_EXECUTABLES) / sizeof(char*); ++j)
         {
-            printf("\rExecuting run %s %i/%i %i/%llu      ", runName, i + 1, (int)steps, j+1, sizeof(TEST_EXECUTABLES) / sizeof(char*));
+            printf("\rExecuting run %s %i/%i %i/%llu      ", runName, i + 1, (int)steps, j + 1, sizeof(TEST_EXECUTABLES) / sizeof(char*));
             agentCount = 0;
             totalTime = 0;
             //executeBenchmark
@@ -724,11 +803,11 @@ bool runCollated2D(const T &start, const T &end1, const T &end2, const unsigned 
             //For each mod
             for (unsigned int j = 0; j < sizeof(TEST_EXECUTABLES) / sizeof(char*); ++j)
             {
-                printf("\rExecuting run %s %d:%d/%d:%d %i/%llu      ", runName, w + 1, v+1, steps1, steps2, j + 1, sizeof(TEST_EXECUTABLES) / sizeof(char*));
+                printf("\rExecuting run %s %d:%d/%d:%d %i/%llu      ", runName, w + 1, v + 1, steps1, steps2, j + 1, sizeof(TEST_EXECUTABLES) / sizeof(char*));
                 agentCount = 0;
                 totalTime = 0;
                 //executeBenchmark
-                if (!executeBenchmark(TEST_EXECUTABLES[j], modelArgs2, &modelParamsOut, &agentCount, &initRes, &stepRes, &totalTime, &nsFirst, &nsLast))
+                if (!executeBenchmark(TEST_EXECUTABLES[j], modelArgs, &modelParamsOut, &agentCount, &initRes, &stepRes, &totalTime, &nsFirst, &nsLast))
                 {
                     fprintf(stderr, "\rBenchmark '%s' '%s' execution failed on stage %d:%d/%d:%d, exiting early.\n", runName, TEST_NAMES[j], w + 1, v + 1, steps1, steps2);
                     return false;
@@ -742,7 +821,7 @@ bool runCollated2D(const T &start, const T &end1, const T &end2, const unsigned 
             log(log_F, &nsFirst);
             log(log_F, &nsLast);
             //Model Args
-            log(log_F, &modelArgs2);
+            log(log_F, &modelArgs);
             fputs("\n", log_F);
             fflush(log_F);
         }
@@ -1433,7 +1512,7 @@ void logCollatedHeader(FILE *out, const CirclesParams &modelArgs)
 void logCollatedHeader(FILE *out, const NullParams &modelArgs)
 {
     //Row 1
-    for (unsigned int i = 0; i < sizeof(TEST_NAMES) / sizeof(char*);++i)
+    for (unsigned int i = 0; i < sizeof(TEST_NAMES) / sizeof(char*); ++i)
     {//9 columns per model
         fprintf(out, "%s,,,,,,,,,", TEST_NAMES[i]);
     }

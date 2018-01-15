@@ -916,8 +916,8 @@ int SpatialPartition::requiredSM(int blockSize)
     return blockSize*sizeof(LocationMessage)
 #if defined(MODULAR) //BlockRelative + BlockContinue
         + sizeof(DIMENSIONS_IVEC) + sizeof(bool)
-#elif defined(MODULAR_STRIPS_3D) //BlockRelative + BlockContinue
-        +sizeof(glm::ivec2) + sizeof(bool)
+#elif defined(MODULAR_STRIPS) //BlockRelative + BlockContinue
+        +sizeof(DIMENSIONS_IVEC_MINUS1) + sizeof(bool)
 #endif
     ;
 }

@@ -18,7 +18,7 @@ __global__ void step_null_model(LocationMessages *locationMessagesIn, LocationMe
 #endif
     DIMENSIONS_VEC averageLoc = DIMENSIONS_VEC(0);
     int ct = 0;
-#if defined(MODULAR) || defined(MODULAR_STRIPS_3D)
+#if defined(MODULAR) || defined(MODULAR_STRIPS)
     LocationMessage *lm = locationMessagesIn->firstBin(myLoc);
 do
 {
@@ -38,11 +38,11 @@ do
             //averageLoc += glm::vec2(sqrt(pow(sqrt(pow(lm->location.x, 2.0f)), 2.0f)), sqrt(pow(sqrt(pow(lm->location.y, 2.0f)), 2.0f)));
             ct++;
         }
-#if !(defined(MODULAR) || defined(MODULAR_STRIPS_3D))
+#if !(defined(MODULAR) || defined(MODULAR_STRIPS))
         lm = locationMessagesIn->getNextNeighbour(lm);//Returns a pointer to shared memory or 0
 #endif
     }
-#if defined(MODULAR) || defined(MODULAR_STRIPS_3D)
+#if defined(MODULAR) || defined(MODULAR_STRIPS)
 } while (locationMessagesIn->nextBin(lm));
 #else
     while (lm);

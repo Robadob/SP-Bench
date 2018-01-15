@@ -55,6 +55,12 @@ struct ModelParams
 
 struct CirclesParams : ModelParams
 {
+    static CirclesParams makeEmpty()
+    {
+        CirclesParams a;
+        memset(&a, 0, sizeof(CirclesParams));
+        return a;
+    }
     CirclesParams()
 #if defined(_2D)
 		: width(250)
@@ -82,6 +88,12 @@ private:
 
 struct NullParams : ModelParams
 {
+    static NullParams makeEmpty()
+    {
+        NullParams a;
+        memset(&a, 0, sizeof(NullParams));
+        return a;
+    }
     NullParams()
         : agents(16384)
         , density(1.5f)
@@ -99,6 +111,12 @@ private:
 
 struct DensityParams : ModelParams
 {
+    static DensityParams makeEmpty()
+    {
+        DensityParams a;
+        memset(&a, 0, sizeof(DensityParams));
+        return a;
+    }
     DensityParams()
         : agentsPerCluster(2048)
         , envWidth(50.0f)

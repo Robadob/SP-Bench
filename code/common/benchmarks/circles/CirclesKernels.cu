@@ -100,7 +100,7 @@ __global__ void step_circles_model(LocationMessages *locationMessagesIn, Locatio
     //Always atleast 1 location message, our own location!
     //const float rHalf = d_interactionRad / 2.0f;
     int ct = 0;
-#if defined(MODULAR) || defined(MODULAR_STRIPS_3D)
+#if defined(MODULAR) || defined(MODULAR_STRIPS)
     LocationMessage *lm = locationMessagesIn->firstBin(myLoc);
 do
 {
@@ -130,11 +130,11 @@ do
                 }
             }
         }
-#if !(defined(MODULAR) || defined(MODULAR_STRIPS_3D))
+#if !(defined(MODULAR) || defined(MODULAR_STRIPS))
         lm = locationMessagesIn->getNextNeighbour(lm);//Returns a pointer to shared memory or 0
 #endif
     }
-#if defined(MODULAR) || defined(MODULAR_STRIPS_3D)
+#if defined(MODULAR) || defined(MODULAR_STRIPS)
 } while (locationMessagesIn->nextBin(lm));
 #else
     while (lm);

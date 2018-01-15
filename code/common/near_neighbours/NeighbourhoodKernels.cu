@@ -268,6 +268,16 @@ __device__ __forceinline__ bool invalidBinYZ(DIMENSIONS_IVEC bin)
     }
     return false;
 }
+__device__ __forceinline__ bool invalidBinY(DIMENSIONS_IVEC bin)
+{
+    if (
+        bin.y<0 || bin.y >= d_gridDim.y
+        )
+    {
+        return true;
+    }
+    return false;
+}
 __device__ __forceinline__ bool invalidBinX(DIMENSIONS_IVEC bin)
 {
     if (
@@ -289,7 +299,7 @@ __device__ bool LocationMessages::nextBin(LocationMessage *sm_message)
 #elif defined(_3D)
     for (unsigned int i = 0; i<9; ++i)
 #endif
-#elif !(defined(MODULAR)||defined(MODULAR_STRIPS_3D)) //Modular only checks if we have bin, not if bin is valid
+#elif !(defined(MODULAR)||defined(MODULAR_STRIPS)) //Modular only checks if we have bin, not if bin is valid
 #if defined(_2D)
 for(unsigned int i = 0;i<9;++i)
 #elif defined(_3D)
@@ -391,13 +401,14 @@ for (unsigned int i = 0; i<27; ++i)
         sm_message->state.relative++;
     }
 #endif
-#elif defined(MODULAR_STRIPS_3D)
+#elif defined(MODULAR_STRIPS)
     extern __shared__ LocationMessage sm_messages[];
-    glm::ivec2 *blockRelative = (glm::ivec2 *)(void*)(&(sm_messages[blockDim.x]));
+    DIMENSIONS_IVEC_MINUS1 *blockRelative = (DIMENSIONS_IVEC_MINUS1 *)(void*)(&(sm_messages[blockDim.x]));
     bool *blockContinue = (bool *)(void*)&blockRelative[1];
     //Thread 0 in block decide next relative block
     if (threadIdx.x == 0)//&&threadIdx.y==0&&threadIdx.z==0)
     {
+#if defined(_3D)
         if (blockRelative->x >= 1)
         {
             blockRelative->x = -1;
@@ -410,10 +421,23 @@ for (unsigned int i = 0; i<27; ++i)
             {
                 blockRelative->y++;
             }
+#elif defined(_2D)
+        if (*blockRelative >= 1)
+        {
+            *blockContinue = false;
+#else
+#error "Unexpected dims"
+#endif
         }
         else
         {
+#if defined(_3D)
             blockRelative->x++;
+#elif defined(_2D)
+            (*blockRelative)++;
+#else
+#error "Unexpected dims"
+#endif
         }
     }
 #ifndef NO_SYNC
@@ -525,20 +549,38 @@ for (unsigned int i = 0; i<27; ++i)
 #endif
         return true;//Bin strip has items!
     }
-#elif defined(MODULAR_STRIPS_3D)
+#elif defined(MODULAR_STRIPS)
 //Find the start of the strip
     //Find relative + offset
     sm_message->state.relative = (*blockRelative)+sm_message->state.offset;
     //For the modular axis, if new relative > 1, set -1
+#if defined(_3D)    
     sm_message->state.relative.x = sm_message->state.relative.x>1 ? sm_message->state.relative.x - 3 : sm_message->state.relative.x;
     sm_message->state.relative.y = sm_message->state.relative.y>1 ? sm_message->state.relative.y - 3 : sm_message->state.relative.y;
+#elif defined(_2D)
+    sm_message->state.relative = sm_message->state.relative>1 ? sm_message->state.relative - 3 : sm_message->state.relative;
+#else
+#error "Unexpected dims"
+#endif
     //Check the new bin is valid
-    glm::ivec3 next_bin_first = sm_message->state.location + glm::ivec3(-1, sm_message->state.relative.x, sm_message->state.relative.y);
-    glm::ivec3 next_bin_last = next_bin_first;
+#if defined(_3D)
+    DIMENSIONS_IVEC next_bin_first = sm_message->state.location + DIMENSIONS_IVEC(-1, sm_message->state.relative.x, sm_message->state.relative.y);
+#elif defined(_2D)
+    DIMENSIONS_IVEC next_bin_first = sm_message->state.location + DIMENSIONS_IVEC(-1, sm_message->state.relative);
+#else
+#error "Unexpected dims"
+#endif
+    DIMENSIONS_IVEC next_bin_last = next_bin_first;
     next_bin_last.x += 2;
     bool firstInvalid = invalidBinX(next_bin_first);
     bool lastInvalid = invalidBinX(next_bin_last);
+#if defined(_3D)
     if (invalidBinYZ(next_bin_first))
+#elif defined(_2D)
+    if (invalidBinY(next_bin_first))
+#else
+#error "Unexpected dims"
+#endif
     {//Whole strip invalid, skip
         sm_message->state.binIndexMax = 0;
         return true;
@@ -631,7 +673,7 @@ for (unsigned int i = 0; i<27; ++i)
 #endif
 #endif
 }
-#if defined(MODULAR) || defined(MODULAR_STRIPS_3D)
+#if defined(MODULAR) || defined(MODULAR_STRIPS)
 return true;
 #else
 return false;
@@ -645,7 +687,7 @@ __device__ LocationMessage *LocationMessages::loadNextMessage(LocationMessage *s
   
     if(sm_message->state.binIndex >= sm_message->state.binIndexMax)//Do we need to change bin?
     {
-#if defined(MODULAR)||defined(MODULAR_STRIPS_3D)
+#if defined(MODULAR)||defined(MODULAR_STRIPS)
         return nullptr;
 #else
 		if (!nextBin(sm_message))
@@ -706,7 +748,7 @@ __device__ LocationMessage *LocationMessages::loadNextMessage(LocationMessage *s
     return sm_message;
 }
 
-#if defined(MODULAR) || defined(MODULAR_STRIPS_3D)
+#if defined(MODULAR) || defined(MODULAR_STRIPS)
 __device__ LocationMessage *LocationMessages::firstBin(DIMENSIONS_VEC location)
 #else
 __device__ LocationMessage *LocationMessages::getFirstNeighbour(DIMENSIONS_VEC location)
@@ -729,13 +771,19 @@ __device__ LocationMessage *LocationMessages::getFirstNeighbour(DIMENSIONS_VEC l
         //Init blockContinue true
         ((bool*)(void*)&blockRelative[1])[0] = true;
     }
-#elif defined(MODULAR_STRIPS_3D)
+#elif defined(MODULAR_STRIPS)
     //Init global relative if block thread X
     if (threadIdx.x == 0)//&&threadIdx.y==0&&threadIdx.z==0)
     {
         //Init blockRelative
-        glm::ivec2 *blockRelative = (glm::ivec2 *)(void*)(&(sm_messages[blockDim.x]));
+        DIMENSIONS_IVEC_MINUS1 *blockRelative = (DIMENSIONS_IVEC_MINUS1 *)(void*)(&(sm_messages[blockDim.x]));
+#if defined(_3D)
         blockRelative[0] = glm::ivec2(-2, -1);
+#elif defined(_2D)
+        blockRelative[0] = -2;
+#else
+#error "Unexpected dims."
+#endif
         //Init blockContinue true
         ((bool*)(void*)&blockRelative[1])[0] = true;
     }
@@ -760,10 +808,16 @@ __device__ LocationMessage *LocationMessages::getFirstNeighbour(DIMENSIONS_VEC l
         sm_message->state.offset = (gridPos + DIMENSIONS_IVEC(1)) % 3;
         sm_message->state.location = gridPos;
     }
-#elif defined(MODULAR_STRIPS_3D)
+#elif defined(MODULAR_STRIPS)
     {
         DIMENSIONS_IVEC gridPos = getGridPosition(location);
+#if defined(_3D)
         sm_message->state.offset = (glm::ivec2(gridPos.y+1,gridPos.z+1)) % 3;
+#elif defined(_2D)
+        sm_message->state.offset = gridPos.y + 1 % 3;
+#else
+#error "Unexpected dims"
+#endif
         sm_message->state.location = gridPos;
     }
 #else
@@ -779,14 +833,14 @@ __device__ LocationMessage *LocationMessages::getFirstNeighbour(DIMENSIONS_VEC l
 #else
     sm_message->state.relative = -2;
 #endif
-#elif !(defined(MODULAR)||defined(MODULAR_STRIPS_3D)) //No need to initialise this value for modular
+#elif !(defined(MODULAR)||defined(MODULAR_STRIPS)) //No need to initialise this value for modular
 #ifdef _3D
 	sm_message->state.relative = glm::ivec3(-2, -1, -1);
 #else
 	sm_message->state.relative = glm::ivec2(-2, -1);
 #endif
 #endif
-#if defined(MODULAR)||defined(MODULAR_STRIPS_3D)
+#if defined(MODULAR)||defined(MODULAR_STRIPS)
     nextBin(sm_message);
     return sm_message;
 #else
