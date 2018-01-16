@@ -814,7 +814,7 @@ __device__ LocationMessage *LocationMessages::getFirstNeighbour(DIMENSIONS_VEC l
 #if defined(_3D)
         sm_message->state.offset = (glm::ivec2(gridPos.y+1,gridPos.z+1)) % 3;
 #elif defined(_2D)
-        sm_message->state.offset = gridPos.y + 1 % 3;
+        sm_message->state.offset = (gridPos.y + 1) % 3;
 #else
 #error "Unexpected dims"
 #endif
