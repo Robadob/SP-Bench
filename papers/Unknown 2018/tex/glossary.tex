@@ -1,0 +1,136 @@
+\newglossaryentry{sm}
+{
+	type=\acronymtype, 
+	name={SM},   
+	description={Stream Multiprocessor},   
+	first={Stream Multiprocessor (SM)},   
+	plural={SMs},   
+	firstplural={Stream Multiprocessors (SMs)}
+}
+\newglossaryentry{avl}{type=\acronymtype, name={AVL}, description={A form of binary tree that stores additional information, allowing it to maintain balance.}, first={Adel'son-Vel'skii \& Landis (AVL)}}
+\newglossaryentry{gis}{type=\acronymtype, name={GIS}, description={A broad term that refers to systems that handle geographic information, such as topological or mapping data.}, first={Geographic Information Service (GIS)}}
+\newglossaryentry{fp32}{type=\acronymtype, name={fp32}, description={32 bit Floating Point; single precision decimal}, first={Single Precision (fp32)}}
+\newglossaryentry{fp64}{type=\acronymtype, name={fp64}, description={64 bit Floating Point; double precision decimal}, first={Double Precision (fp64)}}
+\newglossaryentry{mic}{type=\acronymtype, name={MIC}, description={Many Integrated Core; Intel's (Xeon Phi) compute architecture}, first={Many Integrated Core (MIC)}}
+\newglossaryentry{ecc}{type=\acronymtype, name={ECC}, description={Error Correction Code}, first={Error Correction Code (ECC)}}
+\newglossaryentry{sfu}{type=\acronymtype, name={SFU}, description={Special Functions Unit}, first={Special Functions Unit (SFU)}}
+%\newglossaryentry{hpc}{type=\acronymtype, name={HPC}, description={High Performance Computing}, first={High Performance Computing (HPC)}}
+\newacronym{abm}{ABM}{Agent Based Modelling}
+\newacronym{sph}{SPH}{Smoothed-Particle Hydrodynamics}
+\newacronym{simt}{SIMT}{Single Instruction Multiple Threads}
+\newacronym{flame}{FLAME}{Flexible Large-scale Agent-based Modelling Environment}
+\newacronym{soa}{SoA}{Struct of Arrays}
+\newacronym{aos}{AoS}{Array of Structs}
+\newacronym{gpgpu}{GPGPU}{General Purpose computation on Graphics Processing Units}
+\newacronym{gpu}{GPU}{Graphics Processing Unit}
+\newacronym{cpu}{CPU}{Central Processing Unit}
+\glsunset{cpu} 
+\newacronym{cuda}{CUDA}{Compute Unified Device Architecture}
+\glsunset{cuda} 
+\newacronym{openacc}{OpenACC}{Open Accelerators}
+\glsunset{openacc} 
+\newacronym{hpc}{HPC}{High Performance Computation}
+\newacronym{cudpp}{CUDPP}{CUDA Parallel Primitives}
+\newacronym{opencl}{OpenCL}{Open Computing Language}
+\glsunset{opencl} 
+\newacronym{opengl}{OpenGL}{Open Graphics Library}
+\glsunset{opengl} 
+\newacronym{seti}{SETI}{The Search for Extra-Terrestrial Intelligence}
+\newacronym{str}{STR}{Sort-Tile Recursive}
+\glsunset{seti} 
+\newacronym{nvcc}{nvcc}{NVIDIA CUDA Compiler}
+%\newacronym{api}{API}{Applications Programming Interface}
+\newacronym{openab}{OpenAB}{Open Agent Benchmark Project}
+\newglossaryentry{api}
+{
+	type=\acronymtype, 
+	name={API},   
+	description={Applications Programming Interface},   
+	first={Applications Programming Interface (API)},   
+	plural={APIs},   
+	firstplural={Applications Programming Interfaces (APIs)}
+}
+\glsunset{api} 
+\newacronym{mpi}{MPI}{Message Passing Interface}
+\newacronym{voc}{VOC}{Visual Object Classes}
+\newacronym{kbs}{KBS}{Knowledge Based System}
+\newacronym{cbr}{CBR}{Case Based Reasoning}
+%\newacronym{abs}{ABS}{Agent-Based Systems}
+\newacronym{nn}{NN}{Neural Network}
+\newacronym{dnn}{DNN}{Deep Neural Network}
+\newacronym{pca}{PCA}{Principle Component Analysis}
+\newacronym{abs}{ABS}{Agent Based Simulations}
+\newacronym{pcie}{PCIe}{PCI Express}
+\newacronym{ga}{GA}{Genetic Algorithm}
+\newacronym{ca}{CA}{Cellular Automata}
+%\newacronym{ghr}{GHR}{Gazis-Herman-Rothery}
+%\newacronym{its}{ITS}{Intellegent Transport System}
+%\newacronym{atms}{ATMS}{Advanced Traffic Management System}
+%\newacronym{atis}{ATIS}{Advanced Traffic Information System}
+\newglossaryentry{sli}{type=\acronymtype, name={SLI},  
+first={Scalable Link Interface (SLI)},
+description={Scalable Link Interface (SLI) is the brand name for NVIDIAs multi-GPU technology.}}
+%\glsunset{sli} 
+
+
+%Proper glossary
+\newglossaryentry{atomic}
+{
+  name=atomic,
+  description={An operation whereby a processor can guarantee that read, modify and write actions will occur in serial without interference from concurrent threads. These operations are usually limited to simple types and instructions such as add, min, max \& exchange}
+}
+\newglossaryentry{memory_fence}
+{
+  name=memory fence,
+  description={An operation which is used as a barrier to enforce a degree if order among concurrent threads. The usage ensures all memory accesses before the memory fence have been executed prior to those after the fence being started}
+}
+\newglossaryentry{load_factor}
+{
+  name=load-factor,
+  description={A hashing data-structure statistic calculated as, the number of entries divided by the maximum number of entries (without resizing)}
+}
+\newglossaryentry{triangular_numbers}
+{
+  name=triangular numbers,
+  description={Numbers of the sequence: 1,3,6,10. They are calculated by summing the integers between (inclusive) 1 and the desired index (1 based index), this can be more simply formulated as $T_n=\frac{n(n+1)}{2}$}
+}
+\newglossaryentry{dynamic_parallelism}
+{
+  name=dynamic parallelism,
+  description={A feature introduced with CUDA 5.0 which facilitates nested kernel launches}
+}
+\newglossaryentry{race_condition}
+{
+  name=race condition,
+  description={A condition whereby the output of a concurrent block of code is dependant on the sequence in which the concurrent threads execute}
+}
+\newglossaryentry{perfect_hash}
+{
+  name=perfect hash,
+  description={A hash function capable of mapping a set of distinct elements into a set of distinct hashes with no collisions. Performed with known data, these are able to reach a maximal load factor.}
+}
+\newglossaryentry{convex_set}
+{
+  name=convex set,
+  description={Within geometry, a convex set is an area in which a straight line drawn between any two points would not leave the confines of the set}
+}
+\newglossaryentry{memory_coalescing}
+{
+  name=memory coalescing,
+  description={When multiple memory accesses are combined in a way such that an entire single transaction is used. For example with a 128 byte bus, it would be possible to read 32 neighbouring 4-byte integers in a single transaction. This is achieved in GPGPU programing by having neighbouring threads access neighbouring locations in memory simultaneously}
+}
+\newglossaryentry{coherence}
+{
+  name=coherence,
+  description={The act of being in a logical order. A spatially coherent data-structure is therefore a data-structure whereby elements are stored in an order similar to how they naturally appear}
+}
+\newglossaryentry{hyperplane}
+{
+  name=hyperplane,
+  description={A plane which which is one dimension less than the space in which it exists. If a space is 3-dimensional, then it's hyperplanes are 2-dimensional planes.}
+}
+\newglossaryentry{on-chip}
+{
+  name=on-chip,
+  description={Refers to memory and caches stored on the same chip as the processor, these offer the highest throughput and lowest latencies however are often of limited size}
+}

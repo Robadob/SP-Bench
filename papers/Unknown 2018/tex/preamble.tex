@@ -1,0 +1,44 @@
+\usepackage{amssymb}
+%IEEE Spec
+\usepackage[T1]{fontenc} % optional
+\usepackage{amsmath}
+\usepackage[cmintegrals]{newtxmath}
+\usepackage{bm} % optional
+%Cont
+\setcounter{tocdepth}{3}
+\usepackage{wrapfig}
+\usepackage{graphicx}
+\usepackage[caption=false]{subfig}
+\usepackage[super]{nth} % i.e. 6^th
+\usepackage[british]{babel}
+\usepackage{pgfplots}
+\usepackage{pgfplotstable}
+%\select@language{british}
+\usepackage{algorithm}
+\usepackage{listings} 
+\usepackage{tabu}
+\setlength{\tabcolsep}{5pt} % Set column padding on tables higher
+\setlength{\tabulinesep}{5pt} % Set column padding on tables higher
+\usepackage{url}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks,
+    citecolor=black,
+    filecolor=black,
+    linkcolor=black,
+    urlcolor=black
+}
+%Glossaries
+\usepackage[automake,acronym,section=chapter,hyperfirst=false]{glossaries}
+\makeglossaries
+
+
+\setlength{\intextsep}{0pt}%reduces gap under wrapped figures
+\lstset{basicstyle=\scriptsize\ttfamily,breaklines=true}
+
+\usepackage{academicons}
+\definecolor{orcidlogocol}{HTML}{A6CE39}
+\newcommand{\orcid}[1]{\textsuperscript{\href{https://orcid.org/#1}{\textcolor{orcidlogocol}{\aiOrcid}}}}
+\newcommand{\orcidRob}{\orcid{0000-0003-3379-9042}}
+\newcommand{\orcidSteve}{\orcid{0000-0003-3179-0263}}
+\newcommand{\orcidPaul}{\orcid{0000-0002-4657-5518}}
