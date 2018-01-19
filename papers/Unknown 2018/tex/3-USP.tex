@@ -4,16 +4,16 @@ Under \gls{gpu} uniform spatial partitioning the known environment is sub divide
 
 So that the array of messages can be accessed efficiently, a partition boundary matrix is constructed. This structure provides an index to the start of each bin's messages within the array. Figure \ref{fig:uniform-spatial-partitioning} presents a 2 dimensional example of the data structures used.
 
-\begin{figure*}[!t]
+\begin{figure}[!t]
 \centering
-\includegraphics[width=\textwidth]{../resources/usp/placeholder.png}
+\includegraphics[width=\linewidth]{../resources/usp/usp.pdf}
 \caption{\label{fig:uniform-spatial-partitioning}%
 \textit{This is a placeholder figure, areas in the left hand grid will be replaced with shading/hashing, and coloured people with symbols. May additionally include the moore neighbourhood arrows.}\newline
 Visual representation of an environment and how it's data is stored under \gls{gpu} uniform spatial partitioning.%
 The left hand grid represents the environment, where symbols represent messages. The square [hash-sample] and  circular [hash-sample] areas of the environment represent the Moore and radial search neighbourhoods about the search point [symbol-placeholder].%
 The tables represent the message storage array (top) and partition boundary matrix respectively.
 }
-\end{figure*}
+\end{figure}
 
 Although if the containing bin of a single message changes, the entire data-structure must be reconstructed. The process for constructing both the message array and partition boundary matrix is already highly data-parallel executing in constant time complexity (with respect to the number of messages), if implemented with atomic counting sort\textit{(CITEME? (has Paul published the county sort work), const time scan page 7: https://www.mimuw.edu.pl/~ps209291/kgkp/slides/scan.pdf)}.
 
