@@ -19,7 +19,7 @@ Visual representation of an environment and how it's data is stored and accessed
 \note{Not sure if the Bin ID row is redundant/misleading and should be removed.}
 \end{figure}
 
-Within this paper we have only considered subdivision of the environment such that bin dimensions are equal to the neighbourhood radius. Previously Hoetzlein studied the impact of adjusting bin dimensions, finding the optimal dimension to be $\frac{2}/{3}R$\cite{Hoe14}. However this analysis only considered a fixed density of particles, additionally identifying that it was an optimisation between too many bins and too many messages per bin, the latter which would vary with message density.
+Within this paper we have only considered subdivision of the environment such that bin dimensions are equal to the neighbourhood radius. Previously Hoetzlein studied the impact of adjusting bin dimensions, finding the optimal dimension to be $\frac{2}{3}R$\cite{Hoe14}. However this analysis only considered a fixed density of particles, additionally identifying that it was an optimisation between too many bins and too many messages per bin, the latter which would vary with message density.
 
 To access messages located within the radial neighbourhood of a position, the position's containing environmental bin is identified and all messages stored within the bins of the inclusive Moore neighbourhood are then iterated. Only those with a position inside the radial neighbourhood are forwarded to the model.
 
