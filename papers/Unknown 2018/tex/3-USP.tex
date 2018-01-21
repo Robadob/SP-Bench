@@ -4,20 +4,20 @@ Under \gls{gpu} uniform spatial partitioning the known environment is sub divide
 
 So that the array of messages can be accessed efficiently, a partition boundary matrix is constructed. This structure provides an index to the start of each bin's messages within the array. Figure \ref{fig:uniform-spatial-partitioning} presents a 2 dimensional example of the data structures used.
 
+Although if the containing bin of a single message changes, the entire data-structure must be reconstructed. The process for constructing both the message array and partition boundary matrix is already highly data-parallel executing in constant time complexity (with respect to the number of messages), if implemented with atomic counting sort.
+\note{Cite Paul on atomic count sort?}
+\note{const time scan page 7: https://www.mimuw.edu.pl/~ps209291/kgkp/slides/scan.pdf)}
+
+In all instances the cost of performing the fixed radius near neighbours search outweighs that of constructing the data-structure. Large neighbourhoods can see the search time take 30x longer than construction, whereas the least demanding configurations (which under utilise the hardware) still perform construction in a third of the time required for search. This is in agreement with the work of Hongyu et al whereby the reconstruction was optimised by sorting from the result of the previous sort\cite{HY*15}. They were able to improve performance in a small \gls{sph} simulation of 8192 particles within a $16^{3}$ grid, however performance was equal to that of their initial unoptimised reconstruction when applied to larger simulations.
+
 \begin{figure}[!t]
 \centering
 \includegraphics[width=\linewidth]{../resources/usp/usp.pdf}
 \caption{\label{fig:uniform-spatial-partitioning}%
-\textit{This is a placeholder figure, areas in the left hand grid will be replaced with shading/hashing, and coloured people with symbols. May additionally include the moore neighbourhood arrows.}\newline
-Visual representation of an environment and how it's data is stored under \gls{gpu} uniform spatial partitioning.%
-The left hand grid represents the environment, where symbols represent messages. The square [hash-sample] and  circular [hash-sample] areas of the environment represent the Moore and radial search neighbourhoods about the search point [symbol-placeholder].%
-The tables represent the message storage array (top) and partition boundary matrix respectively.
+Visual representation of an environment and how it's data is stored and accessed under \gls{gpu} uniform spatial partitioning.
 }
+\note{Not sure if the Bin ID row is redundant/misleading and should be removed.}
 \end{figure}
-
-Although if the containing bin of a single message changes, the entire data-structure must be reconstructed. The process for constructing both the message array and partition boundary matrix is already highly data-parallel executing in constant time complexity (with respect to the number of messages), if implemented with atomic counting sort\textit{(CITEME? (has Paul published the county sort work), const time scan page 7: https://www.mimuw.edu.pl/~ps209291/kgkp/slides/scan.pdf)}.
-
-In all instances the cost of performing the fixed radius near neighbours search outweighs that of constructing the data-structure. Large neighbourhoods can see the search time take 30x longer than construction, whereas the least demanding configurations (which under utilise the hardware) still perform construction in a third of the time required for search. This is in agreement with the work of Hongyu et al whereby the reconstruction was optimised by sorting from the result of the previous sort\cite{HY*15}. They were able to improve performance in a small \gls{sph} simulation of 8192 particles within a $16^{3}$ grid, however performance was equal to that of their initial unoptimised reconstruction when applied to larger simulations.
 
 Within this paper we have only considered subdivision of the environment such that bin dimensions are equal to the neighbourhood radius. Previously Hoetzlein studied the impact of adjusting bin dimensions, finding the optimal dimension to be $\frac{2}/{3}R$\cite{Hoe14}. However this analysis only considered a fixed density of particles, additionally identifying that it was an optimisation between too many bins and too many messages per bin, the latter which would vary with message density.
 
@@ -25,12 +25,12 @@ To access messages located within the radial neighbourhood of a position, the po
 
 In 2 dimensions this means that spatially we are accessing messages with an area 2.86x larger than required (2D neighbourhood area: $\pi R^{2}$, 2D Moore neighbourhood area: $(3R)^{2}$), in 3 dimensions this increases to 6.45x (3D neighbourhood volume: $\frac{4}{3}\pi R^{3}$, 3D Moore neighbourhood volume: $(3R)^{3}$).
 
-\textit{Something about the impact of biased message distribution and GPU execution, which we haven't considered in this paper.}
+\note{Something about the impact of biased message distribution and GPU execution, which we haven't considered in this paper.}
 
-\textit{Review Goswami space filling (again), see if we can identify where their research differed from our own experience.}
+\note{Review Goswami space filling (again), see if we can identify where their research differed from our own experience.}
 %Goswami et al improved the performance of uniform spatial partitioning neighbour searches during \gls{sph} \cite{GS*10}. Bins within their partitioning are sorted according to a Z-order space-filling curve (also known as a Morton code, this ensures that all particles lying within any power of two aligned block have contiguous Z-indices. This additional locality ensures that more neighbourhoods consist of contiguous blocks of memory, therefore neighbourhood searches are more likely to benefit from contiguous data becoming cached. They utilised a look-up table for Z-indices to ensure efficient construction.
 
-\textit{Describe larger spatial partitioning specific modifications: e.g. neighbourhood grid.}
+\note{Describe larger spatial partitioning specific modifications: e.g. neighbourhood grid.}
 %#Neighbourhood Grid
 %Joselli et al have described a data-structure, neighbourhood grid. This data-structure has been designed to optimise \gls{sph} by assigning each particle to its own bin, rather than the uniformly sized bins found in uniform spatial partitioning \cite{JR*15}. This binning system instead creates an approximate spatial neighbourhood, which has permitted performance improvements of upto 9 times when compared to uniform spatial partitioning methods.
       

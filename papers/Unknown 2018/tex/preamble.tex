@@ -42,3 +42,54 @@
 \newcommand{\orcidRob}{\orcid{0000-0003-3379-9042}}
 \newcommand{\orcidSteve}{\orcid{0000-0003-3179-0263}}
 \newcommand{\orcidPaul}{\orcid{0000-0002-4657-5518}}
+
+%Pete's Todo stuff
+\usepackage{xifthen}
+\usepackage{mdframed}
+\definecolor{todo_light}{HTML}{FFCC7D}
+\definecolor{todo_dark}{HTML}{CB8F00}
+\newmdenv[
+    linecolor=todo_dark,
+    linewidth=12pt,
+    backgroundcolor=todo_light,
+    frametitlebackgroundcolor=todo_light,
+    innertopmargin=6pt,
+    innerrightmargin=4pt,
+    innerbottommargin=6pt,
+    innerleftmargin=4pt,
+    skipabove=12pt,
+    skipbelow=12pt,
+    topline=false,
+    rightline=false,
+    bottomline=false
+]{md_todo}
+\newcommand{\todo}[2][]{
+    \begin{md_todo}[]
+    \texttt{@todo:} \textbf{#1} \ifthenelse{\equal{#1}{}}{}{\newline\noindent}#2
+    \end{md_todo}
+}
+%Pete's Todo stuff, but adjusted for a mint coloured note
+\usepackage{xifthen}
+\usepackage{mdframed}
+\definecolor{note_light}{HTML}{82CCB5}
+\definecolor{note_dark}{HTML}{089D7E}
+\newmdenv[
+    linecolor=note_dark,
+    linewidth=12pt,
+    backgroundcolor=note_light,
+    frametitlebackgroundcolor=note_light,
+    innertopmargin=6pt,
+    innerrightmargin=4pt,
+    innerbottommargin=6pt,
+    innerleftmargin=4pt,
+    skipabove=12pt,
+    skipbelow=12pt,
+    topline=false,
+    rightline=false,
+    bottomline=false
+]{md_note}
+\newcommand{\note}[2][]{
+    \begin{md_note}[]
+    \textbf{#1} \ifthenelse{\equal{#1}{}}{}{\newline\noindent}#2
+    \end{md_note}
+}
