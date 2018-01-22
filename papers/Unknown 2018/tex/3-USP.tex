@@ -1,14 +1,17 @@
-\section{Uniform Spatial Partitioning\label{sec:spatial-partitioning}}
+\section{Near Neighbours on \gls{gpu}\label{sec:spatial-partitioning}}
 
+\note{kd-trees, kinetic data structures, k-nn, aproxx knn}
+
+\subsection{Uniform Spatial Partitioning}
 Under \gls{gpu} uniform spatial partitioning the known environment is sub divided into a uniform grid of bins, each given a consecutive identifier (such that in 2 dimensions $i = p^{Y}d^{X}+p^{X}$ where $p$ is the grid position in the corresponding axis and $d$ is the grid's dimensions). Message's locations are then clamped into the known environment bounds, allowing the containing environmental bin to be identified. Messages are sorted and stored in order of their containing bin's identifier.
 
 So that the array of messages can be accessed efficiently, a partition boundary matrix is constructed. This structure provides an index to the start of each bin's messages within the array. Figure \ref{fig:uniform-spatial-partitioning} presents a 2 dimensional example of the data structures used.
 
-Although if the containing bin of a single message changes, the entire data-structure must be reconstructed. The process for constructing both the message array and partition boundary matrix is already highly data-parallel executing in constant time complexity (with respect to the number of messages), if implemented with atomic counting sort.
+Although if the containing bin of a single message changes, the entire data structure must be reconstructed. The process for constructing both the message array and partition boundary matrix is already highly data-parallel executing in constant time complexity (with respect to the number of messages), if implemented with atomic counting sort.
 \note{Cite Paul on atomic count sort?}
 \note{const time scan page 7: https://www.mimuw.edu.pl/~ps209291/kgkp/slides/scan.pdf)}
 
-In all instances the cost of performing the fixed radius near neighbours search outweighs that of constructing the data-structure. Large neighbourhoods can see the search time take 30x longer than construction, whereas the least demanding configurations (which under utilise the hardware) still perform construction in a third of the time required for search. This is in agreement with the work of Hongyu et al whereby the reconstruction was optimised by sorting from the result of the previous sort\cite{HY*15}. They were able to improve performance in a small \gls{sph} simulation of 8192 particles within a $16^{3}$ grid, however performance was equal to that of their initial unoptimised reconstruction when applied to larger simulations.
+In all instances the cost of performing the fixed radius near neighbours search outweighs that of constructing the data structure. Large neighbourhoods can see the search time take 30x longer than construction, whereas the least demanding configurations (which under utilise the hardware) still perform construction in a third of the time required for search. This is in agreement with the work of Hongyu et al whereby the reconstruction was optimised by sorting from the result of the previous sort\cite{HY*15}. They were able to improve performance in a small \gls{sph} simulation of 8192 particles within a $16^{3}$ grid, however performance was equal to that of their initial unoptimised reconstruction when applied to larger simulations.
 
 \begin{figure}[!t]
 \centering
@@ -32,8 +35,8 @@ In 2 dimensions this means that spatially we are accessing messages with an area
 
 \note{Describe larger spatial partitioning specific modifications: e.g. neighbourhood grid.}
 %#Neighbourhood Grid
-%Joselli et al have described a data-structure, neighbourhood grid. This data-structure has been designed to optimise \gls{sph} by assigning each particle to its own bin, rather than the uniformly sized bins found in uniform spatial partitioning \cite{JR*15}. This binning system instead creates an approximate spatial neighbourhood, which has permitted performance improvements of upto 9 times when compared to uniform spatial partitioning methods.
+%Joselli et al have described a data structure, neighbourhood grid. This data structure has been designed to optimise \gls{sph} by assigning each particle to its own bin, rather than the uniformly sized bins found in uniform spatial partitioning \cite{JR*15}. This binning system instead creates an approximate spatial neighbourhood, which has permitted performance improvements of upto 9 times when compared to uniform spatial partitioning methods.
       
 %By storing particles to unique bins within a regular grid, neighbourhood searches can be carried out surveying a constant radius of directly adjacent bins. With a radius of 1 cell in 3 dimensions this reduces all neighbourhood searches to checking 26 bins, and in 2 dimensions only 8 bins. This provides constant time queries, rather than queries that increase with the density of particles.
 
-%As particles move, the data-structure must be sorted such that spatial neighbours remain close within the grid. A bi-tonic sort was used in their development and testing, which sorted each dimension in a separate pass, however the focus was on their data-structure and the sorting algorithm used is independent of that. It was clarified that they do not repeat earlier sorts, if the 2nd or 3rd passes also make changes. They found that this would impact the performance, whilst only correcting around a single percentage of particles.
+%As particles move, the data structure must be sorted such that spatial neighbours remain close within the grid. A bi-tonic sort was used in their development and testing, which sorted each dimension in a separate pass, however the focus was on their data structure and the sorting algorithm used is independent of that. It was clarified that they do not repeat earlier sorts, if the 2nd or 3rd passes also make changes. They found that this would impact the performance, whilst only correcting around a single percentage of particles.

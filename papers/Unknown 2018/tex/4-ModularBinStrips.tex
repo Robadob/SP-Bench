@@ -17,12 +17,16 @@
     \note{Could include a code excerpt to show difference between bounds checking of default vs strips?}
 
   \subsection{Modular}
-\begin{wrapfigure}{r}{0.5\linewidth}
+\begin{figure}[!t]
 \centering
-\includegraphics[width=\linewidth]{../resources/modular/placeholder.png}
-\caption{A visual representation of how the order of an arbitrary Moore neighbourhood may be iterated under the Modular optimisation.}
-\end{wrapfigure}
-    The Modular optimisation targets scattered memory accesses. In the highly parallel \gls{gpu} execution, many neighbourhoods are being read simultaneously. Therefore it is almost certain that there will be intersecting Moore Neighbourhoods. Instead of iterating the Moore neighbourhood linearly, we group neighbouring environment bins into neighbouring collections representative of the Moore neighbourhood. This the bins within each group to be labelled in the standard linear order. Now when a Moore neighbourhood is positioned anywhere in the environment, it will contain one bin with each label value, this is visualised in figure. Therefore it becomes possible to iterate the bins in their label order.
+\includegraphics[width=\linewidth]{../resources/modular/modular.pdf}
+\caption{\label{fig:modular}A visual representation of how the standard local indexing (left) and global indexing (right) of two intersecting Moore neighbourhoods (marked grey) differ.}
+\end{figure}
+    The Modular optimisation targets scattered memory accesses. In the highly parallel \gls{gpu} execution, many neighbourhoods are being read simultaneously. Therefore it is almost certain that there will be intersecting Moore Neighbourhoods. Instead of iterating the Moore neighbourhood according to a local linear order, we calculate a recurring global index to define the order in which all Moore neighbourhoods are iterated. The global index can be produced by tightly packing linear indexed Moore neighbourhoods within the environment. Now when a Moore neighbourhood is positioned anywhere in the environment, it will contain one bin with each index value as shown in figure \ref{fig:modular}. Therefore it becomes possible to iterate the bins according to the order of their global indexes, such that the initial number of bins accessed is reduced significantly.
+    
+    The global index does not need to be precomputed, it can be computed at runtime with minimal additional instructions and storage.
+    
+    \note{Include more detail on how we have implemented modular?, e.g. order calc algorithm, storage reqs}
     
     This optimisation reduces the maximum initial bins accessed to 1/9th of the environment in 2 dimensions and 1/27th in 3 dimensions. Thereby reducing unique memory loads, allowing more efficient utilisation of the limited memory and cache bandwidth.
     
@@ -35,3 +39,5 @@
     This loses the Modular optimisation from the first dimension in favour of the Strips optimisation, however the results in the next section show that this trade-off improves performance over that of either of the optimisations applied individually.
     
     \note{Arguably we could maintain the modular optimisation by iterating messages within the strip from a modular offset, however this is not something we've tested. (It would require storing more temporary iteration info).}
+    
+    \note{Could possibly include code example to differentiate from earlier optimisations, however unclear at this point whether appropriate (until theirs have been added.}
