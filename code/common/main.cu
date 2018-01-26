@@ -43,18 +43,20 @@ ArgData parseArgs(int argc, char * argv[])
 			data.device = (unsigned int)strtoul(argv[++i], nullptr, 0);
 		}
 #ifdef CIRCLES_MODEL
-		//-circles <uint> <float> <float> <float> <float> <ulong>
+		//V2: -circles <uint> <float> <ulong>
         //Enables circles model
 	    //Sets the width, density, interaction rad, attractionForce, repulsionForce and iterations to be executed
 		else if (arg.compare("-circles") == 0)
 		{
             assert(!data.model);//Two model params passed at runtime?
             std::shared_ptr<CirclesParams> mdl = std::make_shared<CirclesParams>();
-            mdl->width = (unsigned int)strtoul(argv[++i], nullptr, 0);
+            //mdl->width = (unsigned int)strtoul(argv[++i], nullptr, 0);
+            mdl->agents = (unsigned int)strtoul(argv[++i], nullptr, 0);
             mdl->density = (float)atof(argv[++i]);
-            mdl->interactionRad = (float)atof(argv[++i]);
-            mdl->attractionForce = (float)atof(argv[++i]);
-            mdl->repulsionForce = (float)atof(argv[++i]);
+            //mdl->interactionRad = (float)atof(argv[++i]);
+            //mdl->attractionForce = (float)atof(argv[++i]);
+            //mdl->repulsionForce = (float)atof(argv[++i]);
+            mdl->forceModifier = (float)atof(argv[++i]);
             mdl->iterations = strtoul(argv[++i], nullptr, 0);
             data.model = mdl;
         }
@@ -178,14 +180,15 @@ int main(int argc, char * argv[])
 	Visualisation v("Visulisation Example", args.GLwidth, args.GLheight);//Need to init GL before creating CUDA textures
 #endif
     std::shared_ptr<CoreModel> model;
-    
+    float density = 1.0f;
     switch (args.model->enumerator())
     {
 #ifdef CIRCLES_MODEL
         case Circles:
         {
             std::shared_ptr<CirclesParams> _model = std::dynamic_pointer_cast<CirclesParams>(args.model);
-            model = std::make_shared<CirclesModel>(_model->width, _model->density, _model->interactionRad * 2, _model->attractionForce, _model->repulsionForce);
+            density = _model->density;
+            model = std::make_shared<CirclesModel>(_model->agents, _model->density, _model->forceModifier);
             break;
         }
 #endif
@@ -193,6 +196,7 @@ int main(int argc, char * argv[])
         case Null:
         {
             std::shared_ptr<NullParams> _model = std::dynamic_pointer_cast<NullParams>(args.model);
+            density = _model->density;
             model = std::make_shared<NullModel>(_model->agents, _model->density);
             break;
         }
@@ -215,7 +219,7 @@ int main(int argc, char * argv[])
         : model->initPopulation(args.model->seed);
     //const Time_Init initTimes = model->initPopulation(args.model->seed);
 #ifdef _GL
-	std::shared_ptr<ParticleScene> scene = std::make_shared<ParticleScene>(v, model);
+    std::shared_ptr<ParticleScene> scene = std::make_shared<ParticleScene>(v, model, density);
 #endif
 
 	//Init model

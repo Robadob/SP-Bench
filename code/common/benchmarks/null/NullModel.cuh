@@ -37,23 +37,7 @@ public:
     const unsigned int width;
     const float density;
     const float interactionRad;
-    static unsigned int NullModel::toWidth(unsigned int agents, float density);
-    static unsigned int NullModel::toAgents(unsigned int width, float density);
 };
-inline unsigned int NullModel::toWidth(unsigned int agents, float density)
-{
-#if DIMENSIONS == 2
-    return (unsigned int)ceil(sqrt(agents / density));
-#elif DIMENSIONS == 3
-    return (unsigned int)ceil(cbrt(agents / density));
-#else
-#error DIMENSIONS must equal 2 or 3
-#endif
-}
-inline unsigned int NullModel::toAgents(unsigned int width, float density)
-{
-    return (unsigned int)(round(pow(width, DIMENSIONS) * (double)density));
-}
 NullModel::NullModel(
     const unsigned int agents,
     const float density

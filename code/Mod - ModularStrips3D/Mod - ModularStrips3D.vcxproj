@@ -37,7 +37,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{AC2C50D9-CE89-4763-888E-BF1B389DE6D8}</ProjectGuid>
     <RootNamespace>ModModularStrips3D</RootNamespace>
-    <ProjectName>Mod-ModularStrips3D</ProjectName>
+    <ProjectName>Mod-ModularStrips</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

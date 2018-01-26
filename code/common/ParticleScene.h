@@ -16,7 +16,7 @@ class ParticleScene : protected Scene
 {
 public:
 
-    ParticleScene(Visualisation &visualisation, std::shared_ptr<CoreModel> model);
+    ParticleScene(Visualisation &visualisation, std::shared_ptr<CoreModel> model, float density=1.0f);
     ~ParticleScene() override;
     void render() override;
     void reload() override;

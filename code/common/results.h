@@ -62,21 +62,13 @@ struct CirclesParams : ModelParams
         return a;
     }
     CirclesParams()
-#if defined(_2D)
-		: width(250)
-#elif defined(_3D)
-        : width(50)
-#endif
-		, density(0.01f)
-		, interactionRad(5.0f)
-		, attractionForce(0.5f)
-		, repulsionForce(0.5f)
+        : agents(16384)
+        , density(0.01f)
+		, forceModifier(0.5f)
 	{ }
-	unsigned int width;
+	unsigned int agents;
 	float density;
-	float interactionRad;
-	float attractionForce;
-	float repulsionForce;
+    float forceModifier;
 
     const char *modelName() override { return MODEL_NAME; };
     const char *modelFlag() override { return MODEL_FLAG; };

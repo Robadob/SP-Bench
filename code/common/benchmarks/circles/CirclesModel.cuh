@@ -9,8 +9,14 @@ class CirclesModel : public CoreModel
 {
 public:
     CirclesModel(
-        const unsigned int width = 250,
+        const unsigned int agents = 16384,
+        const float density = 0.125f,
+        const float forceModifier = 5.0
+        );
+    //Original constructor
+    CirclesModel(
         const float density = 1.0,
+        const unsigned int width = 250,
         const float interactionRad = 10.0,
         const float attract = 5.0,
         const float repulse = 5.0
@@ -26,7 +32,7 @@ public:
     const unsigned int width;
     const float density;
     const float interactionRad;
-    const float attract;
+    const float attract;//Redundant under sin model
     const float repulse;
 };
 
@@ -34,8 +40,25 @@ extern __device__ __constant__ float d_attract;
 extern __device__ __constant__ float d_repulse;
 
 CirclesModel::CirclesModel(
-    const unsigned int width,
+    const unsigned int agents,
     const float density,
+    const float forceModifier
+    )
+    : CoreModel(agents)
+    , spatialPartition(std::make_shared<SpatialPartition>(DIMENSIONS_VEC(0.0f), DIMENSIONS_VEC(toWidth(agents, density)), agentMax, 1.0f))
+    , width(toWidth(agents, density))
+    , density(density)
+    , interactionRad(1.0f)
+    , attract(0)
+    , repulse(forceModifier)
+{
+    //Copy relevant parameters to constants
+    CUDA_CALL(cudaMemcpyToSymbol(d_attract, &attract, sizeof(float)));
+    CUDA_CALL(cudaMemcpyToSymbol(d_repulse, &repulse, sizeof(float)));
+}
+CirclesModel::CirclesModel(
+    const float density,
+    const unsigned int width,
     const float interactionRad,
     const float attract,
     const float repulse

@@ -2,12 +2,12 @@
 
 #include "visualisation/GLcheck.h"
 
-ParticleScene::ParticleScene(Visualisation &visualisation, std::shared_ptr<CoreModel> model)
+ParticleScene::ParticleScene(Visualisation &visualisation, std::shared_ptr<CoreModel> model, float density)
     : Scene(visualisation)
 #if defined(_2D)
-    , icosphere(std::make_shared<Entity>(Stock::Models::ICOSPHERE, 1.0f, std::make_shared<Shaders>("../shaders/instanced2d.vert","../shaders/instanced.frag")))
+    , icosphere(std::make_shared<Entity>(Stock::Models::ICOSPHERE, 1.0f / density, std::make_shared<Shaders>("../shaders/instanced2d.vert", "../shaders/instanced.frag")))
 #elif defined(_3D)
-    , icosphere(std::make_shared<Entity>(Stock::Models::ICOSPHERE, 1.0f, std::make_shared<Shaders>("../shaders/instanced3d.vert","../shaders/instanced.frag")))
+    , icosphere(std::make_shared<Entity>(Stock::Models::ICOSPHERE, 1.0f / density, std::make_shared<Shaders>("../shaders/instanced3d.vert","../shaders/instanced.frag")))
 #endif
     , count(model->agentMax)
     , model(model)

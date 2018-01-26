@@ -48,11 +48,12 @@ void log(FILE *out, const Time_Init *initRes, const Time_Step_dbl *stepRes, cons
 void log(FILE *out, const unsigned int agentCount);
 //const char *TEST_NAMES[] = { "Default", "Strips", "Modular", "Morton", "MortonCompute", "Hilbert", "Peano" };
 //const char *TEST_EXECUTABLES[] = { "Release-Mod-Default.exe", "Release-Mod-Strips.exe", "Release-Mod-Modular.exe", "Release-Mod-Morton.exe", "Release-Mod-MortonCompute.exe", "Release-Mod-Hilbert.exe", "Release-Mod-Peano.exe" };
-const char *TEST_NAMES[] = { "Default", "Strips", "Modular" };
-const char *TEST_EXECUTABLES[] = { "Release-Mod-Default.exe", "Release-Mod-Strips.exe", "Release-Mod-Modular.exe" };
 
-//const char *TEST_NAMES[] = { "Default3D", "Strips3D", "Modular3D", "StripsModularHybrid3D" };
-//const char *TEST_EXECUTABLES[] = { "Release-Mod-Default.exe", "Release-Mod-Strips.exe", "Release-Mod-Modular.exe", "Release-Mod-ModularStrips3D.exe" };
+//const char *TEST_NAMES[] = { "Default", "Strips", "Modular", "StripsModularHybrid" };
+//const char *TEST_EXECUTABLES[] = { "Release-Mod-Default.exe", "Release-Mod-Strips.exe", "Release-Mod-Modular.exe", "Release-Mod-ModularStrips.exe" };
+
+const char *TEST_NAMES[] = { "StripsModularHybrid" };
+const char *TEST_EXECUTABLES[] = { "Release-Mod-ModularStrips.exe" };
 
 //const char *TEST_NAMES[] = { "Default", "Strips", "Modular", "Default-AOS", "Strips-AOS", "Modular-AOS" };
 //const char *TEST_EXECUTABLES[] = { "Release-Mod-Default.exe", "Release-Mod-Strips.exe", "Release-Mod-Modular.exe", "Release-Mod-Default-AOS.exe", "Release-Mod-Strips-AOS.exe", "Release-Mod-Modular-AOS.exe" };
@@ -108,32 +109,32 @@ int main(int argc, char* argv[])
         run(start, end, steps, "CirclesNeighbourhoodScale");
     }
 #elif defined(_2D)
-        {//Null - Problem Scale 200
-            const int steps = 100;
-            //Init model arg start
-            NullParams  start = {};
-            start.agents = 10000;
-            start.iterations = 500;
-            start.density = 24.0f; //~192 neighbours
-            start.seed = 1;
-            //Init model arg end
-            NullParams end = start;
-            end.agents = 300000;
-            runCollated(start, end, steps, "NullProblemScale200_uniformrng");
-        }
-        {//Null - Problem Scale 200
-            const int steps = 100;
-            //Init model arg start
-            NullParams  start = {};
-            start.agents = 10000;
-            start.iterations = 500;
-            start.density = 24.0f; //~192 neighbours
-            start.seed = 0;
-            //Init model arg end
-            NullParams end = start;
-            end.agents = 300000;
-            runCollated(start, end, steps, "NullProblemScale200_uniform");
-        }
+        //{//Null - Problem Scale 200
+        //    const int steps = 100;
+        //    //Init model arg start
+        //    NullParams  start = {};
+        //    start.agents = 10000;
+        //    start.iterations = 500;
+        //    start.density = 24.0f; //~192 neighbours
+        //    start.seed = 1;
+        //    //Init model arg end
+        //    NullParams end = start;
+        //    end.agents = 300000;
+        //    runCollated(start, end, steps, "NullProblemScale200_uniformrng");
+        //}
+        //{//Null - Problem Scale 200
+        //    const int steps = 100;
+        //    //Init model arg start
+        //    NullParams  start = {};
+        //    start.agents = 10000;
+        //    start.iterations = 500;
+        //    start.density = 24.0f; //~192 neighbours
+        //    start.seed = 0;
+        //    //Init model arg end
+        //    NullParams end = start;
+        //    end.agents = 300000;
+        //    runCollated(start, end, steps, "NullProblemScale200_uniform");
+        //}
         //{//Null - Neighbour scale 50k
         //    const int steps = 100;
         //    //Init model arg start
@@ -198,39 +199,75 @@ int main(int argc, char* argv[])
     //    }
     //}
     //{//XL Version: 2D parameter sweep of problem scale, neighbourhood scale
-    //    {//Null
-    //        const int steps1 = 300;
-    //        const int steps2 = 250;
-    //        //Init model arg start
-    //        NullParams  start = {};
-    //        start.agents = 10000;
-    //        start.iterations = 100;
-    //        start.density = 2.0f;
-    //        start.seed = 1;
-    //        //Init model arg end
-    //        NullParams end1 = start;
-    //        end1.agents = 300000;
-    //        NullParams end2 = start;
-    //        end2.density = 50.0f;
-    //        runCollated2D(start, end1, end2, steps1, steps2, "2DSweepXL-Neighbourhood-UniformRNG");
-    //    }
-    //    {//Null
-    //        const int steps1 = 300;
-    //        const int steps2 = 250;
-    //        //Init model arg start
-    //        NullParams  start = {};
-    //        start.agents = 10000;
-    //        start.iterations = 100;
-    //        start.density = 2.0f;
-    //        start.seed = 0;
-    //        //Init model arg end
-    //        NullParams end1 = start;
-    //        end1.agents = 300000;
-    //        NullParams end2 = start;
-    //        end2.density = 50.0f;
-    //        runCollated2D(start, end1, end2, steps1, steps2, "2DSweepXL-Neighbourhood-Uniform");
-    //    }
+        //{//Null
+        //    const int steps1 = 300;
+        //    const int steps2 = 250;
+        //    //Init model arg start
+        //    NullParams  start = {};
+        //    start.agents = 10000;
+        //    start.iterations = 100;
+        //    start.density = 2.0f;
+        //    start.seed = 1;
+        //    //Init model arg end
+        //    NullParams end1 = start;
+        //    end1.agents = 300000;
+        //    NullParams end2 = start;
+        //    end2.density = 50.0f;
+        //    runCollated2D(start, end1, end2, steps1, steps2, "2DSweepXL-Neighbourhood-UniformRNG");
+        //}
+        //{//Null
+        //    const int steps1 = 300;
+        //    const int steps2 = 250;
+        //    //Init model arg start
+        //    NullParams  start = {};
+        //    start.agents = 10000;
+        //    start.iterations = 100;
+        //    start.density = 2.0f;
+        //    start.seed = 0;
+        //    //Init model arg end
+        //    NullParams end1 = start;
+        //    end1.agents = 300000;
+        //    NullParams end2 = start;
+        //    end2.density = 50.0f;
+        //    runCollated2D(start, end1, end2, steps1, steps2, "2DSweepXL-Neighbourhood-Uniform");
+        //}
     //}
+    {//2D sweep of 2D physical model
+        {//Circles - 2D UniformRNG
+            const int steps1 = 150;
+            const int steps2 = 100;
+            //Init model arg start
+            CirclesParams  start = {};
+            start.agents = 10000;
+            start.iterations = 500;
+            start.density = 2.0f;
+            start.forceModifier = 0.01f;
+            start.seed = 1;
+            //Init model arg end
+            CirclesParams end1 = start;
+            end1.agents = 300000;
+            CirclesParams end2 = start;
+            end2.density = 50.0f;
+            runCollated2D(start, end1, end2, steps1, steps2, "2DSweepXL-Circles2D_UniformRNG");
+        }
+        {//Circles - 2D Uniform
+            const int steps1 = 150;
+            const int steps2 = 100;
+            //Init model arg start
+            CirclesParams  start = {};
+            start.agents = 10000;
+            start.iterations = 500;
+            start.density = 2.0f;
+            start.forceModifier = 0.01f;
+            start.seed = 0;
+            //Init model arg end
+            CirclesParams end1 = start;
+            end1.agents = 300000;
+            CirclesParams end2 = start;
+            end2.density = 50.0f;
+            runCollated2D(start, end1, end2, steps1, steps2, "2DSweepXL-Circles2D_Uniform");
+        }
+    }
 /**
 * 2D PARAM SWEEP of 3D Models with Hybrid
 */
@@ -249,7 +286,7 @@ int main(int argc, char* argv[])
 //        end1.agents = 300000;
 //        NullParams end2 = start;
 //        end2.density = 50.0f;
-//        runCollated2D(start, end1, end2, steps1, steps2, "2DSweep-3DModels");
+//        runCollated2D(start, end1, end2, steps1, steps2, "2DSweep-Null3D_UniformRNG");
 //    }
 //    {//Null
 //        const int steps1 = 30;
@@ -265,9 +302,46 @@ int main(int argc, char* argv[])
 //        end1.agents = 300000;
 //        NullParams end2 = start;
 //        end2.density = 50.0f;
-//        runCollated2D(start, end1, end2, steps1, steps2, "2DSweep-3DModels");
+//        runCollated2D(start, end1, end2, steps1, steps2, "2DSweep-Null3D_Uniform");
 //    }
 //}
+    {//2D sweep of 3D physical model
+        //THIS NEEDS TO BE RUN NEXT
+        //{//Circles
+        //    const int steps1 = 150;
+        //    const int steps2 = 100;
+        //    //Init model arg start
+        //    CirclesParams  start = {};
+        //    start.agents = 10000;
+        //    start.iterations = 500;
+        //    start.density = 2.0f;
+        //    start.forceModifier = 0.01f;
+        //    start.seed = 1;
+        //    //Init model arg end
+        //    CirclesParams end1 = start;
+        //    end1.agents = 300000;
+        //    CirclesParams end2 = start;
+        //    end2.density = 50.0f;
+        //    runCollated2D(start, end1, end2, steps1, steps2, "2DSweepXL-Circles3D_UniformRNG");
+        //}
+        //{//Circles
+        //    const int steps1 = 150;
+        //    const int steps2 = 100;
+        //    //Init model arg start
+        //    CirclesParams  start = {};
+        //    start.agents = 10000;
+        //    start.iterations = 500;
+        //    start.density = 2.0f;
+        //    start.forceModifier = 0.01f;
+        //    start.seed = 0;
+        //    //Init model arg end
+        //    CirclesParams end1 = start;
+        //    end1.agents = 300000;
+        //    CirclesParams end2 = start;
+        //    end2.density = 50.0f;
+        //    runCollated2D(start, end1, end2, steps1, steps2, "2DSweepXL-Circles3D_Uniform");
+        //}
+    }
 /**
 * 3D NON-UNIFORM WITH HYBRID
 */
@@ -837,11 +911,13 @@ CirclesParams interpolateParams(const CirclesParams &start, const CirclesParams 
     const float stepsM1 = (float)totalSteps - 1.0f;
     CirclesParams modelArgs;
     modelArgs.seed = start.seed + (long long)((step / stepsM1)*((long long)end.seed - (long long)start.seed));
-    modelArgs.width = start.width + (int)((step / stepsM1)*((int)end.width - (int)start.width));
+    //modelArgs.width = start.width + (int)((step / stepsM1)*((int)end.width - (int)start.width));
+    modelArgs.agents = start.agents + (int)((step / stepsM1)*((int)end.agents - (int)start.agents));
     modelArgs.density = start.density + ((step / stepsM1)*(end.density - start.density));
-    modelArgs.interactionRad = start.interactionRad + ((step / stepsM1)*(end.interactionRad - start.interactionRad));
-    modelArgs.attractionForce = start.attractionForce + ((step / stepsM1)*(end.attractionForce - start.attractionForce));
-    modelArgs.repulsionForce = start.repulsionForce + ((step / stepsM1)*(end.repulsionForce - start.repulsionForce));
+    //modelArgs.interactionRad = start.interactionRad + ((step / stepsM1)*(end.interactionRad - start.interactionRad));
+    //modelArgs.attractionForce = start.attractionForce + ((step / stepsM1)*(end.attractionForce - start.attractionForce));
+    //modelArgs.repulsionForce = start.repulsionForce + ((step / stepsM1)*(end.repulsionForce - start.repulsionForce));
+    modelArgs.forceModifier = start.forceModifier + ((step / stepsM1)*(end.forceModifier - start.forceModifier));
     modelArgs.iterations = start.iterations + (long long)((step / stepsM1)*((int)end.iterations - (int)start.iterations));
     return modelArgs;
 }
@@ -849,11 +925,13 @@ CirclesParams reset(const CirclesParams &start, const CirclesParams &end)
 {
     CirclesParams end1Reset;
     end1Reset.seed = end.seed - start.seed;
-    end1Reset.width = end.width - start.width;
+    //end1Reset.width = end.width - start.width;
+    end1Reset.agents = end.agents - start.agents;
     end1Reset.density = end.density - start.density;
-    end1Reset.interactionRad = end.interactionRad - start.interactionRad;
-    end1Reset.attractionForce = end.attractionForce - start.attractionForce;
-    end1Reset.repulsionForce = end.repulsionForce - start.repulsionForce;
+    //end1Reset.interactionRad = end.interactionRad - start.interactionRad;
+    //end1Reset.attractionForce = end.attractionForce - start.attractionForce;
+    //end1Reset.repulsionForce = end.repulsionForce - start.repulsionForce;
+    end1Reset.forceModifier = end.forceModifier - start.forceModifier;
     end1Reset.iterations = end.iterations - start.iterations;
     return end1Reset;
 }
@@ -885,11 +963,13 @@ CirclesParams interpolateParams2D(const CirclesParams &start, const CirclesParam
     CirclesParams end2Lerp = interpolateParams(CirclesParams::makeEmpty(), reset(start, end2), step2, totalSteps2);
     CirclesParams modelArgs;
     modelArgs.seed = start.seed + end1Lerp.seed + end2Lerp.seed;
-    modelArgs.width = start.width + end1Lerp.width + end2Lerp.width;
+    //modelArgs.width = start.width + end1Lerp.width + end2Lerp.width;
+    modelArgs.agents = start.agents + end1Lerp.agents + end2Lerp.agents;
     modelArgs.density = start.density + end1Lerp.density + end2Lerp.density;
-    modelArgs.interactionRad = start.interactionRad + end1Lerp.interactionRad + end2Lerp.interactionRad;
-    modelArgs.attractionForce = start.attractionForce + end1Lerp.attractionForce + end2Lerp.attractionForce;
-    modelArgs.repulsionForce = start.repulsionForce + end1Lerp.repulsionForce + end2Lerp.repulsionForce;
+    //modelArgs.interactionRad = start.interactionRad + end1Lerp.interactionRad + end2Lerp.interactionRad;
+    //modelArgs.attractionForce = start.attractionForce + end1Lerp.attractionForce + end2Lerp.attractionForce;
+    //modelArgs.repulsionForce = start.repulsionForce + end1Lerp.repulsionForce + end2Lerp.repulsionForce;
+    modelArgs.forceModifier = start.forceModifier + end1Lerp.forceModifier + end2Lerp.forceModifier;
     modelArgs.iterations = start.iterations + end1Lerp.iterations + end2Lerp.iterations;
     return modelArgs;
 }
@@ -1004,15 +1084,17 @@ void execString(const char* executable, CirclesParams modelArgs, char **rtn)
 	buffer = buffer.append(" ");
 	buffer = buffer.append("-circles");
 	buffer = buffer.append(" ");
-	buffer = buffer.append(std::to_string(modelArgs.width));
+    //buffer = buffer.append(std::to_string(modelArgs.width));
+    buffer = buffer.append(std::to_string(modelArgs.agents));
 	buffer = buffer.append(" ");
 	buffer = buffer.append(std::to_string(modelArgs.density));
 	buffer = buffer.append(" ");
-	buffer = buffer.append(std::to_string(modelArgs.interactionRad));
-	buffer = buffer.append(" ");
-	buffer = buffer.append(std::to_string(modelArgs.attractionForce));
-	buffer = buffer.append(" ");
-	buffer = buffer.append(std::to_string(modelArgs.repulsionForce));
+	//buffer = buffer.append(std::to_string(modelArgs.interactionRad));
+	//buffer = buffer.append(" ");
+	//buffer = buffer.append(std::to_string(modelArgs.attractionForce));
+	//buffer = buffer.append(" ");
+    //buffer = buffer.append(std::to_string(modelArgs.repulsionForce));
+    buffer = buffer.append(std::to_string(modelArgs.forceModifier));
 	buffer = buffer.append(" ");
 	buffer = buffer.append(std::to_string(modelArgs.iterations));
 	if (modelArgs.seed!=12)
@@ -1105,7 +1187,8 @@ void execString(const char* executable, DensityParams modelArgs, char **rtn)
 void logHeader(FILE *out, const CirclesParams &modelArgs)
 {
 	fputs("model", out);
-	fputs(",,,,,,,", out);
+    fputs(",,,,,", out);
+    //fputs(",,,,,,,", out);
 	fputs("init (s)", out);
 	fputs(",,,,,,", out);
 	fputs("step avg (s)", out);
@@ -1116,15 +1199,17 @@ void logHeader(FILE *out, const CirclesParams &modelArgs)
     fputs(",,,,,,", out);
 	fputs("\n", out);
 	//ModelArgs
-	fputs("width", out);
+    //fputs("width", out);
+    fputs("agents", out);
 	fputs(",", out);
 	fputs("density", out);
 	fputs(",", out);
-	fputs("interactionRad", out);
-	fputs(",", out);
-	fputs("attractionForce", out);
-	fputs(",", out);
-	fputs("repulsionForce", out);
+	//fputs("interactionRad", out);
+	//fputs(",", out);
+	//fputs("attractionForce", out);
+	//fputs(",", out);
+    //fputs("repulsionForce", out);
+    fputs("forceModifier", out);
 	fputs(",", out);
 	fputs("iterations", out);
     fputs(",", out);
@@ -1171,15 +1256,22 @@ void logHeader(FILE *out, const CirclesParams &modelArgs)
 }
 void logResult(FILE *out, const CirclesParams* modelArgs, const unsigned int agentCount, const Time_Init *initRes, const Time_Step_dbl *stepRes, const float totalTime, const NeighbourhoodStats *nsFirst, const NeighbourhoodStats *nsLast)
 {	//ModelArgs
-	fprintf(out, "%u,%f,%f,%f,%f,%llu,%llu,",
-		modelArgs->width,
-		modelArgs->density,
-		modelArgs->interactionRad,
-		modelArgs->attractionForce,
-		modelArgs->repulsionForce,
-		modelArgs->iterations,
+	//fprintf(out, "%u,%f,%f,%f,%f,%llu,%llu,",
+	//	modelArgs->width,
+	//	modelArgs->density,
+	//	modelArgs->interactionRad,
+	//	modelArgs->attractionForce,
+	//	modelArgs->repulsionForce,
+	//	modelArgs->iterations,
+ //       modelArgs->seed
+	//	);
+    fprintf(out, "%u,%f,%f,%llu,%llu,",
+        modelArgs->agents,
+        modelArgs->density,
+        modelArgs->forceModifier,
+        modelArgs->iterations,
         modelArgs->seed
-		);
+        );
 	//Agent count
 	fprintf(out, "%i,",
 		agentCount
@@ -1434,7 +1526,8 @@ void logCollatedHeader(FILE *out, const CirclesParams &modelArgs)
     }
     fputs(",", out);//Agent count
     fputs(",,,,,,", out);//Neighbourhood stats
-    fputs(",,,,,,", out);//Model Args
+    //fputs(",,,,,,", out);//Model Args
+    fputs(",,,,", out);//Model Args
     fputs("\n", out);
     //Row 2
     for (unsigned int i = 0; i < sizeof(TEST_NAMES) / sizeof(char*); ++i)
@@ -1450,7 +1543,8 @@ void logCollatedHeader(FILE *out, const CirclesParams &modelArgs)
     fputs("Neighbourhood Stats", out);
     fputs(",,,,,,", out);
     fputs("Model", out);
-    fputs(",,,,,,,", out);
+    //fputs(",,,,,,,", out);
+    fputs(",,,,,", out);
     fputs("\n", out);
     //Row 3
     for (unsigned int i = 0; i < sizeof(TEST_NAMES) / sizeof(char*); ++i)
@@ -1492,15 +1586,17 @@ void logCollatedHeader(FILE *out, const CirclesParams &modelArgs)
     fputs("Last Avg", out);
     fputs(",", out);
     //ModelArgs
-    fputs("width", out);
+    //fputs("width", out);
+    fputs("agents", out);
     fputs(",", out);
     fputs("density", out);
     fputs(",", out);
-    fputs("interactionRad", out);
-    fputs(",", out);
-    fputs("attractionForce", out);
-    fputs(",", out);
-    fputs("repulsionForce", out);
+    //fputs("interactionRad", out);
+    //fputs(",", out);
+    //fputs("attractionForce", out);
+    //fputs(",", out);
+    //fputs("repulsionForce", out);
+    fputs("forceModifier", out);
     fputs(",", out);
     fputs("iterations", out);
     fputs(",", out);
@@ -1685,12 +1781,19 @@ void log(FILE *out, const NeighbourhoodStats *nsFirst)
 void log(FILE *out, const CirclesParams *modelArgs)
 {
     //ModelArgs
-    fprintf(out, "%u,%f,%f,%f,%f,%llu,%llu,",
-        modelArgs->width,
+    //fprintf(out, "%u,%f,%f,%f,%f,%llu,%llu,",
+    //    modelArgs->width,
+    //    modelArgs->density,
+    //    modelArgs->interactionRad,
+    //    modelArgs->attractionForce,
+    //    modelArgs->repulsionForce,
+    //    modelArgs->iterations,
+    //    modelArgs->seed
+    //    );
+    fprintf(out, "%u,%f,%f,%llu,%llu,",
+        modelArgs->agents,
         modelArgs->density,
-        modelArgs->interactionRad,
-        modelArgs->attractionForce,
-        modelArgs->repulsionForce,
+        modelArgs->forceModifier,
         modelArgs->iterations,
         modelArgs->seed
         );

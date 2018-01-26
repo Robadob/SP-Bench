@@ -92,25 +92,33 @@ void exportPopulation(std::shared_ptr<SpatialPartition> s, const ArgData &args, 
         else if (args.model->enumerator() == ModelEnum::Circles)
         {
             std::shared_ptr<CirclesParams> _model = std::dynamic_pointer_cast<CirclesParams>(args.model);
-		    //width
-            sprintf(buffer, "%d", _model->width);
+		    ////width
+            //sprintf(buffer, "%d", _model->width);
+		    //rapidxml::xml_node<> *width_node = doc.allocate_node(rapidxml::node_element, width_node_str, doc.allocate_string(buffer));
+		    //params_node->append_node(width_node);	
+            //agents
+            sprintf(buffer, "%d", _model->agents);
 		    rapidxml::xml_node<> *width_node = doc.allocate_node(rapidxml::node_element, width_node_str, doc.allocate_string(buffer));
 		    params_node->append_node(width_node);
-		    //seed
-            sprintf(buffer, "%f", _model->interactionRad);
-		    rapidxml::xml_node<> *rad_node = doc.allocate_node(rapidxml::node_element, rad_node_str, doc.allocate_string(buffer));
-		    params_node->append_node(rad_node);
+      //      //interaction rad
+      //      sprintf(buffer, "%f", _model->interactionRad);
+		    //rapidxml::xml_node<> *rad_node = doc.allocate_node(rapidxml::node_element, rad_node_str, doc.allocate_string(buffer));
+		    //params_node->append_node(rad_node);
 		    //density
             sprintf(buffer, "%f", _model->density);
 		    rapidxml::xml_node<> *density_node = doc.allocate_node(rapidxml::node_element, density_node_str, doc.allocate_string(buffer));
 		    params_node->append_node(density_node);
-		    //att force
-            sprintf(buffer, "%f", _model->attractionForce);
-		    rapidxml::xml_node<> *attract_node = doc.allocate_node(rapidxml::node_element, attract_node_str, doc.allocate_string(buffer));
-		    params_node->append_node(attract_node);
-		    //rep force
-            sprintf(buffer, "%f", _model->repulsionForce);
-		    rapidxml::xml_node<> *repel_node = doc.allocate_node(rapidxml::node_element, repel_node_str, doc.allocate_string(buffer));
+		    ////att force
+            //sprintf(buffer, "%f", _model->attractionForce);
+		    //rapidxml::xml_node<> *attract_node = doc.allocate_node(rapidxml::node_element, attract_node_str, doc.allocate_string(buffer));
+		    //params_node->append_node(attract_node);
+		    ////rep force
+            //sprintf(buffer, "%f", _model->repulsionForce);
+		    //rapidxml::xml_node<> *repel_node = doc.allocate_node(rapidxml::node_element, repel_node_str, doc.allocate_string(buffer));
+            //params_node->append_node(repel_node);
+            //forceModifier force
+            sprintf(buffer, "%f", _model->forceModifier);
+            rapidxml::xml_node<> *repel_node = doc.allocate_node(rapidxml::node_element, repel_node_str, doc.allocate_string(buffer));
             params_node->append_node(repel_node);
         }
         else if (args.model->enumerator() == ModelEnum::Density)

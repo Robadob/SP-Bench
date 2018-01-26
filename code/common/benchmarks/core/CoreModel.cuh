@@ -19,7 +19,25 @@ public:
     virtual const Time_Step step()=0;
     virtual std::shared_ptr<SpatialPartition> getPartition() = 0;
     const unsigned int agentMax;
+protected:
+    static unsigned int toWidth(unsigned int agents, float density);
+    static unsigned int toAgents(unsigned int width, float density);
+
 };
+inline unsigned int CoreModel::toWidth(unsigned int agents, float density)
+{
+#if DIMENSIONS == 2
+    return (unsigned int)ceil(sqrt(agents / density));
+#elif DIMENSIONS == 3
+    return (unsigned int)ceil(cbrt(agents / density));
+#else
+#error DIMENSIONS must equal 2 or 3
+#endif
+}
+inline unsigned int CoreModel::toAgents(unsigned int width, float density)
+{
+    return (unsigned int)(round(pow(width, DIMENSIONS) * (double)density));
+}
 
 const Time_Init CoreModel::initPopulationUniform()
 {
