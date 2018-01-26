@@ -20,7 +20,7 @@
 \begin{figure}[!t]
 \centering
 \includegraphics[width=\linewidth]{../resources/modular/modular.pdf}
-\caption{\label{fig:modular}A visual representation of how the standard local indexing (left) and global indexing (right) of two intersecting Moore neighbourhoods (marked grey) differ.}
+\caption{\label{fig:modular}A visual representation of how the standard local indexing (left) and global indexing of the modular optimisation (right) affect the iteration of two intersecting Moore neighbourhoods (marked grey). In the example shown, they both share the first initial bin under global indexing.}
 \end{figure}
     The Modular optimisation targets scattered memory accesses. In the highly parallel \gls{gpu} execution, many neighbourhoods are being read simultaneously. Therefore it is almost certain that there will be intersecting Moore Neighbourhoods. Instead of iterating the Moore neighbourhood according to a local linear order, we calculate a recurring global index to define the order in which all Moore neighbourhoods are iterated. The global index can be produced by tightly packing linear indexed Moore neighbourhoods within the environment. Now when a Moore neighbourhood is positioned anywhere in the environment, it will contain one bin with each index value as shown in figure \ref{fig:modular}. Therefore it becomes possible to iterate the bins according to the order of their global indexes, such that the initial number of bins accessed is reduced significantly.
     

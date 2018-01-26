@@ -1,5 +1,16 @@
 \section{Near Neighbours on \gls{gpu}\label{sec:spatial-partitioning}}
 
+%FRNNs is used for
+%It is the process whereby
+\gls{frnns} is the process primarily used by complex systems simulations in the process whereby spatially located entities communicate with their neighbours. This provides environmental awareness to the model logic, capable of using the neighbour messages to inform state changes. This process may be repeated once per timestep allowing the entity, e.g. a particle, to evaluate the forces affecting it's motion.
+
+%Many spatial data structures such as x, y, exist how their performance lies in problems other than FRNNs.
+%Furthermore the options available on \gls{gpu} are even more limited.
+There are many techniques, primarily utilising hash tables or trees, capable of managing spatial data. However these data structures target a range of processes from nearest neighbour to \textbf{UNKNOWN}, as such not all are applicable to provide \gls{frnns}. Furthermore transferring these data structures from serial implementations to the highly parallel \gls{simt} architecture requires consideration of a different set of optimisations and techniques.
+
+% Loss of accuracy when tuned to FRNNs.
+
+* The naive approach is brute force...however this falls over as the volume of messages increases.
 \note{kd-trees, kinetic data structures, k-nn, aproxx knn}
 
 \subsection{Uniform Spatial Partitioning}
