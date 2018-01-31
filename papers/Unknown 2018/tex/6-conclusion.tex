@@ -1,11 +1,25 @@
 \section{Conclusion\label{sec:conclusion}}
-\note{Need to change this into paragraphs}
-    \begin{itemize}
-      \item The work within this paper has presented two compatible (better word to show they can be combined) optimisations for the accessing of the spatial partitioning data-structure.
-      \item Our results show that both individually and combined they out perform an implementation lacking the optimisation in a wide range of problem and neighbourhood sizes (with uniformly/uniform-randomly distributed agents) in two and three dimensions.
-      \item The combined approach consistently outperforms or equals performance of the individual optimisations.
-      \item The peak improvement in 2D executed in 26.7\% of the runtime of the initial implementation. (300k agents, ~48.0 neighbours)
-      \item The peak improvement in 3D executed in 18.6\% of the runtime of the initial implementation. (40k agents, ~46.7 neighbours)
-      \item Physical model results showed... This contrast is due to the greater diversity of agent distribution seen(?)...which is an area that will be explored in further detail in the ongoing research....
-      \item Further research is ongoing investigating the impact of other variables which may affect the performance of \gls{gpu} uniform spatial partitioning and how they affect these optimisations and may lead to further improvements of performance.
-    \end{itemize}
+  This paper has presented two compatible high level optimisations to the \glsentrylong{usp} data structure. These optimisations target how bins are accessed within the data structure and can be applied in tandem.
+  
+  Our results have shown that both individually and in combination, these optimisations outperform an implementation lacking the optimisation across a wide range of tested problem and neighbour scales in two and three dimensions.
+  
+  The hybrid approach, combining both the Strips and Modular optimisations has consistently outperformed the individual optimisations. Being beaten in less than 1\% of the hundreds of thousands of tested configurations by fractional margins.
+  
+  Our testing in two dimensions showed a peak improvement of 3.7 times speed up. This occurred with 300,000 messages and neighbourhood volumes of averaging 48 neighbours. As this occurred at the largest problem size tested higher improvements may be possible with even larger problem sizes.
+
+  Furthermore testing in three dimensions showed a peak improvement of 5.4 times speed up. This occurred with a lower problem size of 40k messages and similar neighbourhood size averaging 47.
+  
+  Physical model results show...
+  
+  This research has shown that more investigation is required into the impact of other variables on the performance of \gls{gpu} \gls{frnns} and how they interact with optimisations. In particular we have seen how the distribution of agents between bins can have a significant impact of performance. As such, in future research we hope to explore this impact and whether further optimisations can be applied to target the varied distributions seen in different complex systems.
+  
+  %\note{Need to change this into paragraphs}
+  %  \begin{itemize}
+  %    \item The work within this paper has presented two compatible (better word to show they can be combined) optimisations for the accessing of the spatial partitioning data-structure.
+  %    \item Our results show that both individually and combined they out perform an implementation lacking the optimisation in a wide range of problem and neighbourhood sizes (with uniformly/uniform-randomly distributed messages) in two and three dimensions.
+  %    \item The combined approach consistently outperforms or equals performance of the individual optimisations.
+  %    \item The peak improvement in 2D executed in 26.7\% of the runtime of the initial implementation. (300k messages, ~48.0 neighbours)
+  %    \item The peak improvement in 3D executed in 18.6\% of the runtime of the initial implementation. (40k messages, ~46.7 neighbours)
+  %    \item Physical model results showed... This contrast is due to the greater diversity of agent distribution seen(?)...which is an area that will be explored in further detail in the ongoing research....
+  %    \item Further research is ongoing investigating the impact of other variables which may affect the performance of \gls{gpu} uniform spatial partitioning and how they affect these optimisations and may lead to further improvements of performance.
+  %  \end{itemize}

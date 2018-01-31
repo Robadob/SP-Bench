@@ -1,5 +1,5 @@
 \section{Modular Bin Strips\label{sec:innovation}}
-  The previous section explained the operation of fixed-radius near neighbours on \gls{gpu} via the data structure uniform spatial partitioning. In particular this research has concerned itself with optimisation at the stage of accessing bins. We have developed two independent optimisations that we refer to as \textit{Strips} and \textit{Modular}. These two optimisations can be combined to access the benefits of both techniques simultaneously.
+  The previous section explained the operation of \gls{frnns} on \glspl{gpu} via the data structure \gls{usp}. In particular this research has concerned itself with optimisation at the stage of accessing bins. We have developed two independent optimisations that we refer to as \textit{Strips} and \textit{Modular}. These two optimisations can be combined to access the benefits of both techniques simultaneously.
   
   \note{Not too sure about consistent use of language here, neighbour or desired message etc. This also applies to the figure in the prior section.}
   
@@ -20,24 +20,27 @@
 \begin{figure}[!t]
 \centering
 \includegraphics[width=\linewidth]{../resources/modular/modular.pdf}
-\caption{\label{fig:modular}A visual representation of how the standard local indexing (left) and global indexing of the modular optimisation (right) affect the iteration of two intersecting Moore neighbourhoods (marked grey). In the example shown, they both share the first initial bin under global indexing.}
+\caption{\label{fig:modular}A visual representation of how the standard local indexing (left) and global indexing of the Modular optimisation (right) affect the iteration of two intersecting Moore neighbourhoods (marked grey). In the example shown, they both share the same initial bin under global indexing.}
 \end{figure}
-    The Modular optimisation targets scattered memory accesses. In the highly parallel \gls{gpu} execution, many neighbourhoods are being read simultaneously. Therefore it is almost certain that there will be intersecting Moore Neighbourhoods. Instead of iterating the Moore neighbourhood according to a local linear order, we calculate a recurring global index to define the order in which all Moore neighbourhoods are iterated. The global index can be produced by tightly packing linear indexed Moore neighbourhoods within the environment. Now when a Moore neighbourhood is positioned anywhere in the environment, it will contain one bin with each index value as shown in figure \ref{fig:modular}. Therefore it becomes possible to iterate the bins according to the order of their global indexes, such that the initial number of bins accessed is reduced significantly.
+    The Modular optimisation targets scattered memory accesses. In the highly parallel \gls{gpu} execution, many neighbourhoods are being read simultaneously. Therefore it is almost certain that there will be intersecting Moore Neighbourhoods. Instead of iterating the Moore neighbourhood according to a local linear order, we calculate a recurring global index to define the order in which all Moore neighbourhoods are iterated. The global index can be produced by tightly packing linear indexed Moore neighbourhoods within the environment. Now when a Moore neighbourhood is positioned anywhere in the environment, it will contain one bin with each index value as shown in figure \ref{fig:modular}. Therefore it becomes possible to iterate the bins according to the order of their global indexes, such that the number of concurrent bins accessed is reduced significantly.
     
     The global index does not need to be precomputed, it can be computed at runtime with minimal additional instructions and storage.
     
-    \note{Include more detail on how we have implemented modular?, e.g. order calc algorithm, storage reqs}
+    Instead of each thread independently tracking their current bin's relative position within the neighbourhood, the relative position is tracked at a block level and maintained by the first thread. When the search is initiated, the offset of the local Moore neighbourhood from the global Moore neighbourhood is calculated for each thread. When the relative and offset values are combined the result can be processed in a modular manner (bounded from $-1$ to $+1$) to provide the threads relative bin index. If not using block-level synchronisation, it becomes necessary to structure message iteration as a nested loop so that all threads within a block complete processing their bins before the block's relative bin is switched.
+    %sm_message->state.relative = (*blockRelative)+sm_message->state.offset;
+    %//For each axis, if new relative > 1, set -1
+    %sm_message->state.relative.x = sm_message->state.relative.x>1 ? sm_message->state.relative.x - 3 : sm_message->state.relative.x;
+    %...
     
-    This optimisation reduces the maximum initial bins accessed to 1/9th of the environment in 2 dimensions and 1/27th in 3 dimensions. Thereby reducing unique memory loads, allowing more efficient utilisation of the limited memory and cache bandwidth.
+    This optimisation reduces the maximum bins accessed to 1/9th of the environment in 2 dimensions and 1/27th in 3 dimensions. Thereby reducing unique memory loads, allowing more efficient utilisation of the limited memory and cache bandwidth.
     
-    Additionally we trialled including a block synchronisation at each bin change, to ensure that the bin alignment remained consistent throughout iteration of the entire Moore neighbourhood. Testing however showed that even with a uniformly distributed agent population this had a slight negative impact on the performance of the optimisation.
-    \note{Add sample graph of sync vs !sync?}
+    Although validation showed that the structure of the nested loop ensures synchronisation is maintained and all messages are accessed, we trialled including an explicit (and redundant) block synchronisation before bin changes. Testing however showed that this had a slight negative impact on the performance of the optimisation.
+    %Additionally we trialled including a block synchronisation at each bin change, to ensure that the bin alignment remained consistent throughout iteration of the entire Moore neighbourhood without using a nested loop. Testing however showed that this had a slight negative impact on the performance of the optimisation.
+    %\note{Add sample graph of sync vs !sync?}
 
   \subsection{Combining Strips \& Modular}
     The Strips optimisation as presented is only applicable to a single dimension, that which bins are contiguously stored in memory. On the other-hand the Modular optimisation is applicable to any dimensionality. Therefore it becomes possible to apply the Modular optimisation to the remaining dimensions of the Moore neighbourhood after the Strips optimisation has been applied.
     
     This loses the Modular optimisation from the first dimension in favour of the Strips optimisation, however the results in the next section show that this trade-off improves performance over that of either of the optimisations applied individually.
     
-    \note{Arguably we could maintain the modular optimisation by iterating messages within the strip from a modular offset, however this is not something we've tested. (It would require storing more temporary iteration info).}
-    
-    \note{Could possibly include code example to differentiate from earlier optimisations, however unclear at this point whether appropriate (until theirs have been added.}
+    %\note{Arguably we could maintain the modular optimisation by iterating messages within the strip from a modular offset, however this is not something we've tested. (It would require loading and storing more temporary iteration info).}

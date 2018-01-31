@@ -1,0 +1,23 @@
+# Hoetzlein fluids3
+https://github.com/rchoetzlein/fluids3/blob/master/fluids/fluid_system_kern.cu#L320
+
+Appears to execute 1 block per bin
+>Each thread below 27 (3x3x3 bins). copies a bin size about the target location to shared memory
+>Thread 0 performs a prefix sum over these values
+>Each thread below 27. copies particles of associated bin into shared memory
+>Each thread iterates the shared mem particle list
+
+
+
+#lammps
+https://github.com/lammps/lammps/blob/master/lib/gpu/lal_neighbor_gpu.cu#L141
+
+Also appears to do some similar loading via shared memory from bins in a linear order, albeit the code is less clear.
+
+#amber
+http://ambermd.org/gpus/index.htm
+
+It's commercial software, so source code isn't available.
+
+The below paper has some details appears to mention use of a 4x4x4 hilbert curve within bins to allow more advanced access control (section 3.3). No implementation specific details of interest to our implementation however.
+http://pubs.acs.org/doi/abs/10.1021/ct400314y

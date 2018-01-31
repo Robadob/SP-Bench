@@ -2,27 +2,25 @@
 
 %FRNNs is used for
 %It is the process whereby
-\gls{frnns} is the process primarily used by complex systems simulations in the process whereby spatially located entities communicate with their neighbours. This provides environmental awareness to the model logic, capable of using the neighbour messages to inform state changes. This process may be repeated once per timestep allowing the entity, e.g. a particle, to evaluate the forces affecting it's motion.
+\gls{frnns} is the process primarily used by complex systems simulations to allow spatially located entities to communicate with their neighbours. This process provides environmental awareness to the underlying model, which is capable of using the neighbour messages to inform state changes. This process may be repeated once per timestep allowing the entity, e.g. a particle, to evaluate the forces affecting it's motion.
 
 %Many spatial data structures such as x, y, exist how their performance lies in problems other than FRNNs.
 %Furthermore the options available on \gls{gpu} are even more limited.
-There are many techniques, primarily utilising hash tables or trees, capable of managing spatial data. However these data structures target a range of processes from nearest neighbour to \textbf{UNKNOWN}, as such not all are applicable to provide \gls{frnns}. Furthermore transferring these data structures from serial implementations to the highly parallel \gls{simt} architecture requires consideration of a different set of optimisations and techniques.
+There are many techniques, primarily utilising hash tables or trees, capable of managing spatial data. However these data structures target a range of processes from nearest neighbour to intersection, as such not all are applicable to provide \gls{frnns}. Furthermore transferring these data structures from serial implementations to the highly parallel \gls{simt} architecture of \glspl{gpu} requires consideration of an additional set of optimisations and techniques.
 
-% Loss of accuracy when tuned to FRNNs.
+The naive approach is brute force however this quickly becomes unsustainable -- performance quickly declines as the volume of messages increases. Whilst hierarchical spatial data structures such as kd-trees can be accelerated on \glspl{gpu}, they are more suited for tasks requiring greater precision such as ray-tracing \cite{SSK07}.
 
-* The naive approach is brute force...however this falls over as the volume of messages increases.
-\note{kd-trees, kinetic data structures, k-nn, aproxx knn}
+%USP is used elsewhere
+As such partitioning methods have become the standard for \gls{gpu} \gls{frnns} and similar algorithms, such as K-nearest neighbours. There are many libraries and frameworks which provide implementations, e.g.: FLAMEGPU\cite{FLAMEGPU}, fluids3\cite{fluids3}, LAMMPS\cite{LAMMPS} \& AMBER\cite{AMBER,SG*13}. In particular we focus on the general case present in FLAMEGPU, also visible in the NVIDIA CUDA particles sample \cite{Gre10}\footnote{The CUDA particles sample code is available on installation of the CUDA toolkit.}. Whilst the optimisations presented in this paper may be applied in part to the other implementations, they include more restrictive use-case optimisations requiring additional consideration.
 
-\subsection{Uniform Spatial Partitioning}
-Under \gls{gpu} uniform spatial partitioning the known environment is sub divided into a uniform grid of bins, each given a consecutive identifier (such that in 2 dimensions $i = p^{Y}d^{X}+p^{X}$ where $p$ is the grid position in the corresponding axis and $d$ is the grid's dimensions). Message's locations are then clamped into the known environment bounds, allowing the containing environmental bin to be identified. Messages are sorted and stored in order of their containing bin's identifier.
+Under \gls{gpu} \gls{usp} the known environment is sub-divided into a uniform grid of bins, each given a consecutive identifier (such that in 2 dimensions $i = p^{Y}d^{X}+p^{X}$ where $p$ is the grid position in the corresponding axis and $d$ is the grid's dimensions). Message's locations are then clamped into the known environment bounds, allowing the containing environmental bin to be identified. Messages are sorted and stored in order of their containing bin's identifier.
 
 So that the array of messages can be accessed efficiently, a partition boundary matrix is constructed. This structure provides an index to the start of each bin's messages within the array. Figure \ref{fig:uniform-spatial-partitioning} presents a 2 dimensional example of the data structures used.
 
-Although if the containing bin of a single message changes, the entire data structure must be reconstructed. The process for constructing both the message array and partition boundary matrix is already highly data-parallel executing in constant time complexity (with respect to the number of messages), if implemented with atomic counting sort.
-\note{Cite Paul on atomic count sort?}
-\note{const time scan page 7: https://www.mimuw.edu.pl/~ps209291/kgkp/slides/scan.pdf)}
+Although if the containing bin of a single message changes, the entire data structure must be reconstructed. The process for constructing both the message array and partition boundary matrix is already highly data-parallel executing in constant time complexity (with respect to the number of messages), if implemented with atomic counting sort \cite{SK*10,LOS10}, which produces the partition boundary matrix as a by-product of the message sort.
+%\note{const time scan page 7: https://www.mimuw.edu.pl/~ps209291/kgkp/slides/scan.pdf)}
 
-In all instances the cost of performing the fixed radius near neighbours search outweighs that of constructing the data structure. Large neighbourhoods can see the search time take 30x longer than construction, whereas the least demanding configurations (which under utilise the hardware) still perform construction in a third of the time required for search. This is in agreement with the work of Hongyu et al whereby the reconstruction was optimised by sorting from the result of the previous sort\cite{HY*15}. They were able to improve performance in a small \gls{sph} simulation of 8192 particles within a $16^{3}$ grid, however performance was equal to that of their initial unoptimised reconstruction when applied to larger simulations.
+In all instances, the cost of performing the fixed radius near neighbours search outweighs that of constructing the data structure. Large neighbourhoods can see the search time take thirty times longer than construction, whereas the least demanding configurations (which under utilise the hardware) still perform construction in a third of the time required for search. This is in agreement with the work of Hongyu et al whereby the reconstruction was optimised by sorting from the result of the previous sort\cite{HY*15}. They were able to improve performance in a small \gls{sph} simulation of 8192 particles within a $16^{3}$ grid, however overall performance was equal to that of their initial unoptimised reconstruction when applied to larger simulations.
 
 \begin{figure}[!t]
 \centering
@@ -34,20 +32,16 @@ Visual representation of an environment and how it's data is stored and accessed
 \end{figure}
 
 Within this paper we have only considered subdivision of the environment such that bin dimensions are equal to the neighbourhood radius. Previously Hoetzlein studied the impact of adjusting bin dimensions, finding the optimal dimension to be $\frac{2}{3}R$\cite{Hoe14}. However this analysis only considered a fixed density of particles, additionally identifying that it was an optimisation between too many bins and too many messages per bin, the latter which would vary with message density.
+It can be assumed that non-uniform distributions may be harmful to performance due to increased branch divergence, however the impact of this has not been investigated within this work.
 
+%\note{Something about the impact of biased message distribution and GPU execution, which we haven't considered in this paper.}
 To access messages located within the radial neighbourhood of a position, the position's containing environmental bin is identified and all messages stored within the bins of the inclusive Moore neighbourhood are then iterated. Only those with a position inside the radial neighbourhood are forwarded to the model.
 
 In 2 dimensions this means that spatially we are accessing messages with an area 2.86x larger than required (2D neighbourhood area: $\pi R^{2}$, 2D Moore neighbourhood area: $(3R)^{2}$), in 3 dimensions this increases to 6.45x (3D neighbourhood volume: $\frac{4}{3}\pi R^{3}$, 3D Moore neighbourhood volume: $(3R)^{3}$).
 
-\note{Something about the impact of biased message distribution and GPU execution, which we haven't considered in this paper.}
+Goswami et al were able to improve the performance of uniform spatial partitioning neighbour searches during \gls{sph} on \glspl{gpu} \cite{GS*10}. The environment is subdivided into fixed dimension bins, these are then index according to a Z-order space-filling curve (also known as a Morton code). This creates power of two aligned blocks with contiguous Z-indices. This additional locality intends to ensure that more neighbourhoods consist of contiguous blocks of memory, therefore neighbourhood searches are more likely to benefit from contiguous data becoming cached.
+%Our own results and theory suggest this only works in cases that searches are appropriately aligned with the environment.
 
-\note{Review Goswami space filling (again), see if we can identify where their research differed from our own experience.}
-%Goswami et al improved the performance of uniform spatial partitioning neighbour searches during \gls{sph} \cite{GS*10}. Bins within their partitioning are sorted according to a Z-order space-filling curve (also known as a Morton code, this ensures that all particles lying within any power of two aligned block have contiguous Z-indices. This additional locality ensures that more neighbourhoods consist of contiguous blocks of memory, therefore neighbourhood searches are more likely to benefit from contiguous data becoming cached. They utilised a look-up table for Z-indices to ensure efficient construction.
+Similarly, Salomon-Ferrer et al behind AMBER GPU instead sort particles within bins according to a 4x4x4 Hilbert space-filling curve \cite{SG*13}, in addition to possible benefits of spatial locality this has allowed them to extend the neighbourhood cut off.
 
-\note{Describe larger spatial partitioning specific modifications: e.g. neighbourhood grid.}
-%#Neighbourhood Grid
-%Joselli et al have described a data structure, neighbourhood grid. This data structure has been designed to optimise \gls{sph} by assigning each particle to its own bin, rather than the uniformly sized bins found in uniform spatial partitioning \cite{JR*15}. This binning system instead creates an approximate spatial neighbourhood, which has permitted performance improvements of upto 9 times when compared to uniform spatial partitioning methods.
-      
-%By storing particles to unique bins within a regular grid, neighbourhood searches can be carried out surveying a constant radius of directly adjacent bins. With a radius of 1 cell in 3 dimensions this reduces all neighbourhood searches to checking 26 bins, and in 2 dimensions only 8 bins. This provides constant time queries, rather than queries that increase with the density of particles.
-
-%As particles move, the data structure must be sorted such that spatial neighbours remain close within the grid. A bi-tonic sort was used in their development and testing, which sorted each dimension in a separate pass, however the focus was on their data structure and the sorting algorithm used is independent of that. It was clarified that they do not repeat earlier sorts, if the 2nd or 3rd passes also make changes. They found that this would impact the performance, whilst only correcting around a single percentage of particles.
+Joselli et al described a novel data structure, neighbourhood grid, inspired by \gls{usp} \cite{JR*15}. Their data structure designed for \gls{sph} instead assigns each particular to a unique bin. This binning system instead creates an approximate spatial neighbourhood which can be searched in constant time. These approximate searches have been reported to improve performance upto 9x faster than exact methods based on \gls{usp} by ensuring neighbourhoods are a fixed 26 particles, however they are not as generally applicable.
