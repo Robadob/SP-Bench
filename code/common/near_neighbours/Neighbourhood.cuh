@@ -147,6 +147,10 @@ public:
     DIMENSIONS_IVEC getGridPosition(DIMENSIONS_VEC worldPos);
     unsigned int getHash(DIMENSIONS_IVEC gridPos);
     static int requiredSM(int blockSize);
+#ifdef THREADBLOCK_BINS
+    unsigned int getMaxBinSize() const {return PBM_max_count; }
+    unsigned int getMaxMooreSize() const { return PBM_max_Moore_count; }
+#endif
 #ifdef _DEBUG
     void assertSearch();
     void launchAssertPBMIntegerity();
@@ -217,6 +221,11 @@ private:
     unsigned int *d_vals;//Atomic PBM uses this as bin sub-index
 #ifdef ATOMIC_PBM
     unsigned int *d_PBM_counts;
+#endif
+#ifdef THREADBLOCK_BINS
+    unsigned int *d_PBM_max_count;
+    unsigned int PBM_max_count;
+    unsigned int PBM_max_Moore_count;//Currently we approx this with PBM_max_count^Dims
 #endif
 #ifndef THRUST
 #ifndef ATOMIC_PBM

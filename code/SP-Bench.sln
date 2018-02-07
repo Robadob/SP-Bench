@@ -123,7 +123,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Mod-MortonCompute", "Mod - 
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Mod-Modular", "Mod - Modular\Mod - Modular.vcxproj", "{A20B963C-CB09-44B0-9D96-40860343028C}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Mod-ModularStrips3D", "Mod - ModularStrips3D\Mod - ModularStrips3D.vcxproj", "{AC2C50D9-CE89-4763-888E-BF1B389DE6D8}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Mod-ModularStrips", "Mod - ModularStrips3D\Mod - ModularStrips3D.vcxproj", "{AC2C50D9-CE89-4763-888E-BF1B389DE6D8}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Mod - ThreadBlockBins", "Mod - ThreadBlockBins\Mod - ThreadBlockBins.vcxproj", "{679ECA79-E695-4777-A6F6-9685BF6B813E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -354,6 +356,30 @@ Global
 		{AC2C50D9-CE89-4763-888E-BF1B389DE6D8}.Release|Win32.Build.0 = Release|Win32
 		{AC2C50D9-CE89-4763-888E-BF1B389DE6D8}.Release|x64.ActiveCfg = Release|x64
 		{AC2C50D9-CE89-4763-888E-BF1B389DE6D8}.Release|x64.Build.0 = Release|x64
+		{679ECA79-E695-4777-A6F6-9685BF6B813E}.Debug GL|Mixed Platforms.ActiveCfg = Debug|Win32
+		{679ECA79-E695-4777-A6F6-9685BF6B813E}.Debug GL|Mixed Platforms.Build.0 = Debug|Win32
+		{679ECA79-E695-4777-A6F6-9685BF6B813E}.Debug GL|Win32.ActiveCfg = Debug GL|Win32
+		{679ECA79-E695-4777-A6F6-9685BF6B813E}.Debug GL|Win32.Build.0 = Debug GL|Win32
+		{679ECA79-E695-4777-A6F6-9685BF6B813E}.Debug GL|x64.ActiveCfg = Debug GL|x64
+		{679ECA79-E695-4777-A6F6-9685BF6B813E}.Debug GL|x64.Build.0 = Debug GL|x64
+		{679ECA79-E695-4777-A6F6-9685BF6B813E}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{679ECA79-E695-4777-A6F6-9685BF6B813E}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{679ECA79-E695-4777-A6F6-9685BF6B813E}.Debug|Win32.ActiveCfg = Debug|Win32
+		{679ECA79-E695-4777-A6F6-9685BF6B813E}.Debug|Win32.Build.0 = Debug|Win32
+		{679ECA79-E695-4777-A6F6-9685BF6B813E}.Debug|x64.ActiveCfg = Debug|x64
+		{679ECA79-E695-4777-A6F6-9685BF6B813E}.Debug|x64.Build.0 = Debug|x64
+		{679ECA79-E695-4777-A6F6-9685BF6B813E}.Release GL|Mixed Platforms.ActiveCfg = Release|Win32
+		{679ECA79-E695-4777-A6F6-9685BF6B813E}.Release GL|Mixed Platforms.Build.0 = Release|Win32
+		{679ECA79-E695-4777-A6F6-9685BF6B813E}.Release GL|Win32.ActiveCfg = Release GL|Win32
+		{679ECA79-E695-4777-A6F6-9685BF6B813E}.Release GL|Win32.Build.0 = Release GL|Win32
+		{679ECA79-E695-4777-A6F6-9685BF6B813E}.Release GL|x64.ActiveCfg = Release GL|x64
+		{679ECA79-E695-4777-A6F6-9685BF6B813E}.Release GL|x64.Build.0 = Release GL|x64
+		{679ECA79-E695-4777-A6F6-9685BF6B813E}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{679ECA79-E695-4777-A6F6-9685BF6B813E}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{679ECA79-E695-4777-A6F6-9685BF6B813E}.Release|Win32.ActiveCfg = Release|Win32
+		{679ECA79-E695-4777-A6F6-9685BF6B813E}.Release|Win32.Build.0 = Release|Win32
+		{679ECA79-E695-4777-A6F6-9685BF6B813E}.Release|x64.ActiveCfg = Release|x64
+		{679ECA79-E695-4777-A6F6-9685BF6B813E}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

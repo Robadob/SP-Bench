@@ -1,8 +1,8 @@
 #ifndef __BuildAll_cuh__
 #define __BuildAll_cuh__
 
-#define _2D
-//#define _3D
+//#define _2D
+#define _3D
 
 /**
  * Config

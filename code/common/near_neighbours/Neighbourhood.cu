@@ -35,6 +35,9 @@ SpatialPartition::SpatialPartition(DIMENSIONS_VEC  environmentMin, DIMENSIONS_VE
 #if defined(MORTON) || defined(HILBERT) || defined(PEANO) || defined(MORTON_COMPUTE)
     , gridExponent(0)
 #endif
+#ifdef THREADBLOCK_BINS
+    , PBM_max_count(0)
+#endif
 #ifdef _DEBUG
     , PBM_isBuilt(0)
 #endif
@@ -445,6 +448,10 @@ void SpatialPartition::deviceAllocatePBM(unsigned int **d_PBM_t)
 {
     CUDA_CALL(cudaMalloc(d_PBM_t, sizeof(unsigned int)*(this->binCountMax + 1)));
     CUDA_CALL(cudaMemset(*d_PBM_t, 0, sizeof(unsigned int)*(this->binCountMax + 1)));//Must be 0'd to protect assertions on k20
+#ifdef THREADBLOCK_BINS
+    CUDA_CALL(cudaMalloc(d_PBM_max_count, sizeof(unsigned int)));
+    CUDA_CALL(cudaMemset(*d_PBM_max_count, 0, sizeof(unsigned int)));
+#endif
 }
 void SpatialPartition::deviceAllocatePrimitives(unsigned int **d_keys, unsigned int **d_vals)
 {
@@ -902,6 +909,14 @@ void SpatialPartition::buildPBM()
 #endif //ifdef-else-ATOMIC_PBM
     //Reorder messages
     launchReorderLocationMessages();
+#ifdef THREADBLOCK_BINS
+    //Calc max bin size
+    cub::DeviceReduce::Max(d_CUB_temp_storage, d_CUB_temp_storage_bytes, d_PBM_counts, d_PBM_max_count, this->binCountMax);
+    CUDA_CALL(cudaGetLastError());
+    CUDA_CALL(cudaMemcpy(PBM_max_count, d_PBM_max_count, sizeof(unsigned int), cudaMemcpyDeviceToHost));
+    //Calc moore size (bin size^dims?)
+    PBM_max_Moore_count = pow(PBM_max_count, DIMENSIONS);
+#endif
     //Clone data to textures ready for neighbourhood search
     fillTextures();
 #ifdef _DEBUG
@@ -913,6 +928,15 @@ void SpatialPartition::buildPBM()
 
 int SpatialPartition::requiredSM(int blockSize)
 {
+#ifdef THREADBLOCK_BINS
+    cudaDeviceProp dp;
+    int device;
+    cudaGetDevice(&device);
+    memset(&dp, sizeof(cudaDeviceProp), 0);
+    cudaGetDeviceProperties(&cudaDeviceProp, device);
+    //We could use dp.sharedMemPerBlock/N to improve occupancy
+    return min(PBM_max_Moore_count*sizeof(LocationMessage),dp.sharedMemPerBlock);//Need to limit this to the max SM
+#else
     return blockSize*sizeof(LocationMessage)
 #if defined(MODULAR) //BlockRelative + BlockContinue
         + sizeof(DIMENSIONS_IVEC) + sizeof(bool)
@@ -920,6 +944,7 @@ int SpatialPartition::requiredSM(int blockSize)
         +sizeof(DIMENSIONS_IVEC_MINUS1) + sizeof(bool)
 #endif
     ;
+#endif
 }
 DIMENSIONS_IVEC SpatialPartition::getGridPosition(DIMENSIONS_VEC worldPos)
 {

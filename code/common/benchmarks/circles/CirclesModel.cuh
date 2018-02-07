@@ -121,10 +121,24 @@ int requiredSM_stepCirclesModel(int blockSize)
 }
 void CirclesModel::launchStep()
 {
-    int minGridSize, blockSize;   // The launch configurator returned block size 
+    int blockSize;   // The launch configurator returned block size 
+#ifdef THREADBLOCK_BINS
+    dim3 gridSize;
+    gridSize.x = spatialPartiton->getGridDim().x;
+    gridSize.y = spatialPartiton->getGridDim().y;
+#ifdef _3D
+    gridSize.z = spatialPartiton->getGridDim().z;
+#endif
+    //Grid size = env x/y/z
+    blockSize = spatialPartition->getMaxBinSize();
+    //block size = 1 dim, max bin size (perform a reduction during pbm construction)
+    //smem = max contents of moore neighbourhood x message size????? (this will take an extra kernel launch or similar to calc during PBM construction)
+#else
+    int minGridSize;
     cudaOccupancyMaxPotentialBlockSizeVariableSMem(&minGridSize, &blockSize, step_circles_model, requiredSM_stepCirclesModel, 0);//random 128
     // Round up according to array size
     int gridSize = (agentMax + blockSize - 1) / blockSize;
+#endif
     LocationMessages *d_lm = spatialPartition->d_getLocationMessages();
     LocationMessages *d_lm2 = spatialPartition->d_getLocationMessagesSwap();
     //Launch kernel
