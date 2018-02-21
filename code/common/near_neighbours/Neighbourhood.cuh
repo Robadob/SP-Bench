@@ -133,7 +133,7 @@ public:
     LocationMessages *d_getLocationMessagesSwap() { return d_locationMessages_swap; }
     unsigned int getLocationCount() { return locationMessageCount; }
     //Setters
-    void SpatialPartition::setLocationCount(unsigned int);
+    void setLocationCount(unsigned int);
     //Util
     void buildPBM();
     void swap();

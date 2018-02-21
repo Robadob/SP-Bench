@@ -1,6 +1,6 @@
 /******************************************************************************
  * Copyright (c) 2011, Duane Merrill.  All rights reserved.
- * Copyright (c) 2011-2015, NVIDIA CORPORATION.  All rights reserved.
+ * Copyright (c) 2011-2018, NVIDIA CORPORATION.  All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -64,9 +64,6 @@
 #include "grid/grid_mapping.cuh"
 #include "grid/grid_queue.cuh"
 
-// Host
-#include "host/spinlock.cuh"
-
 // Thread
 #include "thread/thread_load.cuh"
 #include "thread/thread_operators.cuh"
@@ -89,7 +86,6 @@
 #include "iterator/transform_input_iterator.cuh"
 
 // Util
-#include "util_allocator.cuh"
 #include "util_arch.cuh"
 #include "util_debug.cuh"
 #include "util_device.cuh"

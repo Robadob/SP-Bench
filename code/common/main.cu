@@ -9,7 +9,9 @@
 //#include <device_launch_parameters.h>
 #include "results.h"
 #include <fcntl.h>
+#ifdef _MSC_VER
 #include <io.h>
+#endif
 #include "export.h"
 #include <memory>
 
@@ -293,7 +295,10 @@ int main(int argc, char * argv[])
 	if (args.pipe)
 	{
 		//FILE *pipe = fopen("CON", "wb+");// _popen("", "wb");
+#ifdef _MSC_VER
+        //Put stdout into binary mode (stops binary for '\n' being converted to '\r\n')
 		setmode(fileno(stdout), O_BINARY);
+#endif
         size_t modelSize = 0;
         switch (args.model->enumerator())
         {
@@ -370,10 +375,12 @@ int main(int argc, char * argv[])
     model.reset();
 
 	cudaDeviceReset();
-    //Wait for input before exit
+#ifdef _MSC_VER
+    //Wait for input before exit on windows
 	if (!args.pipe&&!args.profile)
 	{
 		getchar();
 	}
+#endif
     return 0;
 }
