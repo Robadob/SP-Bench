@@ -1,6 +1,8 @@
 #ifndef __results_h__
 #define __results_h__
 #include <ctime>
+#include <climits>
+#include <cstring>
 #include <memory>
 
 struct Time_Init

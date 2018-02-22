@@ -5,10 +5,13 @@
 #include <string>
 #include "results.h"
 #include <ctime>
-#ifdef _MSC_BUILD 
+#ifdef _MSC_VER
 #include <windows.h>
+#define popen _popen
+#define pclose _pclose
 #else
-#include <filesystem>
+//#include <filesystem>
+#include <sys/stat.h>
 #endif
 
 CirclesParams reset(const CirclesParams &start, const CirclesParams &end);
@@ -683,23 +686,20 @@ bool run(const T &start, const T &end, const unsigned int steps, const char *run
     {
         //Create log
         std::string logPath("./out/");
-#ifdef _MSC_BUILD
+#ifdef _MSC_VER
         CreateDirectory(logPath.c_str(), NULL);
+#else
+        mkdir(logPath.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 #endif
         logPath = logPath.append(runName);
         logPath = logPath.append("/");
-#ifdef _MSC_BUILD
+#ifdef _MSC_VER
         CreateDirectory(logPath.c_str(), NULL);
-#endif
-        logPath = logPath.append(TEST_NAMES[j]);
-        logPath = logPath.append("/");
-#ifdef _MSC_BUILD
-        CreateDirectory(logPath.c_str(), NULL);
-#endif
-#ifndef _MSC_BUILD
-        if (!exists(logPath)) { // Check if folder exists
-            create_directory(logPath.c_str()); // create folder
-        }
+#else
+        mkdir(logPath.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+        //if (!exists(logPath)) { // Check if folder exists
+        //    create_directory(logPath.c_str()); // create folder
+        //}
 #endif
         logPath = logPath.append(std::to_string(time(0)));
         logPath = logPath.append(".csv");
@@ -756,18 +756,20 @@ bool runCollated(const T &start, const T &end, const unsigned int steps, const c
     FILE *log_F = nullptr;
     {
         std::string logPath("./out/");
-#ifdef _MSC_BUILD
+#ifdef _MSC_VER
         CreateDirectory(logPath.c_str(), NULL);
+#else
+        mkdir(logPath.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 #endif
         logPath = logPath.append(runName);
         logPath = logPath.append("/");
-#ifdef _MSC_BUILD
+#ifdef _MSC_VER
         CreateDirectory(logPath.c_str(), NULL);
-#endif
-#ifndef _MSC_BUILD
-        if (!exists(logPath)) { // Check if folder exists
-            create_directory(logPath.c_str()); // create folder
-        }
+#else
+        mkdir(logPath.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+        //if (!exists(logPath)) { // Check if folder exists
+        //    create_directory(logPath.c_str()); // create folder
+        //}
 #endif
         logPath = logPath.append("collated");
         logPath = logPath.append(std::to_string(time(0)));
@@ -837,18 +839,20 @@ bool runCollated2D(const T &start, const T &end1, const T &end2, const unsigned 
     FILE *log_F = nullptr;
     {
         std::string logPath("./out/");
-#ifdef _MSC_BUILD
+#ifdef _MSC_VER
         CreateDirectory(logPath.c_str(), NULL);
+#else
+        mkdir(logPath.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 #endif
         logPath = logPath.append(runName);
         logPath = logPath.append("/");
-#ifdef _MSC_BUILD
+#ifdef _MSC_VER
         CreateDirectory(logPath.c_str(), NULL);
-#endif
-#ifndef _MSC_BUILD
-        if (!exists(logPath)) { // Check if folder exists
-            create_directory(logPath.c_str()); // create folder
-        }
+#else
+        mkdir(logPath.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+        //if (!exists(logPath)) { // Check if folder exists
+        //    create_directory(logPath.c_str()); // create folder
+        //}
 #endif
         logPath = logPath.append("collated");
         logPath = logPath.append(std::to_string(time(0)));
@@ -877,7 +881,7 @@ bool runCollated2D(const T &start, const T &end1, const T &end2, const unsigned 
             //For each mod
             for (unsigned int j = 0; j < sizeof(TEST_EXECUTABLES) / sizeof(char*); ++j)
             {
-                printf("\rExecuting run %s %d:%d/%d:%d %i/%llu      ", runName, w + 1, v + 1, steps1, steps2, j + 1, sizeof(TEST_EXECUTABLES) / sizeof(char*));
+                printf("\rExecuting run %s %d:%d/%d:%d %i/%lu      ", runName, w + 1, v + 1, steps1, steps2, j + 1, sizeof(TEST_EXECUTABLES) / sizeof(char*));
                 agentCount = 0;
                 totalTime = 0;
                 //executeBenchmark
@@ -903,7 +907,7 @@ bool runCollated2D(const T &start, const T &end1, const T &end2, const unsigned 
     //Close log
     fclose(log_F);
     //Print confirmation to console
-    printf("\rCompleted run %s %i/%i %llu/%llu         \n", runName, (int)steps1, (int)steps2, sizeof(TEST_EXECUTABLES) / sizeof(char*), sizeof(TEST_EXECUTABLES) / sizeof(char*));
+    printf("\rCompleted run %s %i/%i %lu/%lu         \n", runName, (int)steps1, (int)steps2, sizeof(TEST_EXECUTABLES) / sizeof(char*), sizeof(TEST_EXECUTABLES) / sizeof(char*));
     return true;
 }
 CirclesParams interpolateParams(const CirclesParams &start, const CirclesParams &end, const unsigned int step, const unsigned int totalSteps)
@@ -1029,7 +1033,7 @@ bool executeBenchmark(const char* executable, T modelArgs, T *modelparamOut, uns
     char *command;
     bool rtn = true;
     execString(executable, modelArgs, &command);
-    std::shared_ptr<FILE> pipe(_popen(command, "rb"), _pclose);
+    std::shared_ptr<FILE> pipe(popen(command, "rb"), pclose);
     if (!pipe.get()) rtn = false;
     if (rtn)
     {
