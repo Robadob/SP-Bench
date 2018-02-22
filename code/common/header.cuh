@@ -20,13 +20,13 @@ static void HandleCUDAError(const char *file,
 #ifdef _DEBUG
 	cudaDeviceSynchronize();
 #endif
-    if (status != CUDA_SUCCESS || (status = cudaGetLastError()) != CUDA_SUCCESS)
+    if (status != cudaError::cudaSuccess || (status = cudaGetLastError()) != cudaError::cudaSuccess)
     {
         if (status == cudaErrorUnknown)
         {
             printf("%s(%i) An Unknown CUDA Error Occurred :(\n", file, line);
             printf("Perhaps performing the same operation under the CUDA debugger with Memory Checker enabled could help!\n");
-            printf("If this error only occurs outside of NSight debugging sessions, or causes the system to lock up. It may be caused by not passing the required amount of shared memory to a kernal launch that uses runtime sized shared memory.\n", file, line);
+            printf("If this error only occurs outside of NSight debugging sessions, or causes the system to lock up. It may be caused by not passing the required amount of shared memory to a kernal launch that uses runtime sized shared memory.\n");
             printf("Also possible you have forgotten to allocate texture memory you are trying to read\n");
             printf("Passing a buffer to 'cudaGraphicsSubResourceGetMappedArray' or a texture to 'cudaGraphicsResourceGetMappedPointer'.\n");
             getchar();

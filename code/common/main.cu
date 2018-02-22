@@ -180,17 +180,19 @@ int main(int argc, char * argv[])
 
 #ifdef _GL
 	Visualisation v("Visulisation Example", args.GLwidth, args.GLheight);//Need to init GL before creating CUDA textures
+    float density = 1.0f;
 #endif
     std::shared_ptr<CoreModel> model;
-    float density = 1.0f;
     switch (args.model->enumerator())
     {
 #ifdef CIRCLES_MODEL
         case Circles:
         {
             std::shared_ptr<CirclesParams> _model = std::dynamic_pointer_cast<CirclesParams>(args.model);
-            density = _model->density;
             model = std::make_shared<CirclesModel>(_model->agents, _model->density, _model->forceModifier);
+#ifdef _GL
+            density = _model->density;
+#endif
             break;
         }
 #endif
@@ -198,8 +200,10 @@ int main(int argc, char * argv[])
         case Null:
         {
             std::shared_ptr<NullParams> _model = std::dynamic_pointer_cast<NullParams>(args.model);
-            density = _model->density;
             model = std::make_shared<NullModel>(_model->agents, _model->density);
+#ifdef _GL
+            density = _model->density;
+#endif
             break;
         }
         case Density:

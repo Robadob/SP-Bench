@@ -13,7 +13,7 @@
 #include "rapidxml/rapidxml.hpp"
 #include "rapidxml/rapidxml_print.hpp"
 
-void exportPopulation(std::shared_ptr<SpatialPartition> s, const ArgData &args, char *path)
+void exportPopulation(std::shared_ptr<SpatialPartition> s, const ArgData &args, const char *path)
 {
 	unsigned int count = s->getLocationCount();
 	std::string outFile = std::string(path);
@@ -199,7 +199,7 @@ void exportPopulation(std::shared_ptr<SpatialPartition> s, const ArgData &args, 
 #endif
 }
 
-void exportAgents(std::shared_ptr<SpatialPartition> s, char *path)
+void exportAgents(std::shared_ptr<SpatialPartition> s, const char *path)
 {
 	
 	int len = s->getLocationCount();
