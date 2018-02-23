@@ -1,0 +1,8 @@
+absoluteBin = vector2i(centralBinPosition)
+loop -1<=relativeBin.x<=1:
+    loop -1<=relativeBin.y<=1:
+        selectedBin = absoluteBin + relativeBin
+        if selectedBin is valid:
+            hash = binToHash(selectedBin)
+            loop messages in range(PBM[hash], PBM[hash + 1]):
+                handleMessage()

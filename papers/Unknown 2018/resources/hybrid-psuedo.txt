@@ -1,0 +1,21 @@
+SHARED_relative = -2
+absoluteBin = vector2i(centralBinPosition)
+binOffset = (absoluteBin.y+1)%3
+loop:
+    if first thread:
+        SHARED_relative++
+    memoryFence_SHARED()
+    if SHARED_relative > 1:
+        exitLoop()
+    relativeStrip = SHARED_relative + binOffset
+    if relativeStrip > 1:
+        relativeStrip -= 3
+    startBin = absoluteBin + vector2i(-1, relativeStrip)
+    endBin = absoluteBin + vector2i(1, relativeStrip)
+    if startBin or endBin are valid:
+        startBin = clampToValid(startBin)
+        endBin = clampToValid(endBin)
+        startHash = binToHash(startBin)
+        endHash = binToHash(endBin)
+        loop messages in range(PBM[startHash], PBM[endHash+1]):
+            handleMessage()

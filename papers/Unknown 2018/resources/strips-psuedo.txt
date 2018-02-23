@@ -1,0 +1,11 @@
+absoluteBin = vector2i(centralBinPosition)
+loop -1<=relativeStrip<=1:
+    startBin = absoluteBin + vector2i(-1, relativeStrip)
+    endBin = absoluteBin + vector2i(1, relativeStrip)
+    if startBin or endBin are valid:
+        startBin = clampToValid(startBin)
+        endBin = clampToValid(endBin)
+        startHash = binToHash(startBin)
+        endHash = binToHash(endBin)
+        loop messages in range(PBM[startHash], PBM[endHash+1]):
+            handleMessage()

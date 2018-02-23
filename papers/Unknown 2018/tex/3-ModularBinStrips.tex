@@ -1,10 +1,8 @@
 \section{Modular Bin Strips\label{sec:innovation}}
   The previous section explained the operation of \gls{frnns} on \glspl{gpu} via the data structure \gls{usp}. In particular this research has concerned itself with optimisation at the stage of accessing bins. We have developed two independent optimisations that we refer to as \textit{Strips} and \textit{Modular}. These two optimisations can be combined to access the benefits of both techniques simultaneously.
+    
+  In order to access all the messages within a given radius of the search position, we must check the contents of all the bins which may contain the desired messages. To achieve this we iterate the bins of the inclusive Moore neighbourhood of the search position's bin. In two dimensions this can be visualised as a 3x3 table containing 9 bins, and in three dimensions this can be visualised as cubes subdivided 3x3x3 into 27 bins. Naturally we iterate the Moore neighbourhood in a one bin at a time in a linear order, first following the X axis, then the Y and so forth, similar to how the labelling of the environment occurs. One example of this approach can be seen in NVIDIA's own particles example which implements uniform spatial partitioning \cite{Gre10}.
   
-  \note{Not too sure about consistent use of language here, neighbour or desired message etc. This also applies to the figure in the prior section.}
-  
-  In order to access all the messages within a given radius of the search position, we must check the contents of all the bins which may contain the desired messages. To achieve this we iterate the bins of the inclusive Moore neighbourhood of the search position's bin. In two dimensions this can be visualised as a 3x3 table containing 9 bins, and in three dimensions this can be visualised as cubes subdivided 3x3x3 into 27 bins. Naturally we iterate the Moore neighbourhood in a one bin at a time in a linear order, first following the X axis, then the Y and so forth, similar to how the labelling of the environment occurs. One example of this approach can be seen in NVIDIA's own particles example which implements uniform spatial partitioning.
-  \note{CITE ME (NV Particles)}
   \subsection{Strips}
     The Strips optimisation targets redundant bin changes. Where a strip of bins within the Moore neighbourhood exists contiguously in memory, we clamp the strip's bins so that they are within the environment's bounds and  solely load the first bin's start index, and the last bin's end index from the partition boundary matrix.
     
@@ -13,8 +11,6 @@
     Therefore the optimisation provides a near constant time speed up through removal of code, relevant to the problem dimensionality and number of simultaneous threads. Additionally the removal of the bin switches can reduce branch divergence, whereby threads within the same warp are operating on differently sized bins and hence would change bins at different times.
     
     \note{Also mention that is not easily applicable to space filling curves due to how they affect contiguous bins, but we tried them and found they were not a useful optimisation?}
-    
-    \note{Could include a code excerpt to show difference between bounds checking of default vs strips?}
 
   \subsection{Modular}
 \begin{figure}[!t]

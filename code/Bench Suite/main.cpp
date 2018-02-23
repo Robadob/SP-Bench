@@ -232,6 +232,21 @@ int main(int argc, char* argv[])
         //    runCollated2D(start, end1, end2, steps1, steps2, "2DSweepXL-Neighbourhood-Uniform");
         //}
     //}
+    //{//Extension of best case uniform random 2D Sweep
+    //    {//Null
+    //        const int steps1 = 75;
+    //        //Init model arg start
+    //        NullParams  start = {};
+    //        start.agents = 10000;
+    //        start.iterations = 100;
+    //        start.density = 2.385542f;
+    //        start.seed = 1;
+    //        //Init model arg end
+    //        NullParams end1 = start;
+    //        end1.agents = 2000000;
+    //        runCollated(start, end1, steps1, "Null2D-22neighbours-uniformrng");
+    //    }
+    //}
     {//2D sweep of 2D physical model
         //{//Circles - 2D UniformRNG
         //    const int steps1 = 50;
@@ -271,6 +286,40 @@ int main(int argc, char* argv[])
 /**
 * 2D PARAM SWEEP of 3D Models with Hybrid
 */
+{//2D parameter sweep of problem scale, neighbourhood scale (v2)
+    {//Null
+        const int steps1 = 75;
+        const int steps2 = 100;
+        //Init model arg start
+        NullParams  start = {};
+        start.agents = 68585;// 10000;
+        start.iterations = 100;
+        start.density = 1.1f;
+        start.seed = 1;
+        //Init model arg end
+        NullParams end1 = start;
+        end1.agents = 300000;
+        NullParams end2 = start;
+        end2.density = 10.0f;
+        runCollated2D(start, end1, end2, steps1, steps2, "2DSweep-Null3D_UniformRNGv2");
+    }
+    {//Null
+        const int steps1 = 100;
+        const int steps2 = 100;
+        //Init model arg start
+        NullParams  start = {};
+        start.agents = 10000;
+        start.iterations = 100;
+        start.density = 1.1f;
+        start.seed = 0;
+        //Init model arg end
+        NullParams end1 = start;
+        end1.agents = 300000;
+        NullParams end2 = start;
+        end2.density = 10.0f;
+        runCollated2D(start, end1, end2, steps1, steps2, "2DSweep-Null3D_Uniformv2");
+    }
+}
 //{//2D parameter sweep of problem scale, neighbourhood scale
 //    {//Null
 //        const int steps1 = 30;
@@ -305,43 +354,42 @@ int main(int argc, char* argv[])
 //        runCollated2D(start, end1, end2, steps1, steps2, "2DSweep-Null3D_Uniform");
 //    }
 //}
-    {//2D sweep of 3D physical model
-        //THIS NEEDS TO BE RUN NEXT
-        {//Circles
-            const int steps1 = 50;
-            const int steps2 = 30;
-            //Init model arg start
-            CirclesParams  start = {};
-            start.agents = 10000;
-            start.iterations = 500;
-            start.density = 2.0f;
-            start.forceModifier = 0.01f;
-            start.seed = 1;
-            //Init model arg end
-            CirclesParams end1 = start;
-            end1.agents = 300000;
-            CirclesParams end2 = start;
-            end2.density = 20.0f;
-            runCollated2D(start, end1, end2, steps1, steps2, "2DSweepXL-Circles3D_UniformRNG");
-        }
-        {//Circles
-            const int steps1 = 50;
-            const int steps2 = 30;
-            //Init model arg start
-            CirclesParams  start = {};
-            start.agents = 10000;
-            start.iterations = 500;
-            start.density = 2.0f;
-            start.forceModifier = 0.01f;
-            start.seed = 0;
-            //Init model arg end
-            CirclesParams end1 = start;
-            end1.agents = 300000;
-            CirclesParams end2 = start;
-            end2.density = 20.0f;
-            runCollated2D(start, end1, end2, steps1, steps2, "2DSweepXL-Circles3D_Uniform");
-        }
-    }
+    //{//2D sweep of 3D physical model
+    //    {//Circles
+    //        const int steps1 = 50;
+    //        const int steps2 = 30;
+    //        //Init model arg start
+    //        CirclesParams  start = {};
+    //        start.agents = 10000;
+    //        start.iterations = 500;
+    //        start.density = 2.0f;
+    //        start.forceModifier = 0.01f;
+    //        start.seed = 1;
+    //        //Init model arg end
+    //        CirclesParams end1 = start;
+    //        end1.agents = 300000;
+    //        CirclesParams end2 = start;
+    //        end2.density = 20.0f;
+    //        runCollated2D(start, end1, end2, steps1, steps2, "2DSweepXL-Circles3D_UniformRNG");
+    //    }
+    //    {//Circles
+    //        const int steps1 = 50;
+    //        const int steps2 = 30;
+    //        //Init model arg start
+    //        CirclesParams  start = {};
+    //        start.agents = 10000;
+    //        start.iterations = 500;
+    //        start.density = 2.0f;
+    //        start.forceModifier = 0.01f;
+    //        start.seed = 0;
+    //        //Init model arg end
+    //        CirclesParams end1 = start;
+    //        end1.agents = 300000;
+    //        CirclesParams end2 = start;
+    //        end2.density = 20.0f;
+    //        runCollated2D(start, end1, end2, steps1, steps2, "2DSweepXL-Circles3D_Uniform");
+    //    }
+    //}
 /**
 * 3D NON-UNIFORM WITH HYBRID
 */

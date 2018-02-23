@@ -195,6 +195,7 @@ __global__ void step_circles_model(LocationMessages *locationMessagesIn, Locatio
 #ifdef _3D
                         messageData[sharedStart + i].location.z = d_messages->locationZ[pbmStart + i];
 #endif
+#endif
                     }
                 }
                 //How far into total messages are we?

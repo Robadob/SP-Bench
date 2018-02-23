@@ -9,7 +9,9 @@
 
   Furthermore testing in three dimensions showed a peak improvement of 5.4 times speed up. This occurred with a lower problem size of 40k messages and similar neighbourhood size averaging 47.
   
-  Physical model results show...
+  Physical model results show a lesser peak speed up of 2.4 times speed up from the Hybrid optimisation in two dimensional environment. In cases of hardware under utilisation (~10,000 agents) the Modular and Hybrid optimisations actually had a negative effect on performance.
+  
+  The difference in results between the diagnostic and physical models point to the significance of message distributions affecting the efficacy of optimisations.
   
   This research has shown that more investigation is required into the impact of other variables on the performance of \gls{gpu} \gls{frnns} and how they interact with optimisations. In particular we have seen how the distribution of agents between bins can have a significant impact of performance. As such, in future research we hope to explore this impact and whether further optimisations can be applied to target the varied distributions seen in different complex systems.
   

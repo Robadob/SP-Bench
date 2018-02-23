@@ -934,8 +934,18 @@ int SpatialPartition::requiredSM(int blockSize)
     cudaGetDevice(&device);
     memset(&dp, sizeof(cudaDeviceProp), 0);
     cudaGetDeviceProperties(&cudaDeviceProp, device);
+    size_t headerSize = ((2*pow(3,DIMENSIONS))+1)*sizeof(unsigned int);//Used to store bin counts and prefix sum/index before the message store
     //We could use dp.sharedMemPerBlock/N to improve occupancy
-    return min(PBM_max_Moore_count*sizeof(LocationMessage),dp.sharedMemPerBlock);//Need to limit this to the max SM
+    if(headerSize+(PBM_max_Moore_count*sizeof(LocationMessage))<dp.sharedMemPerBlock)
+    {
+        //PBM_max_Moore_count space for messages
+        return headerSize + (PBM_max_Moore_count*sizeof(LocationMessage));
+    }
+    else
+    {
+        size_t messageBufferSize = (dp.sharedMemPerBlock-headerSize)/sizeof(LocationMessage);
+        return headerSize + (messageBufferSize*sizeof(LocationMessage));
+    }
 #else
     return blockSize*sizeof(LocationMessage)
 #if defined(MODULAR) //BlockRelative + BlockContinue
