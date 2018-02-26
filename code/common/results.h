@@ -48,9 +48,9 @@ struct ModelParams
         
     }
     //virtual ~ModelParams() = default;
-    virtual const char *modelName() = 0;
-    virtual const char *modelFlag() = 0;
-    virtual ModelEnum enumerator() = 0;
+	virtual const char *modelName() const = 0;
+	virtual const char *modelFlag() const = 0;
+    virtual ModelEnum enumerator() const = 0;
     unsigned long long iterations;
     unsigned long long seed;
 };
@@ -68,13 +68,14 @@ struct CirclesParams : ModelParams
         , density(0.01f)
 		, forceModifier(0.5f)
 	{ }
+
 	unsigned int agents;
 	float density;
     float forceModifier;
 
-    const char *modelName() override { return MODEL_NAME; };
-    const char *modelFlag() override { return MODEL_FLAG; };
-    ModelEnum enumerator() override { return ModelEnum::Circles; };
+	const char *modelName( )const override { return MODEL_NAME; };
+	const char *modelFlag() const override { return MODEL_FLAG; };
+	ModelEnum enumerator() const override{ return ModelEnum::Circles; };
 private:
     const char *MODEL_NAME = "Circles";
     const char *MODEL_FLAG = "-circles";
@@ -95,9 +96,9 @@ struct NullParams : ModelParams
     unsigned int agents;
     float density;
 
-    const char *modelName() override { return MODEL_NAME; };
-    const char *modelFlag() override { return MODEL_FLAG; };
-    ModelEnum enumerator() override { return ModelEnum::Null; };
+	const char *modelName() const override { return MODEL_NAME; };
+	const char *modelFlag() const override { return MODEL_FLAG; };
+	ModelEnum enumerator() const override { return ModelEnum::Null; };
 private:
     const char *MODEL_NAME = "Null";
     const char *MODEL_FLAG = "-null";
@@ -126,9 +127,9 @@ struct DensityParams : ModelParams
     float clusterRad;
     float uniformDensity;
 
-    const char *modelName() override { return MODEL_NAME; };
-    const char *modelFlag() override { return MODEL_FLAG; };
-    ModelEnum enumerator() override { return ModelEnum::Density; };
+	const char *modelName() const override { return MODEL_NAME; };
+	const char *modelFlag() const override { return MODEL_FLAG; };
+	ModelEnum enumerator() const override { return ModelEnum::Density; };
 private:
     const char *MODEL_NAME = "Density";
     const char *MODEL_FLAG = "-density";
