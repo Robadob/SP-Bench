@@ -738,9 +738,9 @@ void ParamSet::execString(const char* executable, NullParams modelArgs, char **r
 		buffer = buffer.append(" ");
 		buffer = buffer.append(std::to_string(modelArgs.seed));
 	}
-	const char *src = buffer.c_str();
-	*rtn = (char *)malloc(sizeof(char*)*(buffer.length() + 1));
-	memcpy(*rtn, src, sizeof(char*)*(buffer.length() + 1));
+    const char *src = buffer.c_str();
+    *rtn = (char *)malloc(sizeof(char)*(buffer.length() + 1));
+    memcpy(*rtn, src, sizeof(char)*(buffer.length() + 1));
 }
 void ParamSet::execString(const char* executable, DensityParams modelArgs, char **rtn)
 {
@@ -778,9 +778,9 @@ void ParamSet::execString(const char* executable, DensityParams modelArgs, char 
 		buffer = buffer.append(" ");
 		buffer = buffer.append(std::to_string(modelArgs.seed));
 	}
-	const char *src = buffer.c_str();
-	*rtn = (char *)malloc(sizeof(char*)*(buffer.length() + 1));
-	memcpy(*rtn, src, sizeof(char*)*(buffer.length() + 1));
+    const char *src = buffer.c_str();
+    *rtn = (char *)malloc(sizeof(char)*(buffer.length() + 1));
+    memcpy(*rtn, src, sizeof(char)*(buffer.length() + 1));
 }
 std::shared_ptr<ModelParams> ParamSet::interpolateParams(std::shared_ptr<ModelParams> start, std::shared_ptr<ModelParams> end, const unsigned int step, const unsigned int totalSteps)
 {
