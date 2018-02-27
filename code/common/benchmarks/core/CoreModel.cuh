@@ -82,7 +82,7 @@ const Time_Init CoreModel::initPopulation(const unsigned long long rngSeed)
     {
         //Adding +1 here will misalign uniform particles slightly, otherwise they are placed in bin centres only and can't touch other particles.
 #if DIMENSIONS==3
-        int particlesPerDim = (int)ceil(cbrt(agentMax));
+        int particlesPerDim = (int)ceil(cbrt((float)agentMax));
 #elif DIMENSIONS==2
         int particlesPerDim = (int)ceil(sqrt(agentMax));
 #else
@@ -174,7 +174,7 @@ const Time_Init CoreModel::initPopulationClusters(const unsigned int clusterCoun
     {
         //Adding +1 here will misalign uniform particles slightly, otherwise they are placed in bin centres only and can't touch other particles.
 #if DIMENSIONS==3
-        int particlesPerDim = (int)cbrt(uniformAgents) + 1;
+        int particlesPerDim = (int)cbrt((float)uniformAgents) + 1;
 #elif DIMENSIONS==2
         int particlesPerDim = (int)sqrt(uniformAgents) + 1;
 #else
