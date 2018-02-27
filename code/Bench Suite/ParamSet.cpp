@@ -14,7 +14,7 @@ unsigned int ParamSet::DEVICE_ID = 0;
 #ifdef _MSC_VER
 std::vector<Executable> ParamSet::BINARIES = { { "Default", "Release-Mod-Default.exe" }, { "Strips", "Release-Mod-Strips.exe" }, { "Modular", "Release-Mod-Modular.exe" }, { "ModularStrips", "Release-Mod-ModularStrips.exe" } };
 #else
-std::vector<Executable> ParamSet::BINARIES = {{ "Default", "release-mod-default" }, { "Strips", "release-mod-strips" }, { "Modular", "release-mod-modular" }, { "ModularStrips", "release-mod-modularStrips3d" }};
+std::vector<Executable> ParamSet::BINARIES = {{ "Default", "release-mod-default" }, { "Strips", "release-mod-strips" }, { "Modular", "release-mod-modular" }, { "ModularStrips", "release-mod-modularstrips3d" }};
 #endif
 
 void ParamSet::setBinDir(const char*d)
@@ -174,7 +174,7 @@ void ParamSet::run() const
 }
 void ParamSet::runCollated() const
 {
-	printf("Running %s\n", name.c_str());
+	printf("Running(1D) %s\n", name.c_str());
 	//Create log
 	FILE *log_F = createLogFile(std::to_string(time(nullptr)).c_str());
 	if (log_F)
@@ -278,7 +278,7 @@ void ParamSet::runCollated() const
 }
 void ParamSet::runCollated2D() const
 {
-	printf("Running %s\n", name.c_str());
+	printf("Running(2D) %s\n", name.c_str());
 	//Create log
 	FILE *log_F = createLogFile(std::to_string(time(nullptr)).c_str());
 	if (log_F)
@@ -702,7 +702,7 @@ void ParamSet::execString(const char* executable, CirclesParams modelArgs, char 
 	{
 
 		buffer = buffer.append(" ");
-		buffer = buffer.append(" -seed");
+		buffer = buffer.append("-seed");
 		buffer = buffer.append(" ");
 		buffer = buffer.append(std::to_string(modelArgs.seed));
 	}
@@ -734,7 +734,7 @@ void ParamSet::execString(const char* executable, NullParams modelArgs, char **r
 	{
 
 		buffer = buffer.append(" ");
-		buffer = buffer.append(" -seed");
+		buffer = buffer.append("-seed");
 		buffer = buffer.append(" ");
 		buffer = buffer.append(std::to_string(modelArgs.seed));
 	}
@@ -774,7 +774,7 @@ void ParamSet::execString(const char* executable, DensityParams modelArgs, char 
 	{
 
 		buffer = buffer.append(" ");
-		buffer = buffer.append(" -seed");
+		buffer = buffer.append("-seed");
 		buffer = buffer.append(" ");
 		buffer = buffer.append(std::to_string(modelArgs.seed));
 	}

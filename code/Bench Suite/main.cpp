@@ -163,7 +163,11 @@ bool executeBenchmark(const char* executable, T modelArgs, T *modelparamOut, uns
     char *command;
     bool rtn = true;
     ParamSet::execString(executable, modelArgs, &command);
+#ifdef _MSC_VER
     std::shared_ptr<FILE> pipe(popen(command, "rb"), pclose);
+#else
+    std::shared_ptr<FILE> pipe(popen(command, "r"), pclose);
+#endif
     if (!pipe.get()) rtn = false;
     if (rtn)
     {
