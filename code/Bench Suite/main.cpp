@@ -160,17 +160,11 @@ DensityParams interpolateParams(const DensityParams &start, const DensityParams 
 template<class T>
 bool executeBenchmark(const char* executable, T modelArgs, T *modelparamOut, unsigned int *agentCount, Time_Init *initRes, Time_Step_dbl *stepRes, float *totalTime, NeighbourhoodStats *nsFirst, NeighbourhoodStats *nsLast)
 {
-    printf("a\n");
     char *command;
-    printf("b\n");
     bool rtn = true;
-    printf("c\n");
     ParamSet::execString(executable, modelArgs, &command);
-    printf("d'%s'\n", command);
     std::shared_ptr<FILE> pipe(popen(command, "rb"), pclose);
-    printf("e\n");
     if (!pipe.get()) rtn = false;
-    printf("f\n");
     if (rtn)
     {
         if (fread(modelparamOut, sizeof(T), 1, pipe.get()) != 1)
@@ -206,7 +200,6 @@ bool executeBenchmark(const char* executable, T modelArgs, T *modelparamOut, uns
     {
         printf("Exec: %s\n", command);
     }
-    printf("g\n");
     return rtn;
 }
 

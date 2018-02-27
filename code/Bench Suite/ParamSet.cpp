@@ -324,7 +324,6 @@ void ParamSet::runCollated2D() const
 					{
 						NullParams n;
 						success = executeBenchmark(bin.file, *std::dynamic_pointer_cast<NullParams>(lerpArgs), &n, &agentCount, &initRes, &stepRes, &totalTime, &nsFirst, &nsLast);
-                        printf("h\n");
 					}
 						break;
 					case Circles:
@@ -349,9 +348,7 @@ void ParamSet::runCollated2D() const
 						return;
 					}
 					//Write result body
-                    printf("i\n");
 					log(log_F, &initRes, &stepRes, totalTime);
-                    printf("j\n");
 				}
 				//Write run config
 				//AgentCount

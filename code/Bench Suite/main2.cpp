@@ -4,8 +4,8 @@
 #include <string>
 
 #ifdef _MSC_VER
-const char *BIN_X64 = "../bin/x64/";
-const char *OUT_DIR = "./out/";
+const char *BIN_X64 = "..\\bin\\x64\\";
+const char *OUT_DIR = ".\\out\\";
 #else
 const char *BIN_X64 = "./";
 const char *OUT_DIR = "../../out/";
