@@ -10,10 +10,11 @@
 
 std::string ParamSet::BIN_DIR = "./";
 std::string ParamSet::OUT_DIR = "./OUT/";
+unsigned int ParamSet::DEVICE_ID = 0;
 #ifdef _MSC_VER
 std::vector<Executable> ParamSet::BINARIES = { { "Default", "Release-Mod-Default.exe" }, { "Strips", "Release-Mod-Strips.exe" }, { "Modular", "Release-Mod-Modular.exe" }, { "ModularStrips", "Release-Mod-ModularStrips.exe" } };
 #else
-std::vector<std::string> ParamSet::BINS = {"", "", ""};
+std::vector<Executable> ParamSet::BINARIES = {{ "Default", "release-mod-default" }, { "Strips", "release-mod-strips" }, { "Modular", "release-mod-modular" }, { "ModularStrips", "release-mod-modularStrips3d" }};
 #endif
 
 void ParamSet::setBinDir(const char*d)
@@ -23,6 +24,10 @@ void ParamSet::setBinDir(const char*d)
 void ParamSet::setOutputDir(const char*d)
 {
 	OUT_DIR = d;
+}
+void ParamSet::setDeviceId(unsigned int d)
+{
+	DEVICE_ID = d;
 }
 
 bool ParamSet::validate() const
@@ -319,6 +324,7 @@ void ParamSet::runCollated2D() const
 					{
 						NullParams n;
 						success = executeBenchmark(bin.file, *std::dynamic_pointer_cast<NullParams>(lerpArgs), &n, &agentCount, &initRes, &stepRes, &totalTime, &nsFirst, &nsLast);
+                        printf("h\n");
 					}
 						break;
 					case Circles:
@@ -343,7 +349,9 @@ void ParamSet::runCollated2D() const
 						return;
 					}
 					//Write result body
+                    printf("i\n");
 					log(log_F, &initRes, &stepRes, totalTime);
+                    printf("j\n");
 				}
 				//Write run config
 				//AgentCount
@@ -676,7 +684,7 @@ void ParamSet::execString(const char* executable, CirclesParams modelArgs, char 
 	buffer = buffer.append(" ");
 	buffer = buffer.append("-device");
 	buffer = buffer.append(" ");
-	buffer = buffer.append(std::to_string(0));
+	buffer = buffer.append(std::to_string(DEVICE_ID));
 	buffer = buffer.append(" ");
 	buffer = buffer.append("-circles");
 	buffer = buffer.append(" ");
@@ -716,7 +724,7 @@ void ParamSet::execString(const char* executable, NullParams modelArgs, char **r
 	buffer = buffer.append(" ");
 	buffer = buffer.append("-device");
 	buffer = buffer.append(" ");
-	buffer = buffer.append(std::to_string(0));
+	buffer = buffer.append(std::to_string(DEVICE_ID));
 	buffer = buffer.append(" ");
 	buffer = buffer.append("-null");
 	buffer = buffer.append(" ");
@@ -748,7 +756,7 @@ void ParamSet::execString(const char* executable, DensityParams modelArgs, char 
 	buffer = buffer.append(" ");
 	buffer = buffer.append("-device");
 	buffer = buffer.append(" ");
-	buffer = buffer.append(std::to_string(0));
+	buffer = buffer.append(std::to_string(DEVICE_ID));
 	buffer = buffer.append(" ");
 	buffer = buffer.append("-density");
 	buffer = buffer.append(" ");

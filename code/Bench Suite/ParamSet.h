@@ -26,12 +26,14 @@ struct ParamSet
 	void execute() const;
 	static void setBinDir(const char*d);
 	static void setOutputDir(const char*d);
+	static void setDeviceId(unsigned int d);
 private:
 	void run() const;
 	void runCollated() const;
 	void runCollated2D() const;
 	static std::string BIN_DIR;
 	static std::string OUT_DIR;
+	static unsigned int DEVICE_ID;
 	static std::vector<Executable> BINARIES;
 	FILE *createLogFile(const char*timestamp) const;
 
