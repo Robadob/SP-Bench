@@ -103,11 +103,11 @@ template <typename Encoding, typename Allocator, typename StackAllocator>
 std::shared_ptr<ModelParams> parseConfig(rapidjson::GenericValue<Encoding, Allocator> &valueType, std::shared_ptr<ModelParams> _default)
 {
 	//Detect config type
-	if (!(valueType.HasMember("enumerator") && valueType["enumerator"].IsInt()))
+	if (!(valueType.HasMember("enumerator") && valueType["enumerator"].IsInt())&&!_default)
 		return nullptr;
 	//Allocate and parse specific type
 	std::shared_ptr<ModelParams> rtn;
-	switch (ModelEnum(valueType["enumerator"].GetInt()))
+    switch (_default?_default->enumerator():ModelEnum(valueType["enumerator"].GetInt()))
 	{
 	case Null:
 	{
