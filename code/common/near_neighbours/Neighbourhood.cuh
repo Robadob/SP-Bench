@@ -32,8 +32,12 @@ struct BinState
 {
 #if defined(MODULAR)
     DIMENSIONS_IVEC offset;//The grid cells alignment offset, so we calculate once
+    DIMENSIONS_IVEC blockRelative;//This should remain in sync between threads in block
+    bool blockContinue;//This should remain in sync between threads in block
 #elif defined(MODULAR_STRIPS)
     DIMENSIONS_IVEC_MINUS1 offset;//The grid cells alignment offset, so we calculate once
+    DIMENSIONS_IVEC_MINUS1 blockRelative;//This should remain in sync between threads in block
+    bool blockContinue;//This should remain in sync between threads in block
 #endif
 #if defined(STRIPS) || defined(MODULAR_STRIPS)
     DIMENSIONS_IVEC_MINUS1 relative;

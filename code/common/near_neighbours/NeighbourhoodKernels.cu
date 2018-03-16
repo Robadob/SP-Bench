@@ -309,10 +309,10 @@ for (unsigned int i = 0; i<27; ++i)
 {
 //Get next bin
 #if defined(MODULAR)
-    extern __shared__ LocationMessage sm_messages[];
-    DIMENSIONS_IVEC *blockRelative = (DIMENSIONS_IVEC *)(void*)(&(sm_messages[blockDim.x]));
-    bool *blockContinue = (bool *)(void*)&blockRelative[1];
-    if(threadIdx.x==0)//&&threadIdx.y==0&&threadIdx.z==0)
+    //extern __shared__ LocationMessage sm_messages[];
+    DIMENSIONS_IVEC *blockRelative = &sm_message->state.blockRelative; //(DIMENSIONS_IVEC *)(void*)(&(sm_messages[blockDim.x]));
+    bool *blockContinue = &sm_message->state.blockContinue;//(bool *)(void*)&blockRelative[1];
+    //if(threadIdx.x==0)//&&threadIdx.y==0&&threadIdx.z==0)
     {
         if (blockRelative->x >= 1)
         {
@@ -402,11 +402,11 @@ for (unsigned int i = 0; i<27; ++i)
     }
 #endif
 #elif defined(MODULAR_STRIPS)
-    extern __shared__ LocationMessage sm_messages[];
-    DIMENSIONS_IVEC_MINUS1 *blockRelative = (DIMENSIONS_IVEC_MINUS1 *)(void*)(&(sm_messages[blockDim.x]));
-    bool *blockContinue = (bool *)(void*)&blockRelative[1];
+    //extern __shared__ LocationMessage sm_messages[];
+    DIMENSIONS_IVEC_MINUS1 *blockRelative = &sm_message->state.blockRelative; //(DIMENSIONS_IVEC_MINUS1 *)(void*)(&(sm_messages[blockDim.x]));
+    bool *blockContinue = &sm_message->state.blockContinue;//(bool *)(void*)&blockRelative[1];
     //Thread 0 in block decide next relative block
-    if (threadIdx.x == 0)//&&threadIdx.y==0&&threadIdx.z==0)
+    //if (threadIdx.x == 0)//&&threadIdx.y==0&&threadIdx.z==0)
     {
 #if defined(_3D)
         if (blockRelative->x >= 1)
@@ -762,21 +762,22 @@ __device__ LocationMessage *LocationMessages::getFirstNeighbour(DIMENSIONS_VEC l
     if (threadIdx.x == 0)//&&threadIdx.y==0&&threadIdx.z==0)
     {
         //Init blockRelative
-        DIMENSIONS_IVEC *blockRelative = (DIMENSIONS_IVEC *)(void*)(&(sm_messages[blockDim.x]));
+        DIMENSIONS_IVEC *blockRelative = &sm_message->state.blockRelative;//(DIMENSIONS_IVEC *)(void*)(&(sm_messages[blockDim.x]));
 #ifdef _3D
         blockRelative[0] = glm::ivec3(-2, -1, -1);
 #else
         blockRelative[0] = glm::ivec2(-2, -1);
 #endif
         //Init blockContinue true
-        ((bool*)(void*)&blockRelative[1])[0] = true;
+        //((bool*)(void*)&blockRelative[1])[0] = true;
+        sm_message->state.blockContinue = true;
     }
 #elif defined(MODULAR_STRIPS)
     //Init global relative if block thread X
     if (threadIdx.x == 0)//&&threadIdx.y==0&&threadIdx.z==0)
     {
         //Init blockRelative
-        DIMENSIONS_IVEC_MINUS1 *blockRelative = (DIMENSIONS_IVEC_MINUS1 *)(void*)(&(sm_messages[blockDim.x]));
+        DIMENSIONS_IVEC_MINUS1 *blockRelative = &sm_message->state.blockRelative;//(DIMENSIONS_IVEC_MINUS1 *)(void*)(&(sm_messages[blockDim.x]));
 #if defined(_3D)
         blockRelative[0] = glm::ivec2(-2, -1);
 #elif defined(_2D)
@@ -785,7 +786,8 @@ __device__ LocationMessage *LocationMessages::getFirstNeighbour(DIMENSIONS_VEC l
 #error "Unexpected dims."
 #endif
         //Init blockContinue true
-        ((bool*)(void*)&blockRelative[1])[0] = true;
+        //((bool*)(void*)&blockRelative[1])[0] = true;
+        sm_message->state.blockContinue = true;
     }
 #endif
 

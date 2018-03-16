@@ -914,11 +914,11 @@ void SpatialPartition::buildPBM()
 int SpatialPartition::requiredSM(int blockSize)
 {
     return blockSize*sizeof(LocationMessage)
-#if defined(MODULAR) //BlockRelative + BlockContinue
-        + sizeof(DIMENSIONS_IVEC) + sizeof(bool)
-#elif defined(MODULAR_STRIPS) //BlockRelative + BlockContinue
-        +sizeof(DIMENSIONS_IVEC_MINUS1) + sizeof(bool)
-#endif
+//#if defined(MODULAR) //BlockRelative + BlockContinue
+//        + sizeof(DIMENSIONS_IVEC) + sizeof(bool)
+//#elif defined(MODULAR_STRIPS) //BlockRelative + BlockContinue
+//        +sizeof(DIMENSIONS_IVEC_MINUS1) + sizeof(bool)
+//#endif
     ;
 }
 DIMENSIONS_IVEC SpatialPartition::getGridPosition(DIMENSIONS_VEC worldPos)
