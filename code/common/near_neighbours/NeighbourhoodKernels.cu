@@ -759,7 +759,7 @@ __device__ LocationMessage *LocationMessages::getFirstNeighbour(DIMENSIONS_VEC l
 
 #if defined(MODULAR)
     //Init global relative if block thread X
-    if (threadIdx.x == 0)//&&threadIdx.y==0&&threadIdx.z==0)
+    //if (threadIdx.x == 0)//&&threadIdx.y==0&&threadIdx.z==0)
     {
         //Init blockRelative
         DIMENSIONS_IVEC *blockRelative = &sm_message->state.blockRelative;//(DIMENSIONS_IVEC *)(void*)(&(sm_messages[blockDim.x]));
@@ -774,7 +774,7 @@ __device__ LocationMessage *LocationMessages::getFirstNeighbour(DIMENSIONS_VEC l
     }
 #elif defined(MODULAR_STRIPS)
     //Init global relative if block thread X
-    if (threadIdx.x == 0)//&&threadIdx.y==0&&threadIdx.z==0)
+    //if (threadIdx.x == 0)//&&threadIdx.y==0&&threadIdx.z==0)
     {
         //Init blockRelative
         DIMENSIONS_IVEC_MINUS1 *blockRelative = &sm_message->state.blockRelative;//(DIMENSIONS_IVEC_MINUS1 *)(void*)(&(sm_messages[blockDim.x]));
