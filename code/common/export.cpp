@@ -247,10 +247,84 @@ void exportAgents(std::shared_ptr<SpatialPartition> s, const char *path)
 #endif
 			oFile << buffer;
 		}
+#ifdef AOS_MESSAGES
+        free(lm.location)
+#else
+        free(lm.locationX);
+        free(lm.locationY);
+#ifdef _3D
+        free(lm.locationZ);
+#endif
+#endif
 		oFile.close();
 	}
 	else
 	{
 		printf("Failed to open file: %s\n", path);
 	}
+}
+
+void exportNullAgents(std::shared_ptr<SpatialPartition> s, const char *path, const DIMENSIONS_VEC *results)
+{
+
+    int len = s->getLocationCount();
+    std::ofstream oFile;
+    oFile.open(path);
+    char buffer[1024];
+    if (oFile.is_open())
+    {
+        //allocate
+        float *d_bufferPtr;
+        LocationMessages *d_lm = s->d_getLocationMessages();
+        LocationMessages lm;
+#ifdef AOS_MESSAGES
+        lm.location = (DIMENSIONS_VEC*)malloc(sizeof(DIMENSIONS_VEC)*len);
+        CUDA_CALL(cudaMemcpy(&d_bufferPtr, &d_lm->location, sizeof(DIMENSIONS_VEC*), cudaMemcpyDeviceToHost));
+        CUDA_CALL(cudaMemcpy(lm.location, d_bufferPtr, sizeof(DIMENSIONS_VEC)*len, cudaMemcpyDeviceToHost));
+#else
+        lm.locationX = (float*)malloc(sizeof(float)*len);
+        CUDA_CALL(cudaMemcpy(&d_bufferPtr, &d_lm->locationX, sizeof(float*), cudaMemcpyDeviceToHost));
+        CUDA_CALL(cudaMemcpy(lm.locationX, d_bufferPtr, sizeof(float)*len, cudaMemcpyDeviceToHost));
+        lm.locationY = (float*)malloc(sizeof(float)* len);
+        CUDA_CALL(cudaMemcpy(&d_bufferPtr, &d_lm->locationY, sizeof(float*), cudaMemcpyDeviceToHost));
+        CUDA_CALL(cudaMemcpy(lm.locationY, d_bufferPtr, sizeof(float)*len, cudaMemcpyDeviceToHost));
+#ifdef _3D
+        lm.locationZ = (float*)malloc(sizeof(float)*len);
+        CUDA_CALL(cudaMemcpy(&d_bufferPtr, &d_lm->locationZ, sizeof(float*), cudaMemcpyDeviceToHost));
+        CUDA_CALL(cudaMemcpy(lm.locationZ, d_bufferPtr, sizeof(float)*len, cudaMemcpyDeviceToHost));
+#endif
+#endif
+        oFile << len << "\n";
+        for (int i = 0; i < len; i++)
+        {
+#ifdef AOS_MESSAGES
+#if defined(_2D)
+            sprintf(&buffer[0], "%.9g,%.9g,%.9g,%.9g\n", lm.location[i].x, lm.location[i].y, results[i].x, results[i].y);
+#elif defined(_3D)
+            sprintf(&buffer[0], "%.9g,%.9g,%.9g,%.9g,%.9g,%.9g\n", lm.location[i].x, lm.location[i].y, lm.location[i].z, results[i].x, results[i].y, results[i].z);
+#endif
+#else
+#if defined(_2D)
+            sprintf(&buffer[0], "%.9g,%.9g,%.9g,%.9g\n", lm.locationX[i], lm.locationY[i], results[i].x, results[i].y);
+#elif defined(_3D)
+            sprintf(&buffer[0], "%.9g,%.9g,%.9g,%.9g,%.9g,%.9g\n", lm.locationX[i], lm.locationY[i], lm.locationZ[i], results[i].x, results[i].y, results[i].z);
+#endif
+#endif
+            oFile << buffer;
+        }
+#ifdef AOS_MESSAGES
+        free(lm.location)
+#else
+        free(lm.locationX);
+        free(lm.locationY);
+#ifdef _3D
+        free(lm.locationZ);
+#endif
+#endif
+        oFile.close();
+    }
+    else
+    {
+        printf("Failed to open file: %s\n", path);
+    }
 }

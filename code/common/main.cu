@@ -368,7 +368,14 @@ int main(int argc, char * argv[])
 	}
 	if (args.exportAgents)
 	{
-		exportAgents(model->getPartition(), "agents.txt");
+        if (auto a = std::dynamic_pointer_cast<NullModel>(model))
+        {
+            exportNullAgents(model->getPartition(), "agents.txt", a->getResults());
+        }
+        else
+        {
+            exportAgents(model->getPartition(), "agents.txt");
+        }
 	}
 #ifdef _GL
     v.run();
