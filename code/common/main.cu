@@ -45,9 +45,9 @@ ArgData parseArgs(int argc, char * argv[])
 			data.device = (unsigned int)strtoul(argv[++i], nullptr, 0);
 		}
 #ifdef CIRCLES_MODEL
-		//V2: -circles <uint> <float> <ulong>
+		//V2: -circles <uint> <float> <float> <ulong>
         //Enables circles model
-	    //Sets the width, density, interaction rad, attractionForce, repulsionForce and iterations to be executed
+	    //Sets the agents, density, forceModifier and iterations to be executed
 		else if (arg.compare("-circles") == 0)
 		{
             assert(!data.model);//Two model params passed at runtime?
