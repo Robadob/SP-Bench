@@ -72,7 +72,12 @@ __global__ void step_circles_model(LocationMessages *locationMessagesIn, Locatio
 }
 */
 //Improved Sin Model
-__global__ void step_circles_model(LocationMessages *locationMessagesIn, LocationMessages *locationMessagesOut)
+//__launch_bounds__(64, 32)
+__global__ void
+#if defined(MODULAR)||defined(MODULAR_STRIPS)
+__launch_bounds__(64)
+#endif
+step_circles_model(LocationMessages *locationMessagesIn, LocationMessages *locationMessagesOut)
 {
     int id = blockIdx.x * blockDim.x + threadIdx.x;
     if (id >= d_locationMessageCount)
