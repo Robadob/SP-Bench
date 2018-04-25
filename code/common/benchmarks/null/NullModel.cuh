@@ -64,7 +64,7 @@ NullModel::NullModel(
     const unsigned int agentsPerCluster,
     const float uniformDensity
     )
-    : CoreModel((clusterCount*agentsPerCluster)+toAgents(envWidth/interactionRad, uniformDensity))//Calculate total agents
+    : CoreModel((clusterCount*agentsPerCluster)+toAgents((unsigned int)(envWidth/interactionRad), uniformDensity))//Calculate total agents
     , spatialPartition(std::make_shared<SpatialPartition>(DIMENSIONS_VEC(0.0f), DIMENSIONS_VEC(envWidth), agentMax, interactionRad))
     , d_result(nullptr)
     , h_result(nullptr)

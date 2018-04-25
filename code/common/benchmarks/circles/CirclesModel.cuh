@@ -15,7 +15,7 @@ public:
         );
     //Original constructor
     CirclesModel(
-        const float density = 1.0,
+        const float density,
         const unsigned int width = 250,
         const float interactionRad = 10.0,
         const float attract = 5.0,
@@ -49,7 +49,7 @@ CirclesModel::CirclesModel(
     , width(toWidth(agents, density))
     , density(density)
     , interactionRad(1.0f)
-    , attract(0)
+    , attract(0.0f)
     , repulse(forceModifier)
 {
     //Copy relevant parameters to constants
