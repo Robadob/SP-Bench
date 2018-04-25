@@ -294,12 +294,14 @@ __device__ bool LocationMessages::nextBin(LocationMessage *sm_message)
 	//LocationMessage *sm_message = &(sm_messages[threadIdx.x]);
 //Max number of bins, fixed loop might get CUDA to unroll
 #if defined(STRIPS) //Strips has less passes
+#pragma unroll
 #if defined(_2D)
     for(unsigned int i = 0;i<3;++i)
 #elif defined(_3D)
     for (unsigned int i = 0; i<9; ++i)
 #endif
 #elif !(defined(MODULAR)||defined(MODULAR_STRIPS)) //Modular only checks if we have bin, not if bin is valid
+#pragma unroll
 #if defined(_2D)
 for(unsigned int i = 0;i<9;++i)
 #elif defined(_3D)
@@ -310,47 +312,45 @@ for (unsigned int i = 0; i<27; ++i)
 //Get next bin
 #if defined(MODULAR)
     //extern __shared__ LocationMessage sm_messages[];
-    DIMENSIONS_IVEC *blockRelative = &sm_message->state.blockRelative; //(DIMENSIONS_IVEC *)(void*)(&(sm_messages[blockDim.x]));
-    bool *blockContinue = &sm_message->state.blockContinue;//(bool *)(void*)&blockRelative[1];
     //if(threadIdx.x==0)//&&threadIdx.y==0&&threadIdx.z==0)
     {
-        if (blockRelative->x >= 1)
+        if (sm_message->state.blockRelativeX >= 1)
         {
-            blockRelative->x = -1;
+            sm_message->state.blockRelativeX = -1;
 
-            if (blockRelative->y >= 1)
+            if (sm_message->state.blockRelativeY >= 1)
             {
 
 #ifdef _3D
-                blockRelative->y = -1;
+                sm_message->state.blockRelativeY = -1;
 
-                if (blockRelative->z >= 1)
+                if (sm_message->state.blockRelativeZ >= 1)
                 {
-                    *blockContinue = false;
+                    sm_message->state.blockContinue = false;
                 }
                 else
                 {
-                    blockRelative->z++;
+                    sm_message->state.blockRelativeZ++;
                 }
 #else
-                *blockContinue = false;
+                sm_message->state.blockContinue = false;
 #endif
             }
             else
             {
-                blockRelative->y++;
+                sm_message->state.blockRelativeY++;
             }
         }
         else
         {
-            blockRelative->x++;
+            sm_message->state.blockRelativeX++;
         }
     }
 #ifndef NO_SYNC
     //Wait for all threads to finish previous bin
     __syncthreads();
 #endif
-    if(!*blockContinue)
+    if(!sm_message->state.blockContinue)
     {
 #if defined(_GL) || defined(_DEBUG)
         //No more neighbours, finalise count by dividing by the number of messages.
@@ -362,11 +362,11 @@ for (unsigned int i = 0; i<27; ++i)
     }
 #elif defined(STRIPS)
 #ifdef _3D
-    if (sm_message->state.relative.x >= 1)
+    if (sm_message->state.relativeX >= 1)
     {
-        sm_message->state.relative.x = -1;
+        sm_message->state.relativeX = -1;
 
-        if (sm_message->state.relative.y >= 1)
+        if (sm_message->state.relativeY >= 1)
         {
 #if defined(_GL) || defined(_DEBUG)
             //No more neighbours, finalise count by dividing by the number of messages.
@@ -378,15 +378,15 @@ for (unsigned int i = 0; i<27; ++i)
         }
         else
         {
-            sm_message->state.relative.y++;
+            sm_message->state.relativeY++;
         }
     }
     else
     {
-        sm_message->state.relative.x++;
+        sm_message->state.relativeX++;
     }
 #else
-    if (sm_message->state.relative >= 1)
+    if (sm_message->state.relativeX >= 1)
     {
 #if defined(_GL) || defined(_DEBUG)
         //No more neighbours, finalise count by dividing by the number of messages.
@@ -398,53 +398,45 @@ for (unsigned int i = 0; i<27; ++i)
     }
     else
     {
-        sm_message->state.relative++;
+        sm_message->state.relativeX++;
     }
 #endif
 #elif defined(MODULAR_STRIPS)
     //extern __shared__ LocationMessage sm_messages[];
-    DIMENSIONS_IVEC_MINUS1 *blockRelative = &sm_message->state.blockRelative; //(DIMENSIONS_IVEC_MINUS1 *)(void*)(&(sm_messages[blockDim.x]));
-    bool *blockContinue = &sm_message->state.blockContinue;//(bool *)(void*)&blockRelative[1];
     //Thread 0 in block decide next relative block
     //if (threadIdx.x == 0)//&&threadIdx.y==0&&threadIdx.z==0)
     {
 #if defined(_3D)
-        if (blockRelative->x >= 1)
+        if (sm_message->state.blockRelativeX >= 1)
         {
-            blockRelative->x = -1;
+            sm_message->state.blockRelativeX = -1;
 
-            if (blockRelative->y >= 1)
+            if (sm_message->state.blockRelativeY >= 1)
             {
-                *blockContinue = false;
+                sm_message->state.blockContinue = false;
             }
             else
             {
-                blockRelative->y++;
+                sm_message->state.blockRelativeY++;
             }
 #elif defined(_2D)
-        if (*blockRelative >= 1)
+        if (sm_message->state.blockRelativeX >= 1)
         {
-            *blockContinue = false;
+            sm_message->state.blockContinue = false;
 #else
 #error "Unexpected dims"
 #endif
         }
         else
         {
-#if defined(_3D)
-            blockRelative->x++;
-#elif defined(_2D)
-            (*blockRelative)++;
-#else
-#error "Unexpected dims"
-#endif
+            sm_message->state.blockRelativeX++;
         }
     }
 #ifndef NO_SYNC
     //Wait for all threads to finish previous bin
     __syncthreads();
 #endif
-    if (!*blockContinue)
+    if (!sm_message->state.blockContinue)
     {
 #if defined(_GL) || defined(_DEBUG)
         //No more neighbours, finalise count by dividing by the number of messages.
@@ -455,17 +447,17 @@ for (unsigned int i = 0; i<27; ++i)
         return false;
     }
 #else
-    if (sm_message->state.relative.x >= 1)
+    if (sm_message->state.relativeX >= 1)
     {
-        sm_message->state.relative.x = -1;
+        sm_message->state.relativeX = -1;
 
-        if (sm_message->state.relative.y >= 1)
+        if (sm_message->state.relativeY >= 1)
         {
 
 #ifdef _3D
-            sm_message->state.relative.y = -1;
+            sm_message->state.relativeY = -1;
 
-            if (sm_message->state.relative.z >= 1)
+            if (sm_message->state.relativeZ >= 1)
             {
 #if defined(_GL) || defined(_DEBUG)
                 //No more neighbours, finalise count by dividing by the number of messages.
@@ -477,7 +469,7 @@ for (unsigned int i = 0; i<27; ++i)
             }
             else
             {
-                sm_message->state.relative.z++;
+                sm_message->state.relativeZ++;
             }
 #else
 #if defined(_GL) || defined(_DEBUG)
@@ -491,12 +483,12 @@ for (unsigned int i = 0; i<27; ++i)
         }
         else
         {
-            sm_message->state.relative.y++;
+            sm_message->state.relativeY++;
             }
         }
     else
     {
-        sm_message->state.relative.x++;
+        sm_message->state.relativeX++;
     }
 #endif
     //Process the strip
@@ -504,9 +496,9 @@ for (unsigned int i = 0; i<27; ++i)
     //Iterate bins in strips
     //calculate the next strip of contiguous bins
 #ifdef _3D
-    glm::ivec3 next_bin_first = sm_message->state.location + glm::ivec3(-1, sm_message->state.relative.x, sm_message->state.relative.y);
+    glm::ivec3 next_bin_first = sm_message->state.location + glm::ivec3(-1, sm_message->state.relativeX, sm_message->state.relativeY);
 #else
-    glm::ivec2 next_bin_first = sm_message->state.location + glm::ivec2(-1, sm_message->state.relative);
+    glm::ivec2 next_bin_first = sm_message->state.location + glm::ivec2(-1, (int)sm_message->state.relativeX);
 #endif
 
     DIMENSIONS_IVEC next_bin_last = next_bin_first;
@@ -552,21 +544,25 @@ for (unsigned int i = 0; i<27; ++i)
 #elif defined(MODULAR_STRIPS)
 //Find the start of the strip
     //Find relative + offset
-    sm_message->state.relative = (*blockRelative)+sm_message->state.offset;
+#if defined(_3D)
+    glm::ivec2 relative = glm::ivec2(sm_message->state.blockRelativeX + sm_message->state.offsetX, sm_message->state.blockRelativeY + sm_message->state.offsetY);
+#elif defined(_2D)
+    int relative = sm_message->state.blockRelativeX + sm_message->state.offsetX;
+#endif
     //For the modular axis, if new relative > 1, set -1
 #if defined(_3D)    
-    sm_message->state.relative.x = sm_message->state.relative.x>1 ? sm_message->state.relative.x - 3 : sm_message->state.relative.x;
-    sm_message->state.relative.y = sm_message->state.relative.y>1 ? sm_message->state.relative.y - 3 : sm_message->state.relative.y;
+    relative.x = relative.x>1 ? relative.x - 3 : relative.x;
+    relative.y = relative.y>1 ? relative.y - 3 : relative.y;
 #elif defined(_2D)
-    sm_message->state.relative = sm_message->state.relative>1 ? sm_message->state.relative - 3 : sm_message->state.relative;
+    relative = relative>1 ? relative - 3 : relative;
 #else
 #error "Unexpected dims"
 #endif
     //Check the new bin is valid
 #if defined(_3D)
-    DIMENSIONS_IVEC next_bin_first = sm_message->state.location + DIMENSIONS_IVEC(-1, sm_message->state.relative.x, sm_message->state.relative.y);
+    DIMENSIONS_IVEC next_bin_first = sm_message->state.location + DIMENSIONS_IVEC(-1, relative.x, relative.y);
 #elif defined(_2D)
-    DIMENSIONS_IVEC next_bin_first = sm_message->state.location + DIMENSIONS_IVEC(-1, sm_message->state.relative);
+    DIMENSIONS_IVEC next_bin_first = sm_message->state.location + DIMENSIONS_IVEC(-1, relative);
 #else
 #error "Unexpected dims"
 #endif
@@ -624,16 +620,27 @@ for (unsigned int i = 0; i<27; ++i)
 #else
 #if defined(MODULAR)
     //Find relative + offset
-    sm_message->state.relative = (*blockRelative)+sm_message->state.offset;
+#if defined(_3D)
+    glm::ivec3 relative = glm::ivec3(sm_message->state.blockRelativeX + sm_message->state.offsetX, sm_message->state.blockRelativeY + sm_message->state.offsetY, sm_message->state.blockRelativeZ + sm_message->state.offsetZ);
+#elif defined(_2D)
+    glm::ivec2 relative = glm::ivec2(sm_message->state.blockRelativeX + sm_message->state.offsetX, sm_message->state.blockRelativeY + sm_message->state.offsetY);
+#endif
     //For each axis, if new relative > 1, set -1
-    sm_message->state.relative.x = sm_message->state.relative.x>1 ? sm_message->state.relative.x - 3 : sm_message->state.relative.x;
-    sm_message->state.relative.y = sm_message->state.relative.y>1 ? sm_message->state.relative.y - 3 : sm_message->state.relative.y;
+    relative.x = relative.x>1 ? relative.x - 3 : relative.x;
+    relative.y = relative.y>1 ? relative.y - 3 : relative.y;
 #ifdef _3D
-    sm_message->state.relative.z = sm_message->state.relative.z>1 ? sm_message->state.relative.z - 3 : sm_message->state.relative.z;
+    relative.z = relative.z>1 ? relative.z - 3 : relative.z;
 #endif
-#endif
+    DIMENSIONS_IVEC next_bin_first = sm_message->state.location + relative;
+#else
     //Check the new bin is valid
-     DIMENSIONS_IVEC next_bin_first = sm_message->state.location + sm_message->state.relative;
+
+#ifdef _3D
+glm::ivec3 next_bin_first = sm_message->state.location + glm::ivec3(sm_message->state.relativeX, sm_message->state.relativeY, sm_message->state.relativeZ);
+#else
+glm::ivec2 next_bin_first = sm_message->state.location + glm::ivec2(sm_message->state.relativeX, sm_message->state.relativeY);
+#endif
+#endif
     if (invalidBinXYZ(next_bin_first))
     {//Bin invalid, skip to next bin
 #if defined(MODULAR)
@@ -762,11 +769,10 @@ __device__ LocationMessage *LocationMessages::getFirstNeighbour(DIMENSIONS_VEC l
     //if (threadIdx.x == 0)//&&threadIdx.y==0&&threadIdx.z==0)
     {
         //Init blockRelative
-        DIMENSIONS_IVEC *blockRelative = &sm_message->state.blockRelative;//(DIMENSIONS_IVEC *)(void*)(&(sm_messages[blockDim.x]));
+        sm_message->state.blockRelativeX = -2;
+        sm_message->state.blockRelativeY = -1;
 #ifdef _3D
-        blockRelative[0] = glm::ivec3(-2, -1, -1);
-#else
-        blockRelative[0] = glm::ivec2(-2, -1);
+        sm_message->state.blockRelativeZ = -1;
 #endif
         //Init blockContinue true
         //((bool*)(void*)&blockRelative[1])[0] = true;
@@ -777,13 +783,9 @@ __device__ LocationMessage *LocationMessages::getFirstNeighbour(DIMENSIONS_VEC l
     //if (threadIdx.x == 0)//&&threadIdx.y==0&&threadIdx.z==0)
     {
         //Init blockRelative
-        DIMENSIONS_IVEC_MINUS1 *blockRelative = &sm_message->state.blockRelative;//(DIMENSIONS_IVEC_MINUS1 *)(void*)(&(sm_messages[blockDim.x]));
+        sm_message->state.blockRelativeX = -2;
 #if defined(_3D)
-        blockRelative[0] = glm::ivec2(-2, -1);
-#elif defined(_2D)
-        blockRelative[0] = -2;
-#else
-#error "Unexpected dims."
+        sm_message->state.blockRelativeY = -1;
 #endif
         //Init blockContinue true
         //((bool*)(void*)&blockRelative[1])[0] = true;
@@ -806,21 +808,20 @@ __device__ LocationMessage *LocationMessages::getFirstNeighbour(DIMENSIONS_VEC l
 #endif
 #if defined(MODULAR)
     {
-        DIMENSIONS_IVEC gridPos = getGridPosition(location);
-        sm_message->state.offset = (gridPos + DIMENSIONS_IVEC(1)) % 3;
-        sm_message->state.location = gridPos;
+        sm_message->state.location = getGridPosition(location);
+        sm_message->state.offsetX = (sm_message->state.location.x + 1) % 3;
+        sm_message->state.offsetY = (sm_message->state.location.y + 1) % 3;
+#if defined(_3D)
+        sm_message->state.offsetZ = (sm_message->state.location.z + 1) % 3;
+#endif
     }
 #elif defined(MODULAR_STRIPS)
     {
-        DIMENSIONS_IVEC gridPos = getGridPosition(location);
+        sm_message->state.location = getGridPosition(location);
+        sm_message->state.offsetX = (sm_message->state.location.y + 1) % 3;
 #if defined(_3D)
-        sm_message->state.offset = (glm::ivec2(gridPos.y+1,gridPos.z+1)) % 3;
-#elif defined(_2D)
-        sm_message->state.offset = (gridPos.y + 1) % 3;
-#else
-#error "Unexpected dims"
+        sm_message->state.offsetY = (sm_message->state.location.z + 1) % 3;
 #endif
-        sm_message->state.location = gridPos;
     }
 #else
     sm_message->state.location = getGridPosition(location);
@@ -830,16 +831,15 @@ __device__ LocationMessage *LocationMessages::getFirstNeighbour(DIMENSIONS_VEC l
     //Location in moore neighbourhood
     //Start out of range, so we get moved into 1st cell
 #if defined(STRIPS)
+    sm_message->state.relativeX = -2;
 #ifdef _3D
-	sm_message->state.relative = glm::ivec2(-2, -1);
-#else
-    sm_message->state.relative = -2;
+	sm_message->state.relativeY = -1;
 #endif
-#elif !(defined(MODULAR)||defined(MODULAR_STRIPS)) //No need to initialise this value for modular
+#elif !(defined(MODULAR)||defined(MODULAR_STRIPS))
+    sm_message->state.relativeX = -2;
+    sm_message->state.relativeY = -1;
 #ifdef _3D
-	sm_message->state.relative = glm::ivec3(-2, -1, -1);
-#else
-	sm_message->state.relative = glm::ivec2(-2, -1);
+    sm_message->state.relativeZ = -1;
 #endif
 #endif
 #if defined(MODULAR)||defined(MODULAR_STRIPS)

@@ -30,25 +30,46 @@
 **/
 struct BinState
 {
-#if defined(MODULAR)
-    DIMENSIONS_IVEC offset;//The grid cells alignment offset, so we calculate once
-    DIMENSIONS_IVEC blockRelative;//This should remain in sync between threads in block
-    bool blockContinue;//This should remain in sync between threads in block
-#elif defined(MODULAR_STRIPS)
-    DIMENSIONS_IVEC_MINUS1 offset;//The grid cells alignment offset, so we calculate once
-    DIMENSIONS_IVEC_MINUS1 blockRelative;//This should remain in sync between threads in block
-    bool blockContinue;//This should remain in sync between threads in block
-#endif
-#if defined(STRIPS) || defined(MODULAR_STRIPS)
-    DIMENSIONS_IVEC_MINUS1 relative;
-#else
-    DIMENSIONS_IVEC relative;
-#endif
     DIMENSIONS_IVEC location;
     unsigned int binIndexMax;//Last pbm index
     unsigned int binIndex;//Current loaded message pbm index
 #ifdef STRIDED_MESSAGES
     unsigned int binOffset;//Temp for testing
+#endif
+    /**
+    * Default: 6 bits
+    * Strips: 4 bits
+    * Modular: 15 bits
+    * Hybrid : 11 bits
+    * Compiler rounds the entire field upto 4 bytes regardless
+    */
+#if (defined(MODULAR_STRIPS)||defined(MODULAR))
+#if defined(_3D)
+    short blockRelativeX : 2;
+    short blockRelativeY : 2;
+    unsigned short offsetX : 2;//0-3
+    unsigned short offsetY : 2;//0-3
+#if defined(MODULAR)
+    short blockRelativeZ : 2;
+    unsigned short offsetZ : 2;//0-3
+#endif
+#elif defined(_2D)
+    short blockRelativeX : 2;
+    unsigned short offsetX : 2;//0-3
+#if defined(MODULAR)
+    short blockRelativeY : 2;
+    unsigned short offsetY : 2;//0-3
+#endif
+#endif
+    unsigned short blockContinue : 1;
+#else
+    char relativeX : 3;//-2 to 1
+#if defined(_3D) || !defined(STRIPS)
+    char relativeY : 2;//-1 to 1
+#if defined(_3D) && !defined(STRIPS)
+    char relativeZ : 2;//-1 to 1
+#endif
+#endif
 #endif
 };
 
