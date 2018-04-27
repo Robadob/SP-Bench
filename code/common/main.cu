@@ -116,7 +116,7 @@ ArgData parseArgs(int argc, char * argv[])
             {
                 auto a = std::make_shared<DensityParams>();
                 data.model = a;
-                a->uniformDensity = 0.1;//Enough to show, but they wont interact
+                a->uniformDensity = 0.1f;//Enough to show, but they wont interact
                 continue;
             }
 #endif

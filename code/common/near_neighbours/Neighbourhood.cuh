@@ -98,6 +98,17 @@ public:
 #if defined(_GL) || defined(_DEBUG)
     float *count;
 #endif
+
+#if !defined(SHARED_BINSTATE)
+#if !(defined(MODULAR) || defined(MODULAR_STRIPS))
+    __device__ void getFirstNeighbour(DIMENSIONS_VEC location, LocationMessage *message);
+#endif
+    __device__ bool getNextNeighbour(LocationMessage *message);
+#if defined(MODULAR) || defined(MODULAR_STRIPS)
+    __device__ void firstBin(DIMENSIONS_VEC location, LocationMessage *message);
+    __device__ bool nextBin(LocationMessage *sm_message);
+#endif
+#else
 #if !(defined(MODULAR) || defined(MODULAR_STRIPS))
     __device__ LocationMessage *getFirstNeighbour(DIMENSIONS_VEC location);
 #endif
@@ -106,12 +117,18 @@ public:
     __device__ LocationMessage *firstBin(DIMENSIONS_VEC location);
     __device__ bool nextBin(LocationMessage *sm_message);
 #endif
+#endif
 private:
 #if !(defined(MODULAR) || defined(MODULAR_STRIPS))
 	__device__ bool nextBin(LocationMessage *sm_message);
 #endif
+
+#if !defined(SHARED_BINSTATE)
+    __device__ bool loadNextMessage(LocationMessage *message);
+#else
     //Load the next desired message into shared memory
 	__device__ LocationMessage *loadNextMessage(LocationMessage *message);
+#endif
 
 };
 /* //These structures would be used if we were passing more data with neighbours, than simply location
@@ -276,7 +293,7 @@ private:
     cudaGraphicsResource_t gl_gRes[DIMENSIONS];
 #endif
 };
-
+/*Not required by RDC=false
 //Device constants
 extern __device__ __constant__ unsigned int d_locationMessageCount;
 extern __device__ __constant__ unsigned int d_binCount;
@@ -308,5 +325,5 @@ extern __device__ __constant__ LocationMessages *d_messages;
 #if defined(_GL) || !(defined(GLOBAL_MESSAGES) ||defined(LDG_MESSAGES))
 extern __device__ __constant__ cudaTextureObject_t d_tex_location[DIMENSIONS];
 #endif
-
+*/
 #endif

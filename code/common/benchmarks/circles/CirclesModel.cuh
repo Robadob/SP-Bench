@@ -36,8 +36,11 @@ public:
     const float repulse;
 };
 
-extern __device__ __constant__ float d_attract;
-extern __device__ __constant__ float d_repulse;
+//Required to remove extern for RDC=false
+//extern __device__ __constant__ float d_attract;
+//extern __device__ __constant__ float d_repulse;
+__device__ __constant__ float d_attract;
+__device__ __constant__ float d_repulse;
 
 CirclesModel::CirclesModel(
     const unsigned int agents,

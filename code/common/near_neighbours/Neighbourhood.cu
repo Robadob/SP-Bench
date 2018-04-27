@@ -913,7 +913,11 @@ void SpatialPartition::buildPBM()
 
 int SpatialPartition::requiredSM(int blockSize)
 {
+#if !defined(SHARED_BINSTATE)
+    return 0
+#else
     return blockSize*sizeof(LocationMessage)
+#endif
 //#if defined(MODULAR) //BlockRelative + BlockContinue
 //        + sizeof(DIMENSIONS_IVEC) + sizeof(bool)
 //#elif defined(MODULAR_STRIPS) //BlockRelative + BlockContinue

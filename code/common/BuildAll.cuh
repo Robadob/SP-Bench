@@ -1,8 +1,8 @@
 #ifndef __BuildAll_cuh__
 #define __BuildAll_cuh__
 
-#define _2D
-//#define _3D
+//#define _2D
+#define _3D
 
 /**
  * Config
@@ -10,7 +10,9 @@
 #define ATOMIC_PBM //Improves construction perf over large strips of empty bins
 
 //#define GLOBAL_MESSAGES
-#define LDG_MESSAGES
+//#define LDG_MESSAGES
+
+//#define SHARED_BINSTATE //Defines storage of sm_message (and bin state) in shared memory
 
 //#define STRIDED_MESSAGES //Harmful to perf
 

@@ -23,15 +23,30 @@ step_null_model(LocationMessages *locationMessagesIn, LocationMessages *location
 #endif
     DIMENSIONS_VEC averageLoc = DIMENSIONS_VEC(0);
     int ct = 0;
+#if !defined(SHARED_BINSTATE)
+    LocationMessage _lm;
+    LocationMessage *lm = &_lm;
+#if defined(MODULAR) || defined(MODULAR_STRIPS)
+    locationMessagesIn->firstBin(myLoc, &_lm);
+    do
+    {
+        while (locationMessagesIn->getNextNeighbour(&_lm))//Returns true if next neighbour was found
+#else
+    //Always atleast 1 location message, our own location!
+    locationMessagesIn->getFirstNeighbour(myLoc, &_lm);
+    do
+#endif
+#else
 #if defined(MODULAR) || defined(MODULAR_STRIPS)
     LocationMessage *lm = locationMessagesIn->firstBin(myLoc);
-do
-{
-    while (locationMessagesIn->getNextNeighbour(lm))//Returns a pointer to shared memory or 0
+    do
+    {
+        while (locationMessagesIn->getNextNeighbour(lm))//Returns a pointer to shared memory or 0
 #else
     //Always atleast 1 location message, our own location!
     LocationMessage *lm = locationMessagesIn->getFirstNeighbour(myLoc);
     do
+#endif
 #endif
     {
         assert(lm != 0);
@@ -43,16 +58,19 @@ do
             //averageLoc += glm::vec2(sqrt(pow(sqrt(pow(lm->location.x, 2.0f)), 2.0f)), sqrt(pow(sqrt(pow(lm->location.y, 2.0f)), 2.0f)));
             ct++;
         }
-#if !(defined(MODULAR) || defined(MODULAR_STRIPS))
+#if (!(defined(MODULAR) || defined(MODULAR_STRIPS))&&defined(SHARED_BINSTATE))
         lm = locationMessagesIn->getNextNeighbour(lm);//Returns a pointer to shared memory or 0
 #endif
     }
 #if defined(MODULAR) || defined(MODULAR_STRIPS)
-} while (locationMessagesIn->nextBin(lm));
+    } while (locationMessagesIn->nextBin(lm));
+#else
+#if !defined(SHARED_BINSTATE)
+    while (locationMessagesIn->getNextNeighbour(lm));
 #else
     while (lm);
 #endif
-
+#endif
     //Export newLoc
     if (ct)
     {

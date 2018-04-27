@@ -237,7 +237,11 @@ __global__ void assertPBMIntegrity()
 }
 #endif
 
+#if !defined(SHARED_BINSTATE)
+__device__ __forceinline__ bool LocationMessages::getNextNeighbour(LocationMessage *sm_message)
+#else
 __device__ __forceinline__ LocationMessage *LocationMessages::getNextNeighbour(LocationMessage *sm_message)
+#endif
 {
 	return loadNextMessage(sm_message);
 }
@@ -290,8 +294,6 @@ __device__ __forceinline__ bool invalidBinX(DIMENSIONS_IVEC bin)
 }
 __device__ bool LocationMessages::nextBin(LocationMessage *sm_message)
 {
-	//extern __shared__ LocationMessage sm_messages[];
-	//LocationMessage *sm_message = &(sm_messages[threadIdx.x]);
 //Max number of bins, fixed loop might get CUDA to unroll
 #if defined(STRIPS) //Strips has less passes
 #pragma unroll
@@ -311,8 +313,6 @@ for (unsigned int i = 0; i<27; ++i)
 {
 //Get next bin
 #if defined(MODULAR)
-    //extern __shared__ LocationMessage sm_messages[];
-    //if(threadIdx.x==0)//&&threadIdx.y==0&&threadIdx.z==0)
     {
         if (sm_message->state.blockRelativeX >= 1)
         {
@@ -402,9 +402,6 @@ for (unsigned int i = 0; i<27; ++i)
     }
 #endif
 #elif defined(MODULAR_STRIPS)
-    //extern __shared__ LocationMessage sm_messages[];
-    //Thread 0 in block decide next relative block
-    //if (threadIdx.x == 0)//&&threadIdx.y==0&&threadIdx.z==0)
     {
 #if defined(_3D)
         if (sm_message->state.blockRelativeX >= 1)
@@ -687,19 +684,30 @@ return false;
 #endif
 }
 //Load the next desired message into shared memory
+
+#if !defined(SHARED_BINSTATE)
+__device__ bool LocationMessages::loadNextMessage(LocationMessage *sm_message)
+#else
 __device__ LocationMessage *LocationMessages::loadNextMessage(LocationMessage *sm_message)
-{
-    //extern __shared__ LocationMessage sm_messages[];
-    //LocationMessage *sm_message = &(sm_messages[threadIdx.x]);
-  
+#endif
+{  
     if(sm_message->state.binIndex >= sm_message->state.binIndexMax)//Do we need to change bin?
     {
 #if defined(MODULAR)||defined(MODULAR_STRIPS)
+
+#if !defined(SHARED_BINSTATE)
+        return false;
+#else
         return nullptr;
+#endif
 #else
 		if (!nextBin(sm_message))
         {
+#if !defined(SHARED_BINSTATE)
+            return false;
+#else
             return nullptr;//All bins exhausted
+#endif
         }
 #endif
     }
@@ -752,17 +760,31 @@ __device__ LocationMessage *LocationMessages::loadNextMessage(LocationMessage *s
 #endif
 
     sm_message->state.binIndex++;
+
+#if !defined(SHARED_BINSTATE)
+    return true;
+#else
     return sm_message;
+#endif
 }
 
+#if !defined(SHARED_BINSTATE)
+#if defined(MODULAR) || defined(MODULAR_STRIPS)
+__device__ void LocationMessages::firstBin(DIMENSIONS_VEC location, LocationMessage *sm_message)
+#else
+__device__ void LocationMessages::getFirstNeighbour(DIMENSIONS_VEC location, LocationMessage *sm_message)
+#endif)
+{
+#else
 #if defined(MODULAR) || defined(MODULAR_STRIPS)
 __device__ LocationMessage *LocationMessages::firstBin(DIMENSIONS_VEC location)
 #else
 __device__ LocationMessage *LocationMessages::getFirstNeighbour(DIMENSIONS_VEC location)
 #endif
 {
-	extern __shared__ LocationMessage sm_messages[];
-	LocationMessage *sm_message = &(sm_messages[threadIdx.x]);
+    extern __shared__ LocationMessage sm_messages[];
+    LocationMessage *sm_message = &(sm_messages[threadIdx.x]);
+#endif
 
 #if defined(MODULAR)
     //Init global relative if block thread X
@@ -844,8 +866,13 @@ __device__ LocationMessage *LocationMessages::getFirstNeighbour(DIMENSIONS_VEC l
 #endif
 #if defined(MODULAR)||defined(MODULAR_STRIPS)
     nextBin(sm_message);
+#if defined(SHARED_BINSTATE)
     return sm_message;
+#endif
 #else
-	return loadNextMessage(sm_message);
+#if defined(SHARED_BINSTATE)
+	return 
+#endif
+    loadNextMessage(sm_message);
 #endif
 }

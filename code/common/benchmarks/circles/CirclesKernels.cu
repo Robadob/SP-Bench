@@ -1,8 +1,8 @@
 #include "CirclesKernels.cuh"
-
+/* Not required by RDC=false
 __device__ __constant__ float d_attract;
 __device__ __constant__ float d_repulse;
-
+*/
 //Padabs model
 /*
 __global__ void step_circles_model(LocationMessages *locationMessagesIn, LocationMessages *locationMessagesOut)
@@ -105,6 +105,20 @@ step_circles_model(LocationMessages *locationMessagesIn, LocationMessages *locat
     //Always atleast 1 location message, our own location!
     //const float rHalf = d_interactionRad / 2.0f;
     int ct = 0;
+#if !defined(SHARED_BINSTATE)
+    LocationMessage _lm;
+    LocationMessage *lm = &_lm;
+#if defined(MODULAR) || defined(MODULAR_STRIPS)
+    locationMessagesIn->firstBin(myLoc, &_lm);
+    do
+    {
+        while (locationMessagesIn->getNextNeighbour(&_lm))//Returns true if next neighbour was found
+#else
+    //Always atleast 1 location message, our own location!
+    locationMessagesIn->getFirstNeighbour(myLoc, &_lm);
+    do
+#endif
+#else
 #if defined(MODULAR) || defined(MODULAR_STRIPS)
     LocationMessage *lm = locationMessagesIn->firstBin(myLoc);
 do
@@ -114,6 +128,7 @@ do
     //Always atleast 1 location message, our own location!
     LocationMessage *lm = locationMessagesIn->getFirstNeighbour(myLoc);
     do
+#endif
 #endif
     {
         assert(lm != 0);
@@ -135,14 +150,18 @@ do
                 }
             }
         }
-#if !(defined(MODULAR) || defined(MODULAR_STRIPS))
+#if (!(defined(MODULAR) || defined(MODULAR_STRIPS))&&defined(SHARED_BINSTATE))
         lm = locationMessagesIn->getNextNeighbour(lm);//Returns a pointer to shared memory or 0
 #endif
     }
 #if defined(MODULAR) || defined(MODULAR_STRIPS)
 } while (locationMessagesIn->nextBin(lm));
 #else
+#if !defined(SHARED_BINSTATE)
+    while (locationMessagesIn->getNextNeighbour(lm));
+#else
     while (lm);
+#endif
 #endif
     //Export newLoc
     newLoc /= ct>0?ct:1;
