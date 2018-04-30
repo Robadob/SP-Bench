@@ -418,7 +418,7 @@ for (unsigned int i = 0; i<27; ++i)
                 sm_message->state.relativeYpp();
             }
 #elif defined(_2D)
-        if (sm_message->state.rRelativeX() >= 1)
+        if (sm_message->state.relativeX() >= 1)
         {
             sm_message->state.cont(false);
 #else
