@@ -484,7 +484,6 @@ void SpatialPartition::deviceAllocateTextures()
 #ifdef AOS_MESSAGES
 #error TODO Allocate AOS message texture
 #else
-#pragma unroll 3
     for (unsigned int i = 0; i < DIMENSIONS; i++)
         deviceAllocateTexture_float(i);
 #endif
@@ -684,7 +683,6 @@ void SpatialPartition::deviceDeallocateTextures()
 #ifdef AOS_MESSAGES
 #error TODO Deallocate AOS message texture
 #else
-#pragma unroll
     for (unsigned int i = 0; i < DIMENSIONS; i++)
     {
         cudaDestroyTextureObject(tex_location[i]);

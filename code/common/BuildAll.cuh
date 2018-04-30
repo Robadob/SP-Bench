@@ -8,7 +8,6 @@
  * Config
  */
 #define ATOMIC_PBM //Improves construction perf over large strips of empty bins
-
 //#define GLOBAL_MESSAGES
 //#define LDG_MESSAGES
 
@@ -20,6 +19,8 @@
 //#define LDG_PBM //Negligible effect to perf
 
 //#define AOS_MESSAGES //This is how the CUDA_Particles example operates, also makes larger messages easier to do in a templated manner
+
+#define BITFIELDS_V2 //Manually implements bitfields to ensure packing (V1 uses same amount of registers regardless due to 4 byte alignment)
 
 /**
  * Build includes
