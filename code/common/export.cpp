@@ -328,3 +328,54 @@ void exportNullAgents(std::shared_ptr<SpatialPartition> s, const char *path, con
         printf("Failed to open file: %s\n", path);
     }
 }
+
+/**
+ * Export steps timing in csv format
+ */
+void exportSteps(const int argc, char **argv, const Time_Step *ts, const NeighbourhoodStats *ns, const unsigned int &stepCount, const char *path)
+{
+    std::ofstream oFile;
+    oFile.open(path);
+    char buffer[1024];
+    if (oFile.is_open())
+    {
+        //Header row 1: runtime args
+        for (unsigned int i = 0; i < argc;++i)
+        {
+            oFile << argv[i];
+            oFile << " ";
+        }
+        oFile << "\n";
+        //Header row 2: high lvl titles
+        oFile << ",";
+        oFile << "step avg (s),,,";
+        oFile << "Moore Neighbourhood Sizes (s),,,,";
+        oFile << "\n";
+        //Header row 3: actual titles
+        oFile << "Iteration,";
+        oFile << "overall,";
+        oFile << "kernel,";
+        oFile << "texture,";
+        oFile << "min,";
+        oFile << "max,";
+        oFile << "avg,";
+        oFile << "std deviation,";
+        oFile << "\n";
+        //Data
+        for (unsigned int i = 0; i < stepCount;++i)
+        {
+            sprintf(&buffer[0], "%u,", i);
+            oFile << buffer;
+            sprintf(&buffer[0], "%.9g,%.9g,%.9g,", ts[i].overall, ts[i].kernel, ts[i].texture);
+            oFile << buffer;
+            sprintf(&buffer[0], "%u,%u,%.9g,%.9g,", ns[i].min, ns[i].max, ns[i].average, ns[i].standardDeviation);
+            oFile << buffer;
+            oFile << "\n";
+        }
+        oFile.close();
+    }
+    else
+    {
+        printf("Failed to open file: %s\n", path);
+    }
+}

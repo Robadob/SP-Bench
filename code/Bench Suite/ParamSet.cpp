@@ -427,7 +427,7 @@ void ParamSet::logCollatedHeader(FILE *out, const CirclesParams &modelArgs)
         fprintf(out, "%s,,,,,,,,,", bin.name);
     }
     fputs(",", out);//Agent count
-    fputs(",,,,,,", out);//Neighbourhood stats
+    fputs(",,,,,,,,", out);//Neighbourhood stats
     //fputs(",,,,,,", out);//Model Args
     fputs(",,,,", out);//Model Args
     fputs("\n", out);
@@ -443,7 +443,7 @@ void ParamSet::logCollatedHeader(FILE *out, const CirclesParams &modelArgs)
     }
     fputs(",", out);//Agent count
     fputs("Neighbourhood Stats", out);
-    fputs(",,,,,,", out);
+    fputs(",,,,,,,,", out);
     fputs("Model", out);
     //fputs(",,,,,,,", out);
     fputs(",,,,,", out);
@@ -481,11 +481,15 @@ void ParamSet::logCollatedHeader(FILE *out, const CirclesParams &modelArgs)
     fputs(",", out);
     fputs("First Avg", out);
     fputs(",", out);
+    fputs("First SD", out);
+    fputs(",", out);
     fputs("Last Min", out);
     fputs(",", out);
     fputs("Last Max", out);
     fputs(",", out);
     fputs("Last Avg", out);
+    fputs(",", out);
+    fputs("Last SD", out);
     fputs(",", out);
     //ModelArgs
     //fputs("width", out);
@@ -515,7 +519,7 @@ void ParamSet::logCollatedHeader(FILE *out, const NullParams &modelArgs)
         fprintf(out, "%s,,,,,,,,,", bin.name);
     }
     fputs(",", out);//Agent count
-    fputs(",,,,,,", out);//Neighbourhood stats
+    fputs(",,,,,,,,", out);//Neighbourhood stats
     fputs(",,,,,", out);//Model Args
     fputs("\n", out);
     //Row 2
@@ -530,7 +534,7 @@ void ParamSet::logCollatedHeader(FILE *out, const NullParams &modelArgs)
     }
     fputs(",", out);//Agent count
     fputs("Neighbourhood Stats", out);
-    fputs(",,,,,,", out);
+    fputs(",,,,,,,,", out);
     fputs("Model", out);
     fputs(",,,,,", out);
     fputs("\n", out);
@@ -567,11 +571,15 @@ void ParamSet::logCollatedHeader(FILE *out, const NullParams &modelArgs)
     fputs(",", out);
     fputs("First Avg", out);
     fputs(",", out);
+    fputs("First SD", out);
+    fputs(",", out);
     fputs("Last Min", out);
     fputs(",", out);
     fputs("Last Max", out);
     fputs(",", out);
     fputs("Last Avg", out);
+    fputs(",", out);
+    fputs("Last SD", out);
     fputs(",", out);
     fflush(out);
     //ModelArgs
@@ -594,7 +602,7 @@ void ParamSet::logCollatedHeader(FILE *out, const DensityParams &modelArgs)
         fprintf(out, "%s,,,,,,,,,", bin.name);
     }
     fputs(",", out);//Agent count
-    fputs(",,,,,,", out);//Neighbourhood stats
+    fputs(",,,,,,,,", out);//Neighbourhood stats
     fputs(",,,,,,,,,", out);//Model Args
     fputs("\n", out);
     //Row 2
@@ -609,7 +617,7 @@ void ParamSet::logCollatedHeader(FILE *out, const DensityParams &modelArgs)
     }
     fputs(",", out);//Agent count
     fputs("Neighbourhood Stats", out);
-    fputs(",,,,,,", out);
+    fputs(",,,,,,,,", out);
     fputs("Model", out);
     fputs(",,,,,,,,,", out);
     fputs("\n", out);
@@ -646,11 +654,15 @@ void ParamSet::logCollatedHeader(FILE *out, const DensityParams &modelArgs)
     fputs(",", out);
     fputs("First Avg", out);
     fputs(",", out);
+    fputs("First SD", out);
+    fputs(",", out);
     fputs("Last Min", out);
     fputs(",", out);
     fputs("Last Max", out);
     fputs(",", out);
     fputs("Last Avg", out);
+    fputs(",", out);
+    fputs("Last SD", out);
     fputs(",", out);
     fflush(out);
     //ModelArgs

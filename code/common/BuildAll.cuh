@@ -20,7 +20,7 @@
 
 //#define AOS_MESSAGES //This is how the CUDA_Particles example operates, also makes larger messages easier to do in a templated manner
 
-#define BITFIELDS_V2 //Manually implements bitfields to ensure packing (V1 uses same amount of registers regardless due to 4 byte alignment)
+//#define BITFIELDS_V2 //Manually implements bitfields to ensure packing (V1 uses same amount of registers regardless due to 4 byte alignment)
 
 /**
  * Build includes

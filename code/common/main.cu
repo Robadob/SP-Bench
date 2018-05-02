@@ -1,6 +1,7 @@
 #include "near_neighbours/Neighbourhood.cuh"
 #include <algorithm>
 #include <string>
+#include "cuda_profiler_api.h"
 #ifdef _GL
 #include "Visualisation/Visualisation.h"
 #include "ParticleScene.h"
@@ -29,10 +30,21 @@ ArgData parseArgs(int argc, char * argv[])
 		{
 			data.pipe = true;
 		}
-		//-profile, Disables all console IO
+		//-profile (<uint>) (<uint>), Disables all console IO
 		if (arg.compare("-profile") == 0)
 		{
 			data.profile = true;
+            //Check if next arg is beginning of new arg
+            if (i + 1<argc&&argv[i+1][0]!='-')
+            {
+                //Optional profiler start time
+                data.prof_first = (unsigned int)strtoul(argv[++i], nullptr, 0)+1;//0-indexed->1-indexed
+                if (i + 1<argc&&argv[i + 1][0] != '-')
+                {
+                    //Optional profiler end time
+                    data.prof_last = (unsigned int)strtoul(argv[++i], nullptr, 0)+1;//0-indexed->1-indexed
+                }
+            }
 		}
 		//-seed <ulong>, Uses the specified rng seed, defaults to 12, 0 produces uniform initialisation
 		else if (arg.compare("-seed") == 0)
@@ -137,6 +149,10 @@ ArgData parseArgs(int argc, char * argv[])
 		{
 			data.exportInit = true;
 		}
+        else if (arg.compare("-steps"))
+        {
+            data.exportSteps = true;
+        }
 	}
     //If seed is set, add to model data
     if (seed != ULONG_MAX &&data.model)
@@ -250,13 +266,39 @@ int main(int argc, char * argv[])
 	//Do iterations
 	Time_Step_dbl average = {};//init
     NeighbourhoodStats nhFirst, nhLast;
+    Time_Step *stepsAll = nullptr;
+    NeighbourhoodStats *nhAll = nullptr;
+    if (args.exportSteps)
+    {
+        stepsAll = (Time_Step *)malloc(sizeof(Time_Step)* args.model->iterations);
+        memset(stepsAll, 0, sizeof(Time_Step)* args.model->iterations);
+        nhAll = (NeighbourhoodStats *)malloc(sizeof(NeighbourhoodStats)* args.model->iterations);
+        memset(nhAll, 0, sizeof(NeighbourhoodStats)* args.model->iterations);
+    }
     for (unsigned long long i = 1; i <= args.model->iterations; i++)
 	{
-		const Time_Step iterTime = model->step();
-		//Calculate averages
-        average.overall += iterTime.overall / args.model->iterations;
-        average.kernel += iterTime.kernel / args.model->iterations;
-        average.texture += iterTime.texture / args.model->iterations;
+        if (args.profile&&i == args.prof_first)
+        {
+            CUDA_CALL(cudaProfilerStart());
+        }
+        //Build array of times.
+        if (args.exportSteps)
+        {
+            stepsAll[i-1] = model->step();
+            nhAll[i - 1] = model->getPartition()->getNeighbourhoodStats();
+            //Calculate averages
+            average.overall += stepsAll[i - 1].overall / args.model->iterations;
+            average.kernel += stepsAll[i - 1].kernel / args.model->iterations;
+            average.texture += stepsAll[i - 1].texture / args.model->iterations;
+        }
+        else
+        {
+            const Time_Step iterTime = model->step();
+            //Calculate averages
+            average.overall += iterTime.overall / args.model->iterations;
+            average.kernel += iterTime.kernel / args.model->iterations;
+            average.texture += iterTime.texture / args.model->iterations;
+        }
 #ifdef _GL
 		//Pass count to visualisation
 		scene->setCount(model->getPartition()->getLocationCount());
@@ -268,10 +310,28 @@ int main(int argc, char * argv[])
 		}
         if (i==1)
         {
-            nhFirst = model->getPartition()->getNeighbourhoodStats();
+            if (args.exportSteps)
+            {
+                nhFirst = nhAll[0];
+            }
+            else
+            {
+                nhFirst = model->getPartition()->getNeighbourhoodStats();
+            }
+        }
+        if (args.profile&&i == args.prof_last)
+        {
+            CUDA_CALL(cudaProfilerStop());
         }
     }
-    nhLast = model->getPartition()->getNeighbourhoodStats();
+    if (args.exportSteps)
+    {
+        nhLast = nhAll[args.model->iterations-1];
+    }
+    else
+    {
+        nhLast = model->getPartition()->getNeighbourhoodStats();
+    }
 	if (!args.pipe&&!args.profile)
 	{
 		printf("\nModel complete - Average Times\n");
@@ -284,7 +344,6 @@ int main(int argc, char * argv[])
         printf("Last  - Min:%d, Max:%d, Average:%f\n", nhLast.min, nhLast.max, nhLast.average);
         printf("\n");
 	}
-
     //Calculate final timing
     cudaEventRecord(stop);
     cudaEventSynchronize(stop);
@@ -367,7 +426,9 @@ int main(int argc, char * argv[])
         };
 	}
 	if (args.exportAgents)
-	{
+    {
+        if (!args.pipe&&!args.profile)
+            printf("Exporting agents to '%s'...", "agents.txt");
         if (auto a = std::dynamic_pointer_cast<NullModel>(model))
         {
             exportNullAgents(model->getPartition(), "agents.txt", a->getResults());
@@ -376,7 +437,21 @@ int main(int argc, char * argv[])
         {
             exportAgents(model->getPartition(), "agents.txt");
         }
-	}
+        if (!args.pipe&&!args.profile)
+            printf("...Completed!\n");
+    }
+    if (args.exportSteps)
+    {
+        char filename[128];
+        sprintf(filename, "steps-%s.csv", MOD_NAME_SHORT);
+        if (!args.pipe)
+            printf("Exporting steps to '%s'...", filename);
+        exportSteps(argc, argv, stepsAll, nhAll, args.model->iterations, filename);
+        if (!args.pipe)
+            printf("...Completed!\n");
+        free(stepsAll);stepsAll=nullptr;
+        free(nhAll);nhAll=nullptr;
+    }
 #ifdef _GL
     v.run();
     v.~Visualisation();

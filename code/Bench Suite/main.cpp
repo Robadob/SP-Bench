@@ -222,7 +222,7 @@ void logHeader(FILE *out, const CirclesParams &modelArgs)
 	fputs("overall (s)", out);
     fputs(",", out);
     fputs("Neighbourhood Stats", out);
-    fputs(",,,,,,", out);
+    fputs(",,,,,,,,", out);
 	fputs("\n", out);
 	//ModelArgs
     //fputs("width", out);
@@ -271,11 +271,15 @@ void logHeader(FILE *out, const CirclesParams &modelArgs)
     fputs(",", out);
     fputs("First Avg", out);
     fputs(",", out);
+    fputs("First SD", out);
+    fputs(",", out);
     fputs("Last Min", out);
     fputs(",", out);
     fputs("Last Max", out);
     fputs(",", out);
     fputs("Last Avg", out);
+    fputs(",", out);
+    fputs("Last SD", out);
     fputs(",", out);
 	//ln
 	fputs("\n", out);
@@ -321,9 +325,9 @@ void logResult(FILE *out, const CirclesParams* modelArgs, const unsigned int age
 		totalTime /1000
         );
     //Neighbourhood stats
-    fprintf(out, "%d,%d,%f,%d,%d,%f,",
-        nsFirst->min, nsFirst->max, nsFirst->average,
-        nsLast->min, nsLast->max, nsLast->average
+    fprintf(out, "%d,%d,%f,%f,%d,%d,%f,%f,",
+        nsFirst->min, nsFirst->max, nsFirst->average, nsFirst->standardDeviation,
+        nsLast->min, nsLast->max, nsLast->average, nsLast->standardDeviation
         );
 	//ln
 	fputs("\n", out);
@@ -340,7 +344,7 @@ void logHeader(FILE *out, const NullParams &modelArgs)
     fputs("overall (s)", out);
     fputs(",", out);
     fputs("Neighbourhood Stats", out);
-    fputs(",,,,,,", out);
+    fputs(",,,,,,,,", out);
     fputs("\n", out);
     //ModelArgs
     fputs("agents-in", out);
@@ -381,11 +385,15 @@ void logHeader(FILE *out, const NullParams &modelArgs)
     fputs(",", out);
     fputs("First Avg", out);
     fputs(",", out);
+    fputs("First SD", out);
+    fputs(",", out);
     fputs("Last Min", out);
     fputs(",", out);
     fputs("Last Max", out);
     fputs(",", out);
     fputs("Last Avg", out);
+    fputs(",", out);
+    fputs("Last SD", out);
     fputs(",", out);
     //ln
     fputs("\n", out);
@@ -421,9 +429,9 @@ void logResult(FILE *out, const NullParams* modelArgs, const unsigned int agentC
         totalTime / 1000
         );
     //Neighbourhood stats
-    fprintf(out, "%d,%d,%f,%d,%d,%f,",
-        nsFirst->min, nsFirst->max, nsFirst->average,
-        nsLast->min, nsLast->max, nsLast->average
+    fprintf(out, "%d,%d,%f,%f,%d,%d,%f,%f,",
+        nsFirst->min, nsFirst->max, nsFirst->average, nsFirst->standardDeviation,
+        nsLast->min, nsLast->max, nsLast->average, nsLast->standardDeviation
         );
     //ln
     fputs("\n", out);
@@ -440,7 +448,7 @@ void logHeader(FILE *out, const DensityParams &modelArgs)
     fputs("overall (s)", out);
     fputs(",", out);
     fputs("Neighbourhood Stats", out);
-    fputs(",,,,,,", out);
+    fputs(",,,,,,,,", out);
     fputs("\n", out);
     //ModelArgs
     fputs("agents per cluster", out);
@@ -489,11 +497,15 @@ void logHeader(FILE *out, const DensityParams &modelArgs)
     fputs(",", out);
     fputs("First Avg", out);
     fputs(",", out);
+    fputs("First SD", out);
+    fputs(",", out);
     fputs("Last Min", out);
     fputs(",", out);
     fputs("Last Max", out);
     fputs(",", out);
     fputs("Last Avg", out);
+    fputs(",", out);
+    fputs("Last SD", out);
     fputs(",", out);
     //ln
     fputs("\n", out);
@@ -533,20 +545,20 @@ void logResult(FILE *out, const DensityParams* modelArgs, const unsigned int age
         totalTime / 1000
         );
     //Neighbourhood stats
-    fprintf(out, "%d,%d,%f,%d,%d,%f,",
-        nsFirst->min, nsFirst->max, nsFirst->average,
-        nsLast->min, nsLast->max, nsLast->average
+    fprintf(out, "%d,%d,%f,%f,%d,%d,%f,%f,",
+        nsFirst->min, nsFirst->max, nsFirst->average, nsFirst->standardDeviation,
+        nsLast->min, nsLast->max, nsLast->average, nsLast->standardDeviation
         );
     //ln
     fputs("\n", out);
     fflush(out);
 }
 
-void log(FILE *out, const NeighbourhoodStats *nsFirst)
+void log(FILE *out, const NeighbourhoodStats *ns)
 {
     //Neighbourhood stats
-    fprintf(out, "%d,%d,%f,",
-        nsFirst->min, nsFirst->max, nsFirst->average
+    fprintf(out, "%d,%d,%f,%f,",
+        ns->min, ns->max, ns->average, ns->standardDeviation
         );
 }
 void log(FILE *out, const CirclesParams *modelArgs)

@@ -21,7 +21,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Common", "Common", "{7AA820
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Benchmark Models", "Benchmark Models", "{9494D73E-A497-4F3E-A9D3-608D6176B493}"
 	ProjectSection(SolutionItems) = preProject
-		common\export.h = common\export.h
 		common\benchmarks\Readme.md = common\benchmarks\Readme.md
 	EndProjectSection
 EndProject

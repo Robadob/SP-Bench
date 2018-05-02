@@ -13,4 +13,5 @@ void exportPopulation(std::shared_ptr<SpatialPartition> s, const ArgData &args, 
 void exportAgents(std::shared_ptr<SpatialPartition>  s, const char *path);
 void exportNullAgents(std::shared_ptr<SpatialPartition> s, const char *path, const DIMENSIONS_VEC *results);
 
+void exportSteps(const int argc, char **argv, const Time_Step *, const NeighbourhoodStats *, const unsigned int &stepCount, const char*path);
 #endif //__export_h__

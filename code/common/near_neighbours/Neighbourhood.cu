@@ -414,7 +414,13 @@ NeighbourhoodStats SpatialPartition::getNeighbourhoodStats()
         }
         rtn.average += ((PBM_neighbourhoodSize[i] * PBM_binSize[i]) / (float)maxAgents);
     }
-
+    //Calculate standard deviation
+    double valMinAvqSqAvg = 0.0;
+    for (unsigned int i = 0; i < this->binCountMax; i++)
+    {
+        valMinAvqSqAvg += pow(PBM_neighbourhoodSize[i] - rtn.average, 2.0)* PBM_binSize[i] / maxAgents;
+    }
+    rtn.standardDeviation = (float)sqrt(valMinAvqSqAvg);
     free(PBM_binSize);
     free(PBM_neighbourhoodSize);
     return rtn;

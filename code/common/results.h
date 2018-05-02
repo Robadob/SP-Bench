@@ -32,6 +32,7 @@ struct NeighbourhoodStats
     unsigned int max;
     unsigned int min;
     float average;
+    float standardDeviation;
 };
 enum ModelEnum : unsigned int
 {
@@ -148,8 +149,11 @@ struct ArgData
     {}
     bool pipe = false;
     bool profile = false;
+    unsigned int prof_first = 0;
+    unsigned int prof_last = UINT_MAX;
     bool exportAgents = false;
     bool exportInit = false;
+    bool exportSteps = false;
     unsigned int device;
 #ifdef _GL
     unsigned int GLwidth;
