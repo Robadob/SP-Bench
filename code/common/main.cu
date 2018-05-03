@@ -149,7 +149,7 @@ ArgData parseArgs(int argc, char * argv[])
 		{
 			data.exportInit = true;
 		}
-        else if (arg.compare("-steps"))
+        else if (arg.compare("-steps") == 0)
         {
             data.exportSteps = true;
         }
