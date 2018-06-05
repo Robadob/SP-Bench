@@ -33,6 +33,9 @@ ArgData parseArgs(int argc, char * argv[])
 		//-profile (<uint>) (<uint>), Disables all console IO
 		if (arg.compare("-profile") == 0)
 		{
+#ifdef _CUDACC_DEBUG_
+            throw std::runtime_exception("'-profile' runtime arg is unavailable when code built with DEBUG flag.\n");
+#endif
 			data.profile = true;
             //Check if next arg is beginning of new arg
             if (i + 1<argc&&argv[i+1][0]!='-')
