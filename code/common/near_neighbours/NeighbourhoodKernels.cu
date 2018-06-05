@@ -1063,18 +1063,44 @@ __device__ LocationMessage *LocationMessages::getFirstNeighbour(DIMENSIONS_VEC l
     {
         sm_message->state.location = getGridPosition(location);
 #ifdef BITFIELDS_V2
-        sm_message->state.offsetX((sm_message->state.location.x + 1) % 3);
-        sm_message->state.offsetY((sm_message->state.location.y + 1) % 3);
-#if defined(_3D)
-        sm_message->state.offsetZ((sm_message->state.location.z + 1) % 3);
+#if defined(_2D)
+        sm_message->state.offsetX((d_offsets[sm_message->state.location.x][sm_message->state.location.y] & (3 << 0)) >> 0);
+        sm_message->state.offsetY((d_offsets[sm_message->state.location.x][sm_message->state.location.y] & (3 << 2)) >> 2);
+#elif defined(_3D)
+        sm_message->state.offsetX((d_offsets[sm_message->state.location.x][sm_message->state.location.y][sm_message->state.location.z] & (3 << 0)) >> 0);
+        sm_message->state.offsetY((d_offsets[sm_message->state.location.x][sm_message->state.location.y][sm_message->state.location.z] & (3 << 2)) >> 2);
+        sm_message->state.offsetZ((d_offsets[sm_message->state.location.x][sm_message->state.location.y][sm_message->state.location.z] & (3 << 4)) >> 4);
 #endif
 #else
-        sm_message->state.offsetX = (sm_message->state.location.x + 1) % 3;
-        sm_message->state.offsetY = (sm_message->state.location.y + 1) % 3;
-#if defined(_3D)
-        sm_message->state.offsetZ = (sm_message->state.location.z + 1) % 3;
+#if defined(_2D)
+        unsigned char t = d_offsets[sm_message->state.location.x][sm_message->state.location.y];
+        sm_message->state.offsetX = (t & (3 << 0)) >> 0;
+        sm_message->state.offsetY = (t & (3 << 2)) >> 2;
+#elif defined(_3D)
+        sm_message->state.offsetX = (d_offsets[sm_message->state.location.x][sm_message->state.location.y][sm_message->state.location.z] & (3 << 0)) >> 0;
+        sm_message->state.offsetY = (d_offsets[sm_message->state.location.x][sm_message->state.location.y][sm_message->state.location.z] & (3 << 2)) >> 2;
+        sm_message->state.offsetZ = (d_offsets[sm_message->state.location.x][sm_message->state.location.y][sm_message->state.location.z] & (3 << 4)) >> 4;
 #endif
 #endif
+//#ifdef BITFIELDS_V2
+//        int a = (-sm_message->state.location.x + 1) % 3; 
+//        sm_message->state.offsetX(a<0?a+3:a);
+//        a = (-sm_message->state.location.y + 1) % 3; 
+//        sm_message->state.offsetY(a<0?a+3:a);
+//#if defined(_3D)
+//        a = (-sm_message->state.location.z + 1) % 3; 
+//        sm_message->state.offsetZ(a<0?a+3:a);
+//#endif
+//#else
+//        int a = (-sm_message->state.location.x + 1) % 3; 
+//        sm_message->state.offsetX = a<0?a+3:a;
+//        a = (-sm_message->state.location.y + 1) % 3; 
+//        sm_message->state.offsetY = a<0?a+3:a;
+//#if defined(_3D)
+//        a = (-sm_message->state.location.z + 1) % 3; 
+//        sm_message->state.offsetZ = a<0?a+3:a;
+//#endif
+//#endif
     }
 #elif defined(MODULAR_STRIPS)
     {

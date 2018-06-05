@@ -97,6 +97,38 @@ SpatialPartition::SpatialPartition(DIMENSIONS_VEC  environmentMin, DIMENSIONS_VE
 #elif defined(PEANO)
     initPeano(gridDim);
 #endif
+#ifdef MODULAR
+    assert(glm::compMax(gridDim)<MODULAR_OFFSETS_MAX);
+#if defined(_2D)
+    unsigned char h_offsets[MODULAR_OFFSETS_MAX][MODULAR_OFFSETS_MAX];
+    for (unsigned int x = 0; x<MODULAR_OFFSETS_MAX; ++x)
+    {
+        for (unsigned int y = 0; y<MODULAR_OFFSETS_MAX; ++y)
+        {
+            int a = ((((-x+1)%3)+3)%3);
+            int b = ((((-y+1)%3)+3)%3);
+            h_offsets[x][y] = (a & 3) + ((b & 3) << 2);
+        }
+    }
+    CUDA_CALL(cudaMemcpyToSymbol(d_offsets, &h_offsets, sizeof(unsigned char[MODULAR_OFFSETS_MAX][MODULAR_OFFSETS_MAX])));
+#elif defined(_3D)
+    unsigned char h_offsets[MODULAR_OFFSETS_MAX][MODULAR_OFFSETS_MAX][MODULAR_OFFSETS_MAX];
+    for (unsigned int x = 0; x<MODULAR_OFFSETS_MAX; ++x)
+    {
+        for (unsigned int y = 0; y<MODULAR_OFFSETS_MAX; ++y)
+        {
+            for (unsigned int z = 0; z<MODULAR_OFFSETS_MAX; ++z)
+            {
+                int a = ((((-x+1)%3)+3)%3);
+                int b = ((((-y+1)%3)+3)%3);
+                int c = ((((-z+1)%3)+3)%3);
+                h_offsets[x][y][z] = (a & 3) + ((b & 3) << 2) + ((c&3) << 4);
+            }
+        }
+    }
+    CUDA_CALL(cudaMemcpyToSymbol(d_offsets, &h_offsets, sizeof(unsigned char[MODULAR_OFFSETS_MAX][MODULAR_OFFSETS_MAX])));
+#endif
+#endif
 }
 SpatialPartition::~SpatialPartition()
 {

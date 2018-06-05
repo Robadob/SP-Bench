@@ -11,7 +11,17 @@ __device__ __constant__ DIMENSIONS_IVEC d_gridDim;
 __device__ __constant__ DIMENSIONS_VEC  d_gridDim_float;//Float clone, to save cast at runtime inside getGridPosition()
 __device__ __constant__ DIMENSIONS_VEC  d_environmentMin;
 __device__ __constant__ DIMENSIONS_VEC  d_environmentMax;
-
+#ifdef MODULAR
+//#define MODULAR_OFFSETS_MAX 1024
+//__device__ __constant__ unsigned char d_offsets[MODULAR_OFFSETS_MAX];
+#if defined(_2D)
+#define MODULAR_OFFSETS_MAX 100
+__device__ __constant__ unsigned char d_offsets[MODULAR_OFFSETS_MAX][MODULAR_OFFSETS_MAX];
+#elif defined(_3D)
+#define MODULAR_OFFSETS_MAX 40
+__device__ __constant__ unsigned char d_offsets[MODULAR_OFFSETS_MAX][MODULAR_OFFSETS_MAX][MODULAR_OFFSETS_MAX];
+#endif
+#endif
 #ifdef _DEBUG
 __device__ __constant__ unsigned int d_PBM_isBuilt;
 #endif
