@@ -1,0 +1,6 @@
+3D Circles, ~350 neighbours, rng init, 100k-10m
+2D Circles, ~150 neighbours, rng init, 100k-10m
+Circles, 3D 10M pop, 0-800 neighbours.
+[Step] Circles 3D, 10M pop, ~355 neighbours
+[Step] Circles 2D, 10M pop, ~157 neighbours.
+[Step] Circles 2D, 10M pop, ~250?

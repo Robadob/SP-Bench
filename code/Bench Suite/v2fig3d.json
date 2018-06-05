@@ -1,0 +1,37 @@
+[
+{
+  "name" : "v2Figure1[3D-Circles-rng-~350nbr]",
+  "start" : 
+    {
+      "enumerator":1,
+      "agents":10000,
+      "density":14.5,
+      "forceModifier":0.05,
+      "iterations":200,
+      "seed":1
+    },
+  "end" : 
+    {
+      "agents":10000000,
+      "steps":50    
+    }
+},
+{
+  "name" : "v2Figure3[3D-Circles-rng-lt800 neighbours]",
+  "comment" : "774.6 average it 1 with 1mn agents",
+  "start" : 
+    {
+      "enumerator":1,
+      "agents":5000000,
+      "density":2.0,
+      "forceModifier":0.05,
+      "iterations":200,
+      "seed":1
+    },
+  "end" : 
+    {
+      "density":32.0,
+      "steps":50    
+    }
+}
+]

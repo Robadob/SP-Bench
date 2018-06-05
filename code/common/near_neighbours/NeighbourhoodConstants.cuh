@@ -12,6 +12,16 @@ __device__ __constant__ DIMENSIONS_VEC  d_gridDim_float;//Float clone, to save c
 __device__ __constant__ DIMENSIONS_VEC  d_environmentMin;
 __device__ __constant__ DIMENSIONS_VEC  d_environmentMax;
 
+#ifdef MODULAR
+#if defined(_2D)
+#define MODULAR_OFFSETS_MAX 100
+__device__ __constant__ unsigned char d_offsets[MODULAR_OFFSETS_MAX][MODULAR_OFFSETS_MAX];
+#elif defined(_3D)
+#define MODULAR_OFFSETS_MAX 40
+__device__ __constant__ unsigned char d_offsets[MODULAR_OFFSETS_MAX][MODULAR_OFFSETS_MAX][MODULAR_OFFSETS_MAX];
+#endif
+#endif
+
 #ifdef _DEBUG
 __device__ __constant__ unsigned int d_PBM_isBuilt;
 #endif

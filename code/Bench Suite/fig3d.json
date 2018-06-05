@@ -1,0 +1,36 @@
+[
+{
+  "name" : "v2Figure1[3D-Circles-rng-~350nbr]",
+  "start" : 
+    {
+      "enumerator":1,
+      "agents":10000,
+      "density":2.0,
+      "forceModifier":0.05,
+      "iterations":200,
+      "seed":0
+    },
+  "end" : 
+    {
+      "agents":10000000,
+      "steps":50    
+    }
+},
+{
+  "name" : "v2Figure2[3D-Circles-rng-~200nbr]",
+  "start" : 
+    {
+      "enumerator":1,
+      "agents":10000,
+      "density":2.0,
+      "forceModifier":0.05,
+      "iterations":200,
+      "seed":0
+    },
+  "end" : 
+    {
+      "agents":10000000,
+      "steps":50    
+    }
+}
+]

@@ -12,6 +12,7 @@ std::string ParamSet::BIN_DIR = "./";
 std::string ParamSet::OUT_DIR = "./OUT/";
 unsigned int ParamSet::DEVICE_ID = 0;
 #ifdef _MSC_VER
+//std::vector<Executable> ParamSet::BINARIES = { { "Default3D", "Release-Mod-Default3D.exe" }, { "Strips3D", "Release-Mod-Strips3D.exe" }, { "Modular3D", "Release-Mod-Modular3D.exe" }, { "ModularStrips3D", "Release-Mod-ModularStrips3D.exe" } };
 std::vector<Executable> ParamSet::BINARIES = { { "Default", "Release-Mod-Default.exe" }, { "Strips", "Release-Mod-Strips.exe" }, { "Modular", "Release-Mod-Modular.exe" }, { "ModularStrips", "Release-Mod-ModularStrips.exe" } };
 #else
 std::vector<Executable> ParamSet::BINARIES = { { "Default", "release-mod-default" }, { "Strips", "release-mod-strips" }, { "Modular", "release-mod-modular" }, { "ModularStrips", "release-mod-modularstrips3d" } };

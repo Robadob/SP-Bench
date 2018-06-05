@@ -1,0 +1,203 @@
+[
+{
+  "name" : "Test[2D-Null-unif-5mpop]",
+  "start" : 
+    {
+      "enumerator":0,
+      "agents":5000000,
+      "density":2.0,
+      "iterations":100,
+      "seed":0
+    },
+  "end" : 
+    {
+      "density":50.0,
+      "steps":100    
+    }
+},
+{
+  "name" : "Test[2D-Null-rng-5mpop]",
+  "start" : 
+    {
+      "enumerator":0,
+      "agents":5000000,
+      "density":2.0,
+      "iterations":100,
+      "seed":1
+    },
+  "end" : 
+    {
+      "density":50.0,
+      "steps":100    
+    }
+},
+{
+  "name" : "Test[2D-Circles-unif-5mpop]",
+  "start" : 
+    {
+      "enumerator":1,
+      "agents":5000000,
+      "density":2.0,
+      "forceModifier":0.01,
+      "iterations":500,
+      "seed":0
+    },
+  "end" : 
+    {
+      "density":50.0,
+      "steps":100    
+    }
+},
+{
+  "name" : "Test[2D-Circles-rng-5mpop]",
+  "start" : 
+    {
+      "enumerator":1,
+      "agents":5000000,
+      "density":2.0,
+      "forceModifier":0.01,
+      "iterations":500,
+      "seed":1
+    },
+  "end" : 
+    {
+      "density":50.0,
+      "steps":100    
+    }
+},
+{
+  "name" : "Figure6[2D-Null-rng-22Nbr]",
+  "comment" : "~22 Neighbours",
+  "start" : 
+    {
+      "enumerator":0,
+      "agents":100000,
+      "density":2.385542,
+      "iterations":100,
+      "seed":1
+    },
+  "end" : 
+    {
+      "agents":10000000,
+      "steps":100    
+    }
+},
+{
+  "name" : "Figure7[2D-Null-rng-22Nbr-CLOSEUP]",
+  "comment" : "~22 Neighbours",
+  "start" : 
+    {
+      "enumerator":0,
+      "agents":1000000,
+      "density":2.385542,
+      "iterations":100,
+      "seed":1
+    },
+  "end" : 
+    {
+      "agents":5000000,
+      "steps":300    
+    }
+},
+{
+  "name" : "Figure8[2D-Null-rng-2mpop]",
+  "start" : 
+    {
+      "enumerator":0,
+      "agents":2000000,
+      "density":2.0,
+      "iterations":100,
+      "seed":1
+    },
+  "end" : 
+    {
+      "density":50.0,
+      "steps":250    
+    }
+},
+{
+  "name" : "Figure9[2D-Null-rng-2mpop]",
+  "start" : 
+    {
+      "enumerator":0,
+      "agents":2000000,
+      "density":2.0,
+      "iterations":100,
+      "seed":1
+    },
+  "end" : 
+    {
+      "density":50.0,
+      "steps":250    
+    }
+},
+{
+  "name" : "Figure10[2D-Null-unif-22Nbr]",
+  "comment" : "22.85 Neighbours@40066 pop",
+  "start" : 
+    {
+      "enumerator":0,
+      "agents":100000,
+      "density":2.578313,
+      "iterations":100,
+      "seed":0
+    },
+  "end" : 
+    {
+      "agents":10000000,
+      "steps":300    
+    }
+},
+{
+  "name" : "Figure13[2D-Circles-unif-46Nbr]",
+  "comment" : "~46 Neighbours",
+  "start" : 
+    {
+      "enumerator":1,
+      "agents":100000,
+      "density":5.103448,
+      "forceModifier":0.01,
+      "iterations":500,
+      "seed":0
+    },
+  "end" : 
+    {
+      "agents":10000000,
+      "steps":100    
+    }
+},
+{
+  "name" : "Figure14[2D-Circles-unif-2mpop]",
+  "start" : 
+    {
+      "enumerator":1,
+      "agents":2000000,
+      "density":2.0,
+      "forceModifier":0.01,
+      "iterations":500,
+      "seed":0
+    },
+  "end" : 
+    {
+      "density":20.0,
+      "steps":30    
+    }
+},
+{
+  "name" : "Figure15[2D-Circles-rng-2mpop]",
+  "start" : 
+    {
+      "enumerator":1,
+      "agents":2000000,
+      "density":2.0,
+      "forceModifier":0.01,
+      "iterations":500,
+      "seed":1
+    },
+  "end" : 
+    {
+      "density":20.0,
+      "steps":30    
+    }
+}
+]
