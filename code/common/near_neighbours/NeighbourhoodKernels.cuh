@@ -25,7 +25,8 @@ __global__ void hashLocationMessages(unsigned int* keys, unsigned int* vals, Loc
 __global__ void reorderLocationMessages(
     unsigned int *keys,
     unsigned int *vals,
-    unsigned int *pbm,
+    unsigned int *pbm_index,
+    unsigned int *pbm_count,
     LocationMessages *unordered_messages,
     LocationMessages *ordered_messages
     );

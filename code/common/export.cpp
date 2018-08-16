@@ -340,7 +340,7 @@ void exportSteps(const int argc, char **argv, const Time_Step *ts, const Neighbo
     if (oFile.is_open())
     {
         //Header row 1: runtime args
-        for (unsigned int i = 0; i < argc;++i)
+        for (unsigned int i = 0; i < (unsigned int)argc;++i)
         {
             oFile << argv[i];
             oFile << " ";

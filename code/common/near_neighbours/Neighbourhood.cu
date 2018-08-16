@@ -12,6 +12,8 @@
 
 #include "Neighbourhood.cuh"
 #include "NeighbourhoodKernels.cuh"
+#include <cuda_runtime_api.h>
+#include <glm/detail/func_common.hpp>
 
 #ifndef THRUST
 #include <cub/cub.cuh>
@@ -53,12 +55,9 @@ SpatialPartition::SpatialPartition(DIMENSIONS_VEC  environmentMin, DIMENSIONS_VE
     //Allocate bins swap in GPU memory
     deviceAllocateLocationMessages(&d_locationMessages_swap, &hd_locationMessages_swap);
     //Allocate PBM
-    deviceAllocatePBM(&d_PBM);
+    deviceAllocatePBM(&d_PBM_index, &d_PBM_count);
     //Allocate primitive structures
     deviceAllocatePrimitives(&d_keys, &d_vals);
-#ifdef ATOMIC_PBM
-    deviceAllocatePBM(&d_PBM_counts);
-#endif
 #ifndef THRUST
 #ifndef ATOMIC_PBM
     deviceAllocatePrimitives(&d_keys_swap, &d_vals_swap);
@@ -76,7 +75,8 @@ SpatialPartition::SpatialPartition(DIMENSIONS_VEC  environmentMin, DIMENSIONS_VE
     CUDA_CALL(cudaMemcpyToSymbol(d_environmentMin, &environmentMin, sizeof(DIMENSIONS_VEC)));
     CUDA_CALL(cudaMemcpyToSymbol(d_environmentMax, &environmentMax, sizeof(DIMENSIONS_VEC)));
 #if defined(GLOBAL_PBM) || defined(LDG_PBM)
-    CUDA_CALL(cudaMemcpyToSymbol(d_pbm, &d_PBM, sizeof(unsigned int *)));
+    CUDA_CALL(cudaMemcpyToSymbol(d_pbm_index, &d_PBM_index, sizeof(unsigned int *)));
+    CUDA_CALL(cudaMemcpyToSymbol(d_pbm_count, &d_PBM_count, sizeof(unsigned int *)));
 #endif
 #ifdef _DEBUG
     CUDA_CALL(cudaMemcpyToSymbol(d_PBM_isBuilt, &PBM_isBuilt, sizeof(unsigned int)));
@@ -138,12 +138,9 @@ SpatialPartition::~SpatialPartition()
     //Dellocate bins swap in GPU memory
     deviceDeallocateLocationMessages(d_locationMessages_swap, hd_locationMessages_swap);
     //Dellocate PBM
-    deviceDeallocatePBM(d_PBM);
+    deviceDeallocatePBM(d_PBM_index, d_PBM_count);
     //Deallocated primitive structures
     deviceDeallocatePrimitives(d_keys, d_vals);
-#ifdef ATOMIC_PBM
-    deviceDeallocatePBM(d_PBM_counts);
-#endif
 #ifndef THRUST
 #ifndef ATOMIC_PBM
     deviceDeallocatePrimitives(d_keys_swap, d_vals_swap);
@@ -227,234 +224,234 @@ bool SpatialPartition::isValid(DIMENSIONS_IVEC bin) const
 #ifdef _DEBUG
 void SpatialPartition::assertSearch()
 {
-    //return;//
-    unsigned int outCount = this->binCountMax + 1;
-    //unsigned int tableSize = ((outCount / 10) + 1) * 10;
-
-    //Copy raw PBM from device to host
-    unsigned int *PBM_raw = static_cast<unsigned int *>(malloc(sizeof(unsigned int)*outCount));
-    memset(PBM_raw, 0, outCount * sizeof(unsigned int));
-    CUDA_CALL(cudaMemcpy(PBM_raw, d_PBM, sizeof(unsigned int)*outCount, cudaMemcpyDeviceToHost));
-    //Calculate the size of every bin
-    unsigned int agtCount = 0;
-    unsigned int *PBM_binSize = static_cast<unsigned int *>(malloc(sizeof(unsigned int)*this->binCountMax));
-    for (unsigned int i = 0; i < this->binCountMax; i++)
-    {
-            PBM_binSize[i] = PBM_raw[i + 1] - PBM_raw[i];
-            agtCount += PBM_binSize[i];
-    }
-    if (agtCount != maxAgents&&agtCount != 0)
-    {
-        printf("%i PBM records exist for %i agents.\n", agtCount, maxAgents);
-    }
-    //Calculate the size of each bin's neighbourhood
-    unsigned int *PBM_neighbourhoodSize = static_cast<unsigned int *>(malloc(sizeof(unsigned int)*this->binCountMax));
-    for (unsigned int i = 0; i < this->binCountMax; i++)
-    {
-        PBM_neighbourhoodSize[i] = 0;
-        DIMENSIONS_IVEC curCell = getPos(i);
-        for (int x = -1; x <= 1; x++)
-            for (int y = -1; y <= 1; y++)
-            {
-#if defined(_2D)
-                DIMENSIONS_IVEC neighbourCell = curCell + DIMENSIONS_IVEC(x, y);
-#elif defined(_3D)
-                for (int z = -1; z <= 1; z++)
-                {
-                    DIMENSIONS_IVEC neighbourCell = curCell + DIMENSIONS_IVEC(x, y, z);
-#endif
-                    if (isValid(neighbourCell))
-                    {
-                        unsigned int hash = getHash(neighbourCell);
-                        assert(hash < this->binCountMax);
-                        PBM_neighbourhoodSize[i] += PBM_binSize[hash];
-                    }
-#ifdef _3D
-                }
-#endif
-            }
-
-    }
-    //Copy every location and neighbour count from device to host
-    float *d_bufferPtr;
-    LocationMessages lm;
-    lm.locationX = (float*)malloc(sizeof(float)*locationMessageCount);
-    CUDA_CALL(cudaMemcpy(&d_bufferPtr, &d_locationMessages_swap->locationX, sizeof(float*), cudaMemcpyDeviceToHost));
-    CUDA_CALL(cudaMemcpy(lm.locationX, d_bufferPtr, sizeof(float)*locationMessageCount, cudaMemcpyDeviceToHost));
-    lm.locationY = (float*)malloc(sizeof(float)*locationMessageCount);
-    CUDA_CALL(cudaMemcpy(&d_bufferPtr, &d_locationMessages_swap->locationY, sizeof(float*), cudaMemcpyDeviceToHost));
-    CUDA_CALL(cudaMemcpy(lm.locationY, d_bufferPtr, sizeof(float)*locationMessageCount, cudaMemcpyDeviceToHost));
-#ifdef _3D
-    lm.locationZ = (float*)malloc(sizeof(float)*locationMessageCount);
-    CUDA_CALL(cudaMemcpy(&d_bufferPtr, &d_locationMessages_swap->locationZ, sizeof(float*), cudaMemcpyDeviceToHost));
-    CUDA_CALL(cudaMemcpy(lm.locationZ, d_bufferPtr, sizeof(float)*locationMessageCount, cudaMemcpyDeviceToHost));
-#endif
-    lm.count = (float*)malloc(sizeof(float)*locationMessageCount);
-    CUDA_CALL(cudaMemcpy(&d_bufferPtr, &d_locationMessages_swap->count, sizeof(float*), cudaMemcpyDeviceToHost));
-    CUDA_CALL(cudaMemcpy(lm.count, d_bufferPtr, sizeof(float)*locationMessageCount, cudaMemcpyDeviceToHost));
-    //ASSERT: Every agent searched the right amount of neighbours
-    unsigned int matchFails = 0;
-    for (unsigned int i = 0; i < locationMessageCount; i++)
-    {
-        //For rendering purposes the count is stored as count/totalMessages, invert this math for assertion
-#if defined(_2D)
-        unsigned int hash = getHash(getGridPosition(DIMENSIONS_VEC(lm.locationX[i], lm.locationY[i])));
-#elif defined(_3D)
-        unsigned int hash = getHash(getGridPosition(DIMENSIONS_VEC(lm.locationX[i], lm.locationY[i], lm.locationZ[i])));
-#endif
-
-        assert(hash < this->binCountMax);
-        if (glm::epsilonNotEqual(lm.count[i], PBM_neighbourhoodSize[hash] / (float)locationMessageCount, 0.5f))
-        {
-            //printf("%u=%u-%f=%f,", (unsigned int)(lm.count[i] * locationMessageCount), PBM_neighbourhoodSize[hash], lm.count[i], PBM_neighbourhoodSize[hash] / (float)locationMessageCount);
-            matchFails++;
-        }
-    }
-    //Free location/count data
-    free(lm.locationX);
-    free(lm.locationY);
-#ifdef _3D
-    free(lm.locationZ);
-#endif
-    free(lm.count);
-    if (matchFails>0)
-    {
-        printf("ERROR: Neighbour search totals do not match (%u/%u)\n", matchFails, locationMessageCount);
-    }
-    else
-    {
-        free(PBM_raw);
-        free(PBM_binSize);
-        free(PBM_neighbourhoodSize);
-        return;
-    }
-    //Output the 3 PBM_ data structures to file in a readable format
-    FILE *file = fopen("../logs/PBM.txt", "w");
-    fprintf(file, "ERROR: Neighbour search totals do not match (%u/%u)\n", matchFails, locationMessageCount);
-    fprintf(file, "Raw PBM\n");
-    fprintf(file, "|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|\n", "", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9");
-    fprintf(file, "|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|\n");
-    for (unsigned int i = 0; i < (outCount / 10) - 1; i++)
-    {
-        fprintf(file, "|%4u0|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|\n", i,
-            PBM_raw[(10 * i) + 0],
-            PBM_raw[(10 * i) + 1],
-            PBM_raw[(10 * i) + 2],
-            PBM_raw[(10 * i) + 3],
-            PBM_raw[(10 * i) + 4],
-            PBM_raw[(10 * i) + 5],
-            PBM_raw[(10 * i) + 6],
-            PBM_raw[(10 * i) + 7],
-            PBM_raw[(10 * i) + 8],
-            PBM_raw[(10 * i) + 9]
-            );
-    }
-    fprintf(file, "Bin Size\n");
-    fprintf(file, "|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|\n", "", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9");
-    fprintf(file, "|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|\n");
-    for (unsigned int i = 0; i < ((this->binCount + 1) / 10) - 1; i++)
-    {
-        fprintf(file, "|%4u0|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|\n", i,
-            PBM_binSize[(10 * i) + 0],
-            PBM_binSize[(10 * i) + 1],
-            PBM_binSize[(10 * i) + 2],
-            PBM_binSize[(10 * i) + 3],
-            PBM_binSize[(10 * i) + 4],
-            PBM_binSize[(10 * i) + 5],
-            PBM_binSize[(10 * i) + 6],
-            PBM_binSize[(10 * i) + 7],
-            PBM_binSize[(10 * i) + 8],
-            PBM_binSize[(10 * i) + 9]
-            );
-    }
-    fprintf(file, "Neighbour Count\n");
-    fprintf(file, "|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|\n", "", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9");
-    fprintf(file, "|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|\n");
-    for (unsigned int i = 0; i < (outCount / 10) - 1; i++)
-    {
-        fprintf(file, "|%4u0|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|\n", i,
-            PBM_neighbourhoodSize[(10 * i) + 0],
-            PBM_neighbourhoodSize[(10 * i) + 1],
-            PBM_neighbourhoodSize[(10 * i) + 2],
-            PBM_neighbourhoodSize[(10 * i) + 3],
-            PBM_neighbourhoodSize[(10 * i) + 4],
-            PBM_neighbourhoodSize[(10 * i) + 5],
-            PBM_neighbourhoodSize[(10 * i) + 6],
-            PBM_neighbourhoodSize[(10 * i) + 7],
-            PBM_neighbourhoodSize[(10 * i) + 8],
-            PBM_neighbourhoodSize[(10 * i) + 9]
-            );
-    }
-    //Cleanup resources
-    fclose(file);
-    free(PBM_raw);
-    free(PBM_binSize);
-    free(PBM_neighbourhoodSize);
+//    //return;//
+//    unsigned int outCount = this->binCountMax;
+//    //unsigned int tableSize = ((outCount / 10) + 1) * 10;
+//
+//    //Copy raw PBM from device to host
+//    unsigned int *PBM_raw = static_cast<unsigned int *>(malloc(sizeof(unsigned int)*outCount));
+//    memset(PBM_raw, 0, outCount * sizeof(unsigned int));
+//    CUDA_CALL(cudaMemcpy(PBM_raw, d_PBM_index, sizeof(unsigned int)*outCount, cudaMemcpyDeviceToHost));
+//    //Calculate the size of every bin
+//    unsigned int agtCount = 0;
+//    unsigned int *PBM_binSize = static_cast<unsigned int *>(malloc(sizeof(unsigned int)*this->binCountMax));
+//    for (unsigned int i = 0; i < this->binCountMax; i++)
+//    {
+//            PBM_binSize[i] = PBM_raw[i + 1] - PBM_raw[i];
+//            agtCount += PBM_binSize[i];
+//    }
+//    if (agtCount != maxAgents&&agtCount != 0)
+//    {
+//        printf("%i PBM records exist for %i agents.\n", agtCount, maxAgents);
+//    }
+//    //Calculate the size of each bin's neighbourhood
+//    unsigned int *PBM_neighbourhoodSize = static_cast<unsigned int *>(malloc(sizeof(unsigned int)*this->binCountMax));
+//    for (unsigned int i = 0; i < this->binCountMax; i++)
+//    {
+//        PBM_neighbourhoodSize[i] = 0;
+//        DIMENSIONS_IVEC curCell = getPos(i);
+//        for (int x = -1; x <= 1; x++)
+//            for (int y = -1; y <= 1; y++)
+//            {
+//#if defined(_2D)
+//                DIMENSIONS_IVEC neighbourCell = curCell + DIMENSIONS_IVEC(x, y);
+//#elif defined(_3D)
+//                for (int z = -1; z <= 1; z++)
+//                {
+//                    DIMENSIONS_IVEC neighbourCell = curCell + DIMENSIONS_IVEC(x, y, z);
+//#endif
+//                    if (isValid(neighbourCell))
+//                    {
+//                        unsigned int hash = getHash(neighbourCell);
+//                        assert(hash < this->binCountMax);
+//                        PBM_neighbourhoodSize[i] += PBM_binSize[hash];
+//                    }
+//#ifdef _3D
+//                }
+//#endif
+//            }
+//
+//    }
+//    //Copy every location and neighbour count from device to host
+//    float *d_bufferPtr;
+//    LocationMessages lm;
+//    lm.locationX = (float*)malloc(sizeof(float)*locationMessageCount);
+//    CUDA_CALL(cudaMemcpy(&d_bufferPtr, &d_locationMessages_swap->locationX, sizeof(float*), cudaMemcpyDeviceToHost));
+//    CUDA_CALL(cudaMemcpy(lm.locationX, d_bufferPtr, sizeof(float)*locationMessageCount, cudaMemcpyDeviceToHost));
+//    lm.locationY = (float*)malloc(sizeof(float)*locationMessageCount);
+//    CUDA_CALL(cudaMemcpy(&d_bufferPtr, &d_locationMessages_swap->locationY, sizeof(float*), cudaMemcpyDeviceToHost));
+//    CUDA_CALL(cudaMemcpy(lm.locationY, d_bufferPtr, sizeof(float)*locationMessageCount, cudaMemcpyDeviceToHost));
+//#ifdef _3D
+//    lm.locationZ = (float*)malloc(sizeof(float)*locationMessageCount);
+//    CUDA_CALL(cudaMemcpy(&d_bufferPtr, &d_locationMessages_swap->locationZ, sizeof(float*), cudaMemcpyDeviceToHost));
+//    CUDA_CALL(cudaMemcpy(lm.locationZ, d_bufferPtr, sizeof(float)*locationMessageCount, cudaMemcpyDeviceToHost));
+//#endif
+//    lm.count = (float*)malloc(sizeof(float)*locationMessageCount);
+//    CUDA_CALL(cudaMemcpy(&d_bufferPtr, &d_locationMessages_swap->count, sizeof(float*), cudaMemcpyDeviceToHost));
+//    CUDA_CALL(cudaMemcpy(lm.count, d_bufferPtr, sizeof(float)*locationMessageCount, cudaMemcpyDeviceToHost));
+//    //ASSERT: Every agent searched the right amount of neighbours
+//    unsigned int matchFails = 0;
+//    for (unsigned int i = 0; i < locationMessageCount; i++)
+//    {
+//        //For rendering purposes the count is stored as count/totalMessages, invert this math for assertion
+//#if defined(_2D)
+//        unsigned int hash = getHash(getGridPosition(DIMENSIONS_VEC(lm.locationX[i], lm.locationY[i])));
+//#elif defined(_3D)
+//        unsigned int hash = getHash(getGridPosition(DIMENSIONS_VEC(lm.locationX[i], lm.locationY[i], lm.locationZ[i])));
+//#endif
+//
+//        assert(hash < this->binCountMax);
+//        if (glm::epsilonNotEqual(lm.count[i], PBM_neighbourhoodSize[hash] / (float)locationMessageCount, 0.5f))
+//        {
+//            //printf("%u=%u-%f=%f,", (unsigned int)(lm.count[i] * locationMessageCount), PBM_neighbourhoodSize[hash], lm.count[i], PBM_neighbourhoodSize[hash] / (float)locationMessageCount);
+//            matchFails++;
+//        }
+//    }
+//    //Free location/count data
+//    free(lm.locationX);
+//    free(lm.locationY);
+//#ifdef _3D
+//    free(lm.locationZ);
+//#endif
+//    free(lm.count);
+//    if (matchFails>0)
+//    {
+//        printf("ERROR: Neighbour search totals do not match (%u/%u)\n", matchFails, locationMessageCount);
+//    }
+//    else
+//    {
+//        free(PBM_raw);
+//        free(PBM_binSize);
+//        free(PBM_neighbourhoodSize);
+//        return;
+//    }
+//    //Output the 3 PBM_ data structures to file in a readable format
+//    FILE *file = fopen("../logs/PBM.txt", "w");
+//    fprintf(file, "ERROR: Neighbour search totals do not match (%u/%u)\n", matchFails, locationMessageCount);
+//    fprintf(file, "Raw PBM\n");
+//    fprintf(file, "|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|\n", "", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9");
+//    fprintf(file, "|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|\n");
+//    for (unsigned int i = 0; i < (outCount / 10) - 1; i++)
+//    {
+//        fprintf(file, "|%4u0|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|\n", i,
+//            PBM_raw[(10 * i) + 0],
+//            PBM_raw[(10 * i) + 1],
+//            PBM_raw[(10 * i) + 2],
+//            PBM_raw[(10 * i) + 3],
+//            PBM_raw[(10 * i) + 4],
+//            PBM_raw[(10 * i) + 5],
+//            PBM_raw[(10 * i) + 6],
+//            PBM_raw[(10 * i) + 7],
+//            PBM_raw[(10 * i) + 8],
+//            PBM_raw[(10 * i) + 9]
+//            );
+//    }
+//    fprintf(file, "Bin Size\n");
+//    fprintf(file, "|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|\n", "", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9");
+//    fprintf(file, "|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|\n");
+//    for (unsigned int i = 0; i < ((this->binCount + 1) / 10) - 1; i++)
+//    {
+//        fprintf(file, "|%4u0|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|\n", i,
+//            PBM_binSize[(10 * i) + 0],
+//            PBM_binSize[(10 * i) + 1],
+//            PBM_binSize[(10 * i) + 2],
+//            PBM_binSize[(10 * i) + 3],
+//            PBM_binSize[(10 * i) + 4],
+//            PBM_binSize[(10 * i) + 5],
+//            PBM_binSize[(10 * i) + 6],
+//            PBM_binSize[(10 * i) + 7],
+//            PBM_binSize[(10 * i) + 8],
+//            PBM_binSize[(10 * i) + 9]
+//            );
+//    }
+//    fprintf(file, "Neighbour Count\n");
+//    fprintf(file, "|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|%5s|\n", "", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9");
+//    fprintf(file, "|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|\n");
+//    for (unsigned int i = 0; i < (outCount / 10) - 1; i++)
+//    {
+//        fprintf(file, "|%4u0|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|%5u|\n", i,
+//            PBM_neighbourhoodSize[(10 * i) + 0],
+//            PBM_neighbourhoodSize[(10 * i) + 1],
+//            PBM_neighbourhoodSize[(10 * i) + 2],
+//            PBM_neighbourhoodSize[(10 * i) + 3],
+//            PBM_neighbourhoodSize[(10 * i) + 4],
+//            PBM_neighbourhoodSize[(10 * i) + 5],
+//            PBM_neighbourhoodSize[(10 * i) + 6],
+//            PBM_neighbourhoodSize[(10 * i) + 7],
+//            PBM_neighbourhoodSize[(10 * i) + 8],
+//            PBM_neighbourhoodSize[(10 * i) + 9]
+//            );
+//    }
+//    //Cleanup resources
+//    fclose(file);
+//    free(PBM_raw);
+//    free(PBM_binSize);
+//    free(PBM_neighbourhoodSize);
 }
 #endif
 NeighbourhoodStats SpatialPartition::getNeighbourhoodStats()
 {//Based on assertSearch()
     NeighbourhoodStats rtn;
-    //Copy raw PBM from device to host
-    unsigned int *PBM_raw = static_cast<unsigned int *>(malloc(sizeof(unsigned int)*(this->binCountMax + 1)));
-    memset(PBM_raw, 0, (this->binCountMax + 1) * sizeof(unsigned int));
-    CUDA_CALL(cudaMemcpy(PBM_raw, d_PBM, sizeof(unsigned int)*(this->binCountMax + 1), cudaMemcpyDeviceToHost));
-
-    //Calculate the size of every bin
-    unsigned int agtCount = 0;
-    unsigned int *PBM_binSize = static_cast<unsigned int *>(malloc(sizeof(unsigned int)*this->binCountMax));
-    for (unsigned int i = 0; i < this->binCountMax; i++)
-    {
-        PBM_binSize[i] = PBM_raw[i + 1] - PBM_raw[i];
-        agtCount += PBM_binSize[i];
-    }
-    free(PBM_raw);
-    if (agtCount != maxAgents&&agtCount != 0)
-    {
-        printf("%i PBM records exist for %i agents.\n", agtCount, maxAgents);
-    }
-    //Calculate the size of each bin's neighbourhood
-    unsigned int *PBM_neighbourhoodSize = static_cast<unsigned int *>(malloc(sizeof(unsigned int)*this->binCountMax));
-    for (unsigned int i = 0; i < this->binCountMax; i++)
-    {
-        PBM_neighbourhoodSize[i] = 0;
-        DIMENSIONS_IVEC curCell = getPos(i);
-        for (int x = -1; x <= 1; x++)
-            for (int y = -1; y <= 1; y++)
-            {
-#if defined(_2D)
-            DIMENSIONS_IVEC neighbourCell = curCell + DIMENSIONS_IVEC(x, y);
-#elif defined(_3D)
-            for (int z = -1; z <= 1; z++)
-            {
-                DIMENSIONS_IVEC neighbourCell = curCell + DIMENSIONS_IVEC(x, y, z);
-#endif
-                if (isValid(neighbourCell))
-                {
-                    unsigned int hash = getHash(neighbourCell);
-                    assert(hash < this->binCountMax);
-                    PBM_neighbourhoodSize[i] += PBM_binSize[hash];
-                }
-#ifdef _3D
-            }
-#endif
-            }
-        if (PBM_binSize[i])
-        {
-            rtn.min = min(PBM_neighbourhoodSize[i], rtn.min);
-            rtn.max = max(PBM_neighbourhoodSize[i], rtn.max);
-        }
-        rtn.average += ((PBM_neighbourhoodSize[i] * PBM_binSize[i]) / (float)maxAgents);
-    }
-    //Calculate standard deviation
-    double valMinAvqSqAvg = 0.0;
-    for (unsigned int i = 0; i < this->binCountMax; i++)
-    {
-        valMinAvqSqAvg += pow(PBM_neighbourhoodSize[i] - rtn.average, 2.0)* PBM_binSize[i] / maxAgents;
-    }
-    rtn.standardDeviation = (float)sqrt(valMinAvqSqAvg);
-    free(PBM_binSize);
-    free(PBM_neighbourhoodSize);
+//    //Copy raw PBM from device to host
+//    unsigned int *PBM_raw = static_cast<unsigned int *>(malloc(sizeof(unsigned int)*(this->binCountMax + 1)));
+//    memset(PBM_raw, 0, (this->binCountMax + 1) * sizeof(unsigned int));
+//    CUDA_CALL(cudaMemcpy(PBM_raw, d_PBM, sizeof(unsigned int)*(this->binCountMax + 1), cudaMemcpyDeviceToHost));
+//
+//    //Calculate the size of every bin
+//    unsigned int agtCount = 0;
+//    unsigned int *PBM_binSize = static_cast<unsigned int *>(malloc(sizeof(unsigned int)*this->binCountMax));
+//    for (unsigned int i = 0; i < this->binCountMax; i++)
+//    {
+//        PBM_binSize[i] = PBM_raw[i + 1] - PBM_raw[i];
+//        agtCount += PBM_binSize[i];
+//    }
+//    free(PBM_raw);
+//    if (agtCount != maxAgents&&agtCount != 0)
+//    {
+//        printf("%i PBM records exist for %i agents.\n", agtCount, maxAgents);
+//    }
+//    //Calculate the size of each bin's neighbourhood
+//    unsigned int *PBM_neighbourhoodSize = static_cast<unsigned int *>(malloc(sizeof(unsigned int)*this->binCountMax));
+//    for (unsigned int i = 0; i < this->binCountMax; i++)
+//    {
+//        PBM_neighbourhoodSize[i] = 0;
+//        DIMENSIONS_IVEC curCell = getPos(i);
+//        for (int x = -1; x <= 1; x++)
+//            for (int y = -1; y <= 1; y++)
+//            {
+//#if defined(_2D)
+//            DIMENSIONS_IVEC neighbourCell = curCell + DIMENSIONS_IVEC(x, y);
+//#elif defined(_3D)
+//            for (int z = -1; z <= 1; z++)
+//            {
+//                DIMENSIONS_IVEC neighbourCell = curCell + DIMENSIONS_IVEC(x, y, z);
+//#endif
+//                if (isValid(neighbourCell))
+//                {
+//                    unsigned int hash = getHash(neighbourCell);
+//                    assert(hash < this->binCountMax);
+//                    PBM_neighbourhoodSize[i] += PBM_binSize[hash];
+//                }
+//#ifdef _3D
+//            }
+//#endif
+//            }
+//        if (PBM_binSize[i])
+//        {
+//            rtn.min = min(PBM_neighbourhoodSize[i], rtn.min);
+//            rtn.max = max(PBM_neighbourhoodSize[i], rtn.max);
+//        }
+//        rtn.average += ((PBM_neighbourhoodSize[i] * PBM_binSize[i]) / (float)maxAgents);
+//    }
+//    //Calculate standard deviation
+//    double valMinAvqSqAvg = 0.0;
+//    for (unsigned int i = 0; i < this->binCountMax; i++)
+//    {
+//        valMinAvqSqAvg += pow(PBM_neighbourhoodSize[i] - rtn.average, 2.0)* PBM_binSize[i] / maxAgents;
+//    }
+//    rtn.standardDeviation = (float)sqrt(valMinAvqSqAvg);
+//    free(PBM_binSize);
+//    free(PBM_neighbourhoodSize);
     return rtn;
 }
 void SpatialPartition::deviceAllocateLocationMessages(LocationMessages **d_locMessage, LocationMessages *hd_locMessage)
@@ -479,10 +476,12 @@ void SpatialPartition::deviceAllocateLocationMessages(LocationMessages **d_locMe
     CUDA_CALL(cudaMemset(hd_locMessage->count, 0, sizeof(float)*maxAgents));//Must be 0'd to protect assertions on k20
 #endif
 }
-void SpatialPartition::deviceAllocatePBM(unsigned int **d_PBM_t)
+void SpatialPartition::deviceAllocatePBM(unsigned int **d_PBM_index_t, unsigned int **d_PBM_count_t)
 {
-    CUDA_CALL(cudaMalloc(d_PBM_t, sizeof(unsigned int)*(this->binCountMax + 1)));
-    CUDA_CALL(cudaMemset(*d_PBM_t, 0, sizeof(unsigned int)*(this->binCountMax + 1)));//Must be 0'd to protect assertions on k20
+    CUDA_CALL(cudaMalloc(d_PBM_index_t, sizeof(unsigned int)*this->binCountMax));
+    CUDA_CALL(cudaMemset(*d_PBM_index_t, 0, sizeof(unsigned int)*this->binCountMax));//Must be 0'd to protect assertions on k20
+    CUDA_CALL(cudaMalloc(d_PBM_count_t, sizeof(unsigned int)*this->binCountMax));
+    CUDA_CALL(cudaMemset(*d_PBM_count_t, 0, sizeof(unsigned int)*this->binCountMax));//Must be 0'd to protect assertions on k20
 }
 void SpatialPartition::deviceAllocatePrimitives(unsigned int **d_keys, unsigned int **d_vals)
 {
@@ -497,8 +496,8 @@ void SpatialPartition::deviceAllocateCUBTemp(void **d_CUB_temp, size_t &d_cub_te
     d_cub_temp_bytes = 0;
     *d_CUB_temp = NULL;
 #ifdef ATOMIC_PBM
-    cub::DeviceScan::ExclusiveSum(*d_CUB_temp, d_cub_temp_bytes, d_PBM_counts, d_PBM, binCountMax + 1);
-#else
+    cub::DeviceScan::ExclusiveSum(*d_CUB_temp, d_cub_temp_bytes, d_PBM_count, d_PBM_index, binCountMax);
+#else ATOMIC_PBM
     cub::DeviceRadixSort::SortPairs(*d_CUB_temp, d_cub_temp_bytes, d_keys, d_keys_swap, d_vals, d_vals_swap, maxAgents);
 #endif
     // Allocate temporary storage
@@ -549,7 +548,8 @@ void SpatialPartition::fillTextures()
     CUDA_CALL(cudaMemcpy(tex_location_ptr_count, hd_locationMessages.count, locationMessageCount*sizeof(float), cudaMemcpyDeviceToDevice));
 #endif
 #if !(defined(GLOBAL_PBM) || defined(LDG_PBM))
-    CUDA_CALL(cudaMemcpy(tex_PBM_ptr, d_PBM, (this->binCountMax + 1)*sizeof(unsigned int), cudaMemcpyDeviceToDevice));
+    CUDA_CALL(cudaMemcpy(tex_PBM_index_ptr, d_PBM_index, this->binCountMax*sizeof(unsigned int), cudaMemcpyDeviceToDevice));
+    CUDA_CALL(cudaMemcpy(tex_PBM_count_ptr, d_PBM_count, this->binCountMax*sizeof(unsigned int), cudaMemcpyDeviceToDevice));
 #endif
 }
 
@@ -630,25 +630,48 @@ Allocates the PBM texture, which is only accessed via CUDA & memcpy
 */
 void SpatialPartition::deviceAllocateTexture_int()
 {
-    //Define cuda array format
-    //Allocate cuda array
-    unsigned int size = this->binCountMax + 1;
-    CUDA_CALL(cudaMalloc(&tex_PBM_ptr, size*sizeof(unsigned int)));//Number of elements, not bytes
-    //Define cuda resource from array
-    cudaResourceDesc resDesc;
-    memset(&resDesc, 0, sizeof(cudaResourceDesc));
-    resDesc.resType = cudaResourceTypeLinear;
-    resDesc.res.linear.devPtr = tex_PBM_ptr;
-    resDesc.res.linear.desc.f = cudaChannelFormatKindUnsigned;
-    resDesc.res.linear.desc.x = 32; // bits per channel
-    resDesc.res.linear.sizeInBytes = size*sizeof(unsigned int);
+    {//PBM index
+        //Define cuda array format
+        //Allocate cuda array
+        unsigned int size = this->binCountMax;
+        CUDA_CALL(cudaMalloc(&tex_PBM_index_ptr, size*sizeof(unsigned int)));//Number of elements, not bytes
+        //Define cuda resource from array
+        cudaResourceDesc resDesc;
+        memset(&resDesc, 0, sizeof(cudaResourceDesc));
+        resDesc.resType = cudaResourceTypeLinear;
+        resDesc.res.linear.devPtr = tex_PBM_index_ptr;
+        resDesc.res.linear.desc.f = cudaChannelFormatKindUnsigned;
+        resDesc.res.linear.desc.x = 32; // bits per channel
+        resDesc.res.linear.sizeInBytes = size*sizeof(unsigned int);
 
-    cudaTextureDesc texDesc;
-    memset(&texDesc, 0, sizeof(cudaTextureDesc));
-    texDesc.readMode = cudaReadModeElementType;
+        cudaTextureDesc texDesc;
+        memset(&texDesc, 0, sizeof(cudaTextureDesc));
+        texDesc.readMode = cudaReadModeElementType;
 
-    CUDA_CALL(cudaCreateTextureObject(&tex_PBM, &resDesc, &texDesc, NULL));
-    CUDA_CALL(cudaMemcpyToSymbol(d_tex_PBM, &tex_PBM, sizeof(cudaTextureObject_t)));
+        CUDA_CALL(cudaCreateTextureObject(&tex_PBM_index, &resDesc, &texDesc, NULL));
+        CUDA_CALL(cudaMemcpyToSymbol(d_tex_PBM_index, &tex_PBM_index, sizeof(cudaTextureObject_t)));
+    }
+    {//PBM count
+        //Define cuda array format
+        //Allocate cuda array
+        unsigned int size = this->binCountMax;
+        CUDA_CALL(cudaMalloc(&tex_PBM_count_ptr, size*sizeof(unsigned int)));//Number of elements, not bytes
+        //Define cuda resource from array
+        cudaResourceDesc resDesc;
+        memset(&resDesc, 0, sizeof(cudaResourceDesc));
+        resDesc.resType = cudaResourceTypeLinear;
+        resDesc.res.linear.devPtr = tex_PBM_count_ptr;
+        resDesc.res.linear.desc.f = cudaChannelFormatKindUnsigned;
+        resDesc.res.linear.desc.x = 32; // bits per channel
+        resDesc.res.linear.sizeInBytes = size*sizeof(unsigned int);
+
+        cudaTextureDesc texDesc;
+        memset(&texDesc, 0, sizeof(cudaTextureDesc));
+        texDesc.readMode = cudaReadModeElementType;
+
+        CUDA_CALL(cudaCreateTextureObject(&tex_PBM_count, &resDesc, &texDesc, NULL));
+        CUDA_CALL(cudaMemcpyToSymbol(d_tex_PBM_count, &tex_PBM_count, sizeof(cudaTextureObject_t)));
+    }
 }
 #endif
 #ifdef _GL
@@ -699,9 +722,10 @@ void SpatialPartition::deviceDeallocateLocationMessages(LocationMessages *d_locM
 #endif
     CUDA_CALL(cudaFree(d_locMessage));
 }
-void SpatialPartition::deviceDeallocatePBM(unsigned int *d_PBM_t)
+void SpatialPartition::deviceDeallocatePBM(unsigned int *d_PBM_index_t, unsigned int *d_PBM_count_t)
 {
-    CUDA_CALL(cudaFree(d_PBM_t));
+    CUDA_CALL(cudaFree(d_PBM_index_t));
+    CUDA_CALL(cudaFree(d_PBM_count_t));
 }
 void SpatialPartition::deviceDeallocatePrimitives(unsigned int *d_keys, unsigned int *d_vals)
 {
@@ -735,8 +759,10 @@ void SpatialPartition::deviceDeallocateTextures()
 #endif
 #endif
 #if !(defined(GLOBAL_PBM) || defined(LDG_PBM))
-    cudaDestroyTextureObject(tex_PBM);
-    cudaFree(tex_PBM_ptr);
+    cudaDestroyTextureObject(tex_PBM_index);
+    cudaDestroyTextureObject(tex_PBM_count);
+    cudaFree(tex_PBM_index_ptr);
+    cudaFree(tex_PBM_count_ptr);
 #endif
 #ifdef _GL
     cudaGraphicsUnregisterResource(gl_gRes_count);
@@ -791,7 +817,7 @@ void SpatialPartition::launchAtomicHistogram()
     //Keys = bin_index
     //Vals = bin_sub_index
     //Histogram into
-    atomicHistogram<<<gridSize, blockSize>>>(d_keys, d_vals, d_PBM_counts, d_locationMessages);
+    atomicHistogram<<<gridSize, blockSize>>>(d_keys, d_vals, d_PBM_count, d_locationMessages);
     CUDA_CALL(cudaDeviceSynchronize());
 }
 void SpatialPartition::launchReorderLocationMessages()
@@ -801,7 +827,7 @@ void SpatialPartition::launchReorderLocationMessages()
     // Round up according to array size
     int gridSize = (locationMessageCount + blockSize - 1) / blockSize;
     //Copy messages from d_messages to d_messages_swap, in hash order
-    reorderLocationMessages<<<gridSize, blockSize>>>(d_keys, d_vals, d_PBM, d_locationMessages, d_locationMessages_swap);
+    reorderLocationMessages << <gridSize, blockSize >> >(d_keys, d_vals, d_PBM_index, d_locationMessages, d_locationMessages_swap);
     CUDA_CHECK();
     swap();
     //Wait for return
@@ -828,7 +854,7 @@ void SpatialPartition::launchReorderLocationMessages()
     // Round up according to array size
     int gridSize = (locationMessageCount + blockSize - 1) / blockSize;
     //Copy messages from d_messages to d_messages_swap, in hash order
-    reorderLocationMessages << <gridSize, blockSize, requiredSM_reorderLocationMessages(blockSize) >> >(d_keys, d_vals, d_PBM, d_locationMessages, d_locationMessages_swap);
+    reorderLocationMessages << <gridSize, blockSize, requiredSM_reorderLocationMessages(blockSize) >> >(d_keys, d_vals, d_PBM_index, d_PBM_count, d_locationMessages, d_locationMessages_swap);
     CUDA_CHECK();
     swap();
     //Wait for return
@@ -881,20 +907,22 @@ void SpatialPartition::buildPBM()
 #endif
 #ifdef ATOMIC_PBM
     //Reset PBM
-    CUDA_CALL(cudaMemset(d_PBM_counts, 0x00000000, (this->binCountMax + 1) * sizeof(unsigned int)));
+    CUDA_CALL(cudaMemset(d_PBM_count, 0x00000000, this->binCountMax * sizeof(unsigned int)));
     //Build histogram using atomics
     launchAtomicHistogram();
     //prefix sum PBM to convert counts to indices
 #ifndef THRUST
     // Run exclusive prefix min-scan
-    cub::DeviceScan::ExclusiveSum(d_CUB_temp_storage, d_CUB_temp_storage_bytes, d_PBM_counts, d_PBM, this->binCountMax + 1);
+    cub::DeviceScan::ExclusiveSum(d_CUB_temp_storage, d_CUB_temp_storage_bytes, d_PBM_count, d_PBM_index, this->binCountMax);
 #else
 #error Thrust prefix sum not implemented/tested
-    //If we do implement this, make sure we exclusive scan from d_PBM_counts into d_PBM, else use of d_PBM_counts will be incorrect
+    //If we do implement this, make sure we exclusive scan from d_PBM_count into d_PBM_index, else use of d_PBM_count will be incorrect
     thrust::device_ptr<int> ptr_count = thrust::device_pointer_cast(d_location_partition_matrix->end_or_count);
     thrust::device_ptr<int> ptr_index = thrust::device_pointer_cast(d_location_partition_matrix->start);
     thrust::exclusive_scan(thrust::cuda::par.on(stream), ptr_count, ptr_count + xmachine_message_location_grid_size, ptr_index); // scan
 #endif
+    //Reorder messages
+    launchReorderLocationMessages();
 #else
     //Fill primitive key/val arrays for sort
     launchHashLocationMessages();
@@ -934,10 +962,10 @@ void SpatialPartition::buildPBM()
     //CUDA_CALL(cudaMemset(d_PBM, 0xffffffff, PARTITION_GRID_BIN_COUNT * sizeof(int)));
     //Fill pbm end coords with known value 0x00000000 (this should mean if the mysterious bug does occur, the cell is just dropped, not large loop created)
     unsigned int binCount = this->binCountMax;
-    CUDA_CALL(cudaMemset(d_PBM, 0x00000000, (binCount + 1) * sizeof(unsigned int)));
-#endif //ifdef-else-ATOMIC_PBM
-    //Reorder messages
+    CUDA_CALL(cudaMemset(d_PBM_index, 0xffffffff, binCount * sizeof(unsigned int)));
+    //Reorder messages and create PBM index
     launchReorderLocationMessages();
+#endif
     //Clone data to textures ready for neighbourhood search
     fillTextures();
 #ifdef _DEBUG

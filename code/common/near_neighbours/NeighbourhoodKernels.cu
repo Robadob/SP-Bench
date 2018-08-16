@@ -1,4 +1,5 @@
 #include "NeighbourhoodKernels.cuh"
+#include <cuda_runtime.h>
 //getHash already clamps.
 //#define SP_NO_CLAMP_GRID //Clamp grid coords to within grid (if it's possible for model to go out of bounds)
 
@@ -75,7 +76,7 @@ __global__ void atomicHistogram(unsigned int* bin_index, unsigned int* bin_sub_i
 __global__ void reorderLocationMessages(
     unsigned int* bin_index, 
     unsigned int* bin_sub_index,
-    unsigned int *pbm,
+    unsigned int *pbm_index,
     LocationMessages *unordered_messages,
     LocationMessages *ordered_messages
     )
@@ -85,7 +86,7 @@ __global__ void reorderLocationMessages(
     if (index >= d_locationMessageCount) return;
 
     unsigned int i = bin_index[index];
-    unsigned int sorted_index = pbm[i] + bin_sub_index[index];
+    unsigned int sorted_index = pbm_index[i] + bin_sub_index[index];
 
     //Order messages into swap space
 #ifdef AOS_MESSAGES
@@ -121,7 +122,8 @@ __global__ void hashLocationMessages(unsigned int* keys, unsigned int* vals, Loc
 __global__ void reorderLocationMessages(
     unsigned int *keys,
     unsigned int *vals,
-    unsigned int *pbm,
+    unsigned int *pbm_index,
+    unsigned int *pbm_count,
     LocationMessages *unordered_messages,
     LocationMessages *ordered_messages
     )
@@ -129,7 +131,6 @@ __global__ void reorderLocationMessages(
     extern __shared__ int sm_data[];
 
     int index = (blockIdx.x * blockDim.x) + threadIdx.x;
-    int indexPlus1 = index + 1;
 
     //Load current key and copy it into shared
     unsigned int key;
@@ -146,33 +147,35 @@ __global__ void reorderLocationMessages(
     if (index >= d_locationMessageCount) return;
 
     //Load next key
-    unsigned int next_key;
+    unsigned int prev_key;
     //if thread is final thread
-    if (index == d_locationMessageCount - 1)
+    if (index == 0)
     {
-        next_key = d_binCount;
+        prev_key = UINT_MAX;//?
     }
-    //If thread is last in block, no next in SM, goto global
-    else if (threadIdx.x == blockDim.x - 1)
+    //If thread is first in block, no next in SM, goto global
+    else if (threadIdx.x == 0)
     {
-        next_key = keys[indexPlus1];
+        prev_key = keys[index - 1];
     }
     else
     {
-        next_key = sm_data[threadIdx.x + 1];
+        prev_key = sm_data[threadIdx.x - 1];
     }
-    //Boundary message, set all keys after ours until (inclusive) next_key to our index +1
-    if (next_key != key)
+    //Boundary message
+    if (prev_key != key)
     {
-        for (int k = next_key; k > key; k--)
-            pbm[k] = indexPlus1;
+        pbm_index[key] = index;
+        if (index > 0)
+        {
+            pbm_count[key - 1] = index;
+        }
+    }
+    if (index == d_locationMessageCount - 1)
+    {
+        pbm_count[key] = d_locationMessageCount;
     }
 #ifdef _DEBUG
-    if (next_key > d_binCount)
-    {
-		printf("ERROR: PBM generated an out of range next_key (%i > %i).\n", next_key, d_binCount);
-		assert(0);
-    }
     if (old_pos >= d_locationMessageCount)
     {
 		printf("ERROR: PBM generated an out of range old_pos (%i >= %i).\n", old_pos, d_locationMessageCount);
@@ -212,14 +215,14 @@ __global__ void assertPBMIntegrity()
 
     unsigned int prev = 0, me = 0, next = d_locationMessageCount;
     // (tex->local)x3, is faster than (tex->local)x1 (local->shared)x1 (shared->local)x2 right?
-    if (index <= d_binCount)
+    if (index < d_binCount)
     {
         if (index > 0)
-            prev = tex1Dfetch<unsigned int>(d_tex_PBM, index - 1);
+            prev = tex1Dfetch<unsigned int>(d_tex_PBM_index, index - 1);
 
-        me = tex1Dfetch<unsigned int>(d_tex_PBM, index);
-        if (index < d_binCount)
-            next = tex1Dfetch<unsigned int>(d_tex_PBM, index + 1);
+        me = tex1Dfetch<unsigned int>(d_tex_PBM_index, index);
+        if (index < d_binCount-1)
+            next = tex1Dfetch<unsigned int>(d_tex_PBM_index, index + 1);
     }
 
     //Assert Order
@@ -705,14 +708,17 @@ if (!sm_message->state.cont())
     int next_bin_last_hash = next_bin_first_hash + (next_bin_last.x - next_bin_first.x);//Strips are at most length 3
     //use the hash to calculate the start index (pbm stores location of 1st item)
 #if defined(GLOBAL_PBM)
-    sm_message->state.binIndex = d_pbm[next_bin_first_hash];
-    sm_message->state.binIndexMax = d_pbm[next_bin_last_hash + 1];
+    sm_message->state.binIndex = d_pbm_index[next_bin_first_hash];
+    sm_message->state.binIndexMax = d_pbm_count[next_bin_last_hash];
 #elif defined(LDG_PBM)
-    sm_message->state.binIndex = __ldg(&d_pbm[next_bin_first_hash]);
-    sm_message->state.binIndexMax = __ldg(&d_pbm[next_bin_last_hash + 1]);
+    sm_message->state.binIndex = __ldg(&d_pbm_index[next_bin_first_hash]);
+    sm_message->state.binIndexMax = __ldg(&d_pbm_count[next_bin_last_hash]);
 #else
-    sm_message->state.binIndex = tex1Dfetch<unsigned int>(d_tex_PBM, next_bin_first_hash);
-    sm_message->state.binIndexMax = tex1Dfetch<unsigned int>(d_tex_PBM, next_bin_last_hash + 1);
+    sm_message->state.binIndex = tex1Dfetch<unsigned int>(d_tex_PBM_index, next_bin_first_hash);
+    sm_message->state.binIndexMax = tex1Dfetch<unsigned int>(d_tex_PBM_count, next_bin_last_hash);
+#endif
+#ifdef ATOMIC_PBM
+    sm_message->state.binIndexMax += sm_message->state.binIndex;
 #endif
     if (sm_message->state.binIndex < sm_message->state.binIndexMax)//(bin_index_min != 0xffffffff)
     {
@@ -789,14 +795,17 @@ if (!sm_message->state.cont())
 #endif
     //use the hash to calculate the start index (pbm stores location of 1st item)
 #if defined(GLOBAL_PBM)
-    sm_message->state.binIndex = d_pbm[next_bin_first_hash];
-    sm_message->state.binIndexMax = d_pbm[next_bin_last_hash + 1];
+    sm_message->state.binIndex = d_pbm_index[next_bin_first_hash];
+    sm_message->state.binIndexMax = d_pbm_count[next_bin_last_hash];
 #elif defined(LDG_PBM)
-    sm_message->state.binIndex = __ldg(&d_pbm[next_bin_first_hash]);
-    sm_message->state.binIndexMax = __ldg(&d_pbm[next_bin_last_hash + 1]);
+    sm_message->state.binIndex = __ldg(&d_pbm_index[next_bin_first_hash]);
+    sm_message->state.binIndexMax =  __ldg(&d_pbm_count[next_bin_last_hash]);
 #else
-    sm_message->state.binIndex = tex1Dfetch<unsigned int>(d_tex_PBM, next_bin_first_hash);
-    sm_message->state.binIndexMax = tex1Dfetch<unsigned int>(d_tex_PBM, next_bin_last_hash + 1);
+    sm_message->state.binIndex = tex1Dfetch<unsigned int>(d_tex_PBM_index, next_bin_first_hash);
+    sm_message->state.binIndexMax = tex1Dfetch<unsigned int>(d_tex_PBM_count, next_bin_last_hash);
+#endif
+#ifdef ATOMIC_PBM
+    sm_message->state.binIndexMax += sm_message->state.binIndex;
 #endif
     if (sm_message->state.binIndex < sm_message->state.binIndexMax)//(bin_index_min != 0xffffffff)
     {
@@ -864,14 +873,17 @@ glm::ivec2 next_bin_first = sm_message->state.location + glm::ivec2(sm_message->
 #endif
     //use the hash to calculate the start index (pbm stores location of 1st item)
 #if defined(GLOBAL_PBM)
-    sm_message->state.binIndex = d_pbm[next_bin_first_hash];
-    sm_message->state.binIndexMax = d_pbm[next_bin_first_hash + 1];
+    sm_message->state.binIndex = d_pbm_index[next_bin_first_hash];
+    sm_message->state.binIndexMax = d_pbm_count[next_bin_first_hash];
 #elif defined(LDG_PBM)
-    sm_message->state.binIndex = __ldg(&d_pbm[next_bin_first_hash]);
-    sm_message->state.binIndexMax = __ldg(&d_pbm[next_bin_first_hash + 1]);
+    sm_message->state.binIndex = __ldg(&d_pbm_index[next_bin_first_hash]);
+    sm_message->state.binIndexMax = __ldg(&d_pbm_count[next_bin_first_hash]);
 #else
-    sm_message->state.binIndex = tex1Dfetch<unsigned int>(d_tex_PBM, next_bin_first_hash);
-    sm_message->state.binIndexMax = tex1Dfetch<unsigned int>(d_tex_PBM, next_bin_first_hash + 1);
+    sm_message->state.binIndex = tex1Dfetch<unsigned int>(d_tex_PBM_index, next_bin_first_hash);
+    sm_message->state.binIndexMax = tex1Dfetch<unsigned int>(d_tex_PBM_count, next_bin_first_hash);
+#endif
+#ifdef ATOMIC_PBM
+    sm_message->state.binIndexMax += sm_message->state.binIndex;
 #endif
 //#if !defined(MODULAR)
     if (sm_message->state.binIndex < sm_message->state.binIndexMax)//(bin_index_min != 0xffffffff)

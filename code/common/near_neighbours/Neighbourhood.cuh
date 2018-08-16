@@ -207,7 +207,8 @@ public:
     SpatialPartition(DIMENSIONS_VEC  environmentMin, DIMENSIONS_VEC environmentMax, unsigned int maxAgents, float interactionRad);
     ~SpatialPartition();
     //Getters
-    unsigned int *d_getPBM() { return d_PBM; }
+    unsigned int *d_getPBMIndex() { return d_PBM_index; }
+    unsigned int *d_getPBMCount() { return d_PBM_count; }
     LocationMessages *d_getLocationMessages() { return d_locationMessages; }
     LocationMessages *d_getLocationMessagesSwap() { return d_locationMessages_swap; }
     unsigned int getLocationCount() { return locationMessageCount; }
@@ -239,7 +240,7 @@ private:
 	void setBinCount();
     //Allocators
     void deviceAllocateLocationMessages(LocationMessages **d_locMessage, LocationMessages *hd_locMessage);
-    void deviceAllocatePBM(unsigned int **d_PBM_t);
+    void deviceAllocatePBM(unsigned int **d_PBM_index_t, unsigned int **d_PBM_count_t);
 	void deviceAllocatePrimitives(unsigned int **d_keys, unsigned int **d_vals);
 #ifndef THRUST
 	void deviceAllocateCUBTemp(void **d_CUB_temp, size_t &d_cub_temp_bytes);
@@ -263,7 +264,7 @@ private:
 #endif
     //Deallocators
     void deviceDeallocateLocationMessages(LocationMessages *d_locMessage, LocationMessages hd_locMessage);
-    void deviceDeallocatePBM(unsigned int *d_PBM_t);
+    void deviceDeallocatePBM(unsigned int *d_PBM_index_t, unsigned int *d_PBM_count_t);
     void deviceDeallocatePrimitives(unsigned int *d_keys, unsigned int *d_vals);
 	void deviceDeallocateTextures();
 #ifndef THRUST
@@ -288,15 +289,14 @@ private:
     void launchHashLocationMessages();
 #endif
     //Device pointers
-    unsigned int *d_PBM; //Each int points to the first message index of the relevant bin index
+    //Under atomic count is the count
+    //Under non atomic, count is the PBM shifted along one
+    unsigned int *d_PBM_index, *d_PBM_count; //Each index points to the first message index of the relevant bin index
     LocationMessages *d_locationMessages, *d_locationMessages_swap;
     LocationMessages hd_locationMessages, hd_locationMessages_swap;
     //Device primitive pointers (used when building PBM)
     unsigned int *d_keys;//Atomic PBM uses this as bin index
     unsigned int *d_vals;//Atomic PBM uses this as bin sub-index
-#ifdef ATOMIC_PBM
-    unsigned int *d_PBM_counts;
-#endif
 #ifndef THRUST
 #ifndef ATOMIC_PBM
     unsigned int *d_keys_swap;
@@ -320,8 +320,10 @@ private:
     float* tex_loc_ptr[DIMENSIONS];
 #endif
 #if !(defined(GLOBAL_PBM) || defined(LDG_PBM))
-    cudaTextureObject_t tex_PBM;
-    unsigned int* tex_PBM_ptr;
+    cudaTextureObject_t tex_PBM_index;
+    cudaTextureObject_t tex_PBM_count;
+    unsigned int* tex_PBM_index_ptr;
+    unsigned int* tex_PBM_count_ptr;
 #endif
     //GL Textures
 #ifdef _GL

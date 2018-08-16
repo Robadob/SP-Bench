@@ -38,9 +38,11 @@ __device__ __constant__ cudaTextureObject_t d_tex_location[DIMENSIONS];
 #endif
 
 #if defined(GLOBAL_PBM) || defined(LDG_PBM)
-__device__ __constant__  unsigned int *d_pbm;
+__device__ __constant__  unsigned int *d_pbm_index;
+__device__ __constant__  unsigned int *d_pbm_count;
 #else
-__device__ __constant__ cudaTextureObject_t d_tex_PBM;
+__device__ __constant__ cudaTextureObject_t d_tex_PBM_index;
+__device__ __constant__ cudaTextureObject_t d_tex_PBM_count;
 #endif
 //    __constant__ int d_tex_pbm_offset;
 

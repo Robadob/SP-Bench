@@ -549,8 +549,8 @@ step_circles_model2(LocationMessages *locationMessagesIn, LocationMessages *loca
         unsigned int binIndex = __ldg(&d_pbm[binHash]);
         unsigned int binIndexMax = __ldg(&d_pbm[binHash + 1]);
 #else
-        unsigned int binIndex = tex1Dfetch<unsigned int>(d_tex_PBM, binHash);
-        unsigned int binIndexMax = tex1Dfetch<unsigned int>(d_tex_PBM, binHash + 1);
+        unsigned int binIndex = tex1Dfetch<unsigned int>(d_tex_PBM_index, binHash);
+        unsigned int binIndexMax = binIndex+tex1Dfetch<unsigned int>(d_tex_PBM_count, binHash);
 #endif
         /**
          * Start Same Block

@@ -449,7 +449,7 @@ int main(int argc, char * argv[])
         sprintf(filename, "steps-%s.csv", MOD_NAME_SHORT);
         if (!args.pipe)
             printf("Exporting steps to '%s'...", filename);
-        exportSteps(argc, argv, stepsAll, nhAll, args.model->iterations, filename);
+        exportSteps(argc, argv, stepsAll, nhAll, (unsigned int)args.model->iterations, filename);
         if (!args.pipe)
             printf("...Completed!\n");
         free(stepsAll);stepsAll=nullptr;

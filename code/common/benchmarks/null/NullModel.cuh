@@ -43,7 +43,7 @@ NullModel::NullModel(
     const float density
     )
     : CoreModel(agents)
-    , spatialPartition(std::make_shared<SpatialPartition>(DIMENSIONS_VEC(0.0f), DIMENSIONS_VEC(toWidth(agents, density)), agentMax, 1.0f))
+    , spatialPartition(std::make_shared<SpatialPartition>(DIMENSIONS_VEC(0.0f), DIMENSIONS_VEC((float)toWidth(agents, density)), agentMax, 1.0f))
     , d_result(nullptr)
     , h_result(nullptr)
     , width(toWidth(agents, density))
@@ -68,7 +68,7 @@ NullModel::NullModel(
     , spatialPartition(std::make_shared<SpatialPartition>(DIMENSIONS_VEC(0.0f), DIMENSIONS_VEC(envWidth), agentMax, interactionRad))
     , d_result(nullptr)
     , h_result(nullptr)
-    , width(envWidth)//Unsigned or float?
+    , width((unsigned int)envWidth)//Unsigned or float?
     , density(pow(envWidth, DIMENSIONS)/agentMax)
     , interactionRad(interactionRad)
 {

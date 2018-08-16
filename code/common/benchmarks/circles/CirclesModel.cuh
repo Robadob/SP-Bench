@@ -48,7 +48,7 @@ CirclesModel::CirclesModel(
     const float forceModifier
     )
     : CoreModel(agents)
-    , spatialPartition(std::make_shared<SpatialPartition>(DIMENSIONS_VEC(0.0f), DIMENSIONS_VEC(toWidth(agents, density)), agentMax, 1.0f))
+    , spatialPartition(std::make_shared<SpatialPartition>(DIMENSIONS_VEC(0.0f), DIMENSIONS_VEC((float)toWidth(agents, density)), agentMax, 1.0f))
     , width(toWidth(agents, density))
     , density(density)
     , interactionRad(1.0f)
