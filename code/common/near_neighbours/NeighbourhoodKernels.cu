@@ -873,7 +873,7 @@ glm::ivec2 next_bin_first = sm_message->state.location + glm::ivec2(sm_message->
     sm_message->state.binIndex = tex1Dfetch<unsigned int>(d_tex_PBM, next_bin_first_hash);
     sm_message->state.binIndexMax = tex1Dfetch<unsigned int>(d_tex_PBM, next_bin_first_hash + 1);
 #endif
-#if !defined(MODULAR)
+//#if !defined(MODULAR)
     if (sm_message->state.binIndex < sm_message->state.binIndexMax)//(bin_index_min != 0xffffffff)
     {
 #ifdef STRIDED_MESSAGES
@@ -884,7 +884,7 @@ glm::ivec2 next_bin_first = sm_message->state.location + glm::ivec2(sm_message->
 #endif
         return true;//Bin has items!
     }
-#endif
+//#endif
 #endif
 }
 #if defined(MODULAR) || defined(MODULAR_STRIPS)
