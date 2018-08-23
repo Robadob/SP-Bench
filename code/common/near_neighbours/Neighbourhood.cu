@@ -497,7 +497,7 @@ void SpatialPartition::deviceAllocateCUBTemp(void **d_CUB_temp, size_t &d_cub_te
     *d_CUB_temp = NULL;
 #ifdef ATOMIC_PBM
     cub::DeviceScan::ExclusiveSum(*d_CUB_temp, d_cub_temp_bytes, d_PBM_count, d_PBM_index, binCountMax);
-#else ATOMIC_PBM
+#else
     cub::DeviceRadixSort::SortPairs(*d_CUB_temp, d_cub_temp_bytes, d_keys, d_keys_swap, d_vals, d_vals_swap, maxAgents);
 #endif
     // Allocate temporary storage
