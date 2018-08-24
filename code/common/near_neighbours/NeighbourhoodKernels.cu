@@ -995,7 +995,7 @@ __device__ LocationMessage *LocationMessages::loadNextMessage(LocationMessage *s
 __device__ void LocationMessages::firstBin(DIMENSIONS_VEC location, LocationMessage *sm_message)
 #else
 __device__ void LocationMessages::getFirstNeighbour(DIMENSIONS_VEC location, LocationMessage *sm_message)
-#endif)
+#endif
 {
 #else
 #if defined(MODULAR) || defined(MODULAR_STRIPS)
