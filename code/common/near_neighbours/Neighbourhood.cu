@@ -793,7 +793,7 @@ void SpatialPartition::setBinCount()
     this->binCountMax = (unsigned int)pow(this->binCount, DIMENSIONS);
 #endif
     this->binCount = (unsigned int)pow(this->binCount, DIMENSIONS);
-
+    this->binCountBits = (unsigned long)ceil(log(this->binCountMax) / log(2));
 //#if defined(_DEBUG) &&(defined(MORTON) || defined(HILBERT) ||defined(PEANO))
 //    printf("Space-filling grid exponent set to: %u\n", this->gridExponent);
 //    printf("Bin Count Max %u\n", this->binCountMax);
@@ -936,7 +936,7 @@ void SpatialPartition::buildPBM()
     //// Allocate temporary storage
     //cudaMalloc(&d_temp_storage, temp_storage_bytes);
     // Run sorting operation
-    cub::DeviceRadixSort::SortPairs(d_CUB_temp_storage, d_CUB_temp_storage_bytes, d_keys, d_keys_swap, d_vals, d_vals_swap, locationMessageCount);
+    cub::DeviceRadixSort::SortPairs(d_CUB_temp_storage, d_CUB_temp_storage_bytes, d_keys, d_keys_swap, d_vals, d_vals_swap, locationMessageCount, 0, this->binCountBits);
     //Swap arrays
     unsigned int *temp;
     temp = d_keys;

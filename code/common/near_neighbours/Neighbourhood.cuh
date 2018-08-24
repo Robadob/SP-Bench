@@ -276,6 +276,7 @@ private:
     unsigned int getBinCount() const;//(ceil((X_MAX-X_MIN)/SEARCH_RADIUS)*ceil((Y_MAX-Y_MIN)/SEARCH_RADIUS)*ceil((Z_MAX-Z_MIN)/SEARCH_RADIUS))
 	unsigned int binCount;
 	unsigned int binCountMax;
+    unsigned int binCountBits;
 #if defined(MORTON) || defined(HILBERT) || defined(PEANO) || defined(MORTON_COMPUTE)
     unsigned int gridExponent;//The exponent of the grid, when using morton/hilbert encoding, which requires 2^n grid dims (3^n for Peano)
 #endif
