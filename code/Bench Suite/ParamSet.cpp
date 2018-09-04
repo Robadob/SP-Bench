@@ -469,6 +469,13 @@ void ParamSet::logCollatedHeader(FILE *out, const CirclesParams &modelArgs)
         fputs(",", out);
         fputs("texture", out);
         fputs(",", out);
+        //PBM Time
+        fputs("PBMsort", out);
+        fputs(",", out);
+        fputs("PBMreorder", out);
+        fputs(",", out);
+        fputs("PBMtexcopy", out);
+        fputs(",", out);
         //Total
         fputs("time", out);
         fputs(",", out);
@@ -559,6 +566,13 @@ void ParamSet::logCollatedHeader(FILE *out, const NullParams &modelArgs)
         fputs(",", out);
         fputs("texture", out);
         fputs(",", out);
+        //PBM Time
+        fputs("PBMsort", out);
+        fputs(",", out);
+        fputs("PBMreorder", out);
+        fputs(",", out);
+        fputs("PBMtexcopy", out);
+        fputs(",", out);
         //Total
         fputs("time", out);
         fputs(",", out);
@@ -641,6 +655,13 @@ void ParamSet::logCollatedHeader(FILE *out, const DensityParams &modelArgs)
         fputs("kernel", out);
         fputs(",", out);
         fputs("texture", out);
+        fputs(",", out);
+        //PBM Time
+        fputs("PBMsort", out);
+        fputs(",", out);
+        fputs("PBMreorder", out);
+        fputs(",", out);
+        fputs("PBMtexcopy", out);
         fputs(",", out);
         //Total
         fputs("time", out);

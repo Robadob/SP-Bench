@@ -894,10 +894,16 @@ void SpatialPartition::swap()
     CUDA_CALL(cudaMemcpyToSymbol(d_PBM_isBuilt, &PBM_isBuilt, sizeof(unsigned int)));
 #endif
 }
-void SpatialPartition::buildPBM()
+PBM_Time SpatialPartition::buildPBM()
 {
+    cudaEvent_t start_overall, start_reorder, start_texcopy, stop_overall;
+    cudaEventCreate(&start_overall);
+    cudaEventCreate(&start_reorder);
+    cudaEventCreate(&start_texcopy);
+    cudaEventCreate(&stop_overall);
+    PBM_Time p = {0,0};
     //If no messages, or instances, don't bother
-    if (locationMessageCount<1) return;
+    if (locationMessageCount<1) return p;
 #ifdef _DEBUG
     static bool __first = true;
     if (!__first)
@@ -905,6 +911,9 @@ void SpatialPartition::buildPBM()
     if (__first)
         __first = false;
 #endif
+
+    //Start overall timer
+    cudaEventRecord(start_overall);
 #ifdef ATOMIC_PBM
     //Reset PBM
     CUDA_CALL(cudaMemset(d_PBM_count, 0x00000000, this->binCountMax * sizeof(unsigned int)));
@@ -921,6 +930,8 @@ void SpatialPartition::buildPBM()
     thrust::device_ptr<int> ptr_index = thrust::device_pointer_cast(d_location_partition_matrix->start);
     thrust::exclusive_scan(thrust::cuda::par.on(stream), ptr_count, ptr_count + xmachine_message_location_grid_size, ptr_index); // scan
 #endif
+    //Start Reorder timer
+    cudaEventRecord(start_reorder);
     //Reorder messages
     launchReorderLocationMessages();
 #else
@@ -963,16 +974,34 @@ void SpatialPartition::buildPBM()
     //Fill pbm end coords with known value 0x00000000 (this should mean if the mysterious bug does occur, the cell is just dropped, not large loop created)
     unsigned int binCount = this->binCountMax;
     CUDA_CALL(cudaMemset(d_PBM_index, 0xffffffff, binCount * sizeof(unsigned int)));
+    //Start Reorder timer
+    cudaEventRecord(start_reorder);    
     //Reorder messages and create PBM index
     launchReorderLocationMessages();
 #endif
+    //Start Tex Copy
+    cudaEventRecord(start_texcopy);
     //Clone data to textures ready for neighbourhood search
     fillTextures();
+    //End overall timer
+    cudaEventRecord(stop_overall);
 #ifdef _DEBUG
     launchAssertPBMIntegerity();
     PBM_isBuilt = 1;
     CUDA_CALL(cudaMemcpyToSymbol(d_PBM_isBuilt, &PBM_isBuilt, sizeof(unsigned int)));
 #endif
+
+    //Calculate return struct
+    cudaEventSynchronize(stop_overall);
+    cudaEventElapsedTime(&p.sort, start_overall, start_reorder);
+    cudaEventElapsedTime(&p.reorder, start_reorder, start_texcopy);
+    cudaEventElapsedTime(&p.texcopy, start_texcopy, stop_overall);
+    //Cleanup
+    cudaEventDestroy(start_overall);
+    cudaEventDestroy(start_reorder);
+    cudaEventDestroy(start_texcopy);
+    cudaEventDestroy(stop_overall);
+    return p;
 }
 
 int SpatialPartition::requiredSM(int blockSize)

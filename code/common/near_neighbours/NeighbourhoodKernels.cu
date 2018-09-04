@@ -119,6 +119,7 @@ __global__ void hashLocationMessages(unsigned int* keys, unsigned int* vals, Loc
     keys[index] = hash;
     vals[index] = index;
 }
+
 __global__ void reorderLocationMessages(
     unsigned int *keys,
     unsigned int *vals,
@@ -178,8 +179,8 @@ __global__ void reorderLocationMessages(
 #ifdef _DEBUG
     if (old_pos >= d_locationMessageCount)
     {
-		printf("ERROR: PBM generated an out of range old_pos (%i >= %i).\n", old_pos, d_locationMessageCount);
-		assert(0);
+        printf("ERROR: PBM generated an out of range old_pos (%i >= %i).\n", old_pos, d_locationMessageCount);
+        assert(0);
     }
 #endif
 
@@ -226,13 +227,13 @@ __global__ void assertPBMIntegrity()
     }
 
     //Assert Order
-    if (prev>me || me>next)
+    if (((prev>me && prev != -1) || (me>next && next != -1)) &&me!=-1)
     {
         printf("ERROR: PBM contains values which are out of order.\nid:%i, prev:%i, me:%i, next:%i, count:%i\n", index, prev, me, next, d_binCount);
         assert(0);
     }
     //Assert Range
-    if (me > d_locationMessageCount)
+    if (me > d_locationMessageCount && me != -1)
     {
         printf("ERROR: PBM contains out of range values.\nid:%i, prev:%i, me:%i, next:%i, count:%i\n", index, prev, me, next, d_binCount);
         assert(0);

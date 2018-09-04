@@ -13,17 +13,31 @@ struct Time_Init
 	float pbm;
 	float freeCurand;
 };
+struct PBM_Time
+{
+    float sort;
+    float reorder;
+    float texcopy;
+};
 struct Time_Step
 {
 	float overall;
 	float kernel;
 	float texture;
+    PBM_Time pbm;
+};
+struct PBM_Time_dbl
+{
+    double sort;
+    double reorder;
+    double texcopy;
 };
 struct Time_Step_dbl
 {
 	double overall;
 	double kernel;
-	double texture;
+    double texture;
+    PBM_Time_dbl pbm;
 };
 struct NeighbourhoodStats
 {

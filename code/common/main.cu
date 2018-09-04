@@ -79,7 +79,7 @@ ArgData parseArgs(int argc, char * argv[])
         }
 #endif
 #ifdef NULL_MODEL
-        ////-null <uint> <float> <float> <ulong>
+        ////-null <uint> <float> <ulong>
         ////Enables null model
         ////Sets the agent count, density, interaction rad and iterations to be executed
         else if (arg.compare("-null") == 0)
@@ -301,6 +301,9 @@ int main(int argc, char * argv[])
             average.overall += iterTime.overall / args.model->iterations;
             average.kernel += iterTime.kernel / args.model->iterations;
             average.texture += iterTime.texture / args.model->iterations;
+            average.pbm.sort += iterTime.pbm.sort / args.model->iterations;
+            average.pbm.reorder += iterTime.pbm.reorder / args.model->iterations;
+            average.pbm.texcopy += iterTime.pbm.texcopy / args.model->iterations;
         }
 #ifdef _GL
 		//Pass count to visualisation
@@ -340,7 +343,11 @@ int main(int argc, char * argv[])
 		printf("\nModel complete - Average Times\n");
 		printf("Main kernel - %.3fs\n", average.kernel / 1000);
 		printf("Build PBM   - %.3fs\n", average.texture / 1000);
-		printf("Combined    - %.3fs\n", average.overall / 1000);
+        printf("Combined    - %.3fs\n", average.overall / 1000);
+        printf("\nPBM Breakdown\n");
+        printf("PBM Sort    - %.3fs\n", average.pbm.sort / 1000);
+        printf("PBM Reorder - %.3fs\n", average.pbm.reorder / 1000);
+        printf("PBM Texcopy - %.3fs\n", average.pbm.texcopy / 1000);
         printf("\n");
         printf("Neighbourhood stats\n");
         printf("First - Min:%d, Max:%d, Average:%f\n", nhFirst.min, nhFirst.max, nhFirst.average);

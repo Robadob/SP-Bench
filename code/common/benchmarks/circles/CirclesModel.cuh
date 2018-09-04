@@ -101,7 +101,7 @@ const Time_Step CirclesModel::step()
     cudaEventRecord(start_texture);
 
     //Rebuild PBM
-    spatialPartition->buildPBM();
+    PBM_Time p = spatialPartition->buildPBM();
 
     //End overall timer
     cudaEventRecord(stop_overall);
@@ -115,6 +115,7 @@ const Time_Step CirclesModel::step()
     cudaEventElapsedTime(&rtn.overall, start_overall, stop_overall);
     cudaEventElapsedTime(&rtn.kernel, start_overall, start_texture);
     cudaEventElapsedTime(&rtn.texture, start_texture, stop_overall);
+    rtn.pbm = p;
 
     return rtn;
 }

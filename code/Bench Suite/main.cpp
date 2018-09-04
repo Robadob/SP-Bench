@@ -261,6 +261,13 @@ void logHeader(FILE *out, const CirclesParams &modelArgs)
 	fputs(",", out);
 	fputs("texture", out);
 	fputs(",", out);
+    //PBM Time
+    fputs("PBMsort", out);
+    fputs(",", out);
+    fputs("PBMreorder", out);
+    fputs(",", out);
+    fputs("PBMtexcopy", out);
+    fputs(",", out);
 	//Total
 	fputs("time", out);
     fputs(",", out);
@@ -319,7 +326,13 @@ void logResult(FILE *out, const CirclesParams* modelArgs, const unsigned int age
 		stepRes->overall / 1000,
 		stepRes->kernel / 1000,
 		stepRes->texture / 1000
-		);
+        );
+    //PBM Time
+    fprintf(out, "%f,%f,%f,",
+        stepRes->pbm.sort / 1000,
+        stepRes->pbm.reorder / 1000,
+        stepRes->pbm.texcopy / 1000
+        );
 	//Total
 	fprintf(out, "%f,",
 		totalTime /1000
@@ -375,6 +388,13 @@ void logHeader(FILE *out, const NullParams &modelArgs)
     fputs(",", out);
     fputs("texture", out);
     fputs(",", out);
+    //PBM Time
+    fputs("PBMsort", out);
+    fputs(",", out);
+    fputs("PBMreorder", out);
+    fputs(",", out);
+    fputs("PBMtexcopy", out);
+    fputs(",", out);
     //Total
     fputs("time", out);
     fputs(",", out);
@@ -423,6 +443,12 @@ void logResult(FILE *out, const NullParams* modelArgs, const unsigned int agentC
         stepRes->overall / 1000,
         stepRes->kernel / 1000,
         stepRes->texture / 1000
+        );
+    //PBM Time
+    fprintf(out, "%f,%f,%f,",
+        stepRes->pbm.sort / 1000,
+        stepRes->pbm.reorder / 1000,
+        stepRes->pbm.texcopy / 1000
         );
     //Total
     fprintf(out, "%f,",
@@ -487,6 +513,13 @@ void logHeader(FILE *out, const DensityParams &modelArgs)
     fputs(",", out);
     fputs("texture", out);
     fputs(",", out);
+    //PBM Time
+    fputs("PBMsort", out);
+    fputs(",", out);
+    fputs("PBMreorder", out);
+    fputs(",", out);
+    fputs("PBMtexcopy", out);
+    fputs(",", out);
     //Total
     fputs("time", out);
     fputs(",", out);
@@ -539,6 +572,12 @@ void logResult(FILE *out, const DensityParams* modelArgs, const unsigned int age
         stepRes->overall / 1000,
         stepRes->kernel / 1000,
         stepRes->texture / 1000
+        );
+    //PBM Time
+    fprintf(out, "%f,%f,%f,",
+        stepRes->pbm.sort / 1000,
+        stepRes->pbm.reorder / 1000,
+        stepRes->pbm.texcopy / 1000
         );
     //Total
     fprintf(out, "%f,",
@@ -620,6 +659,12 @@ void log(FILE *out, const Time_Init *initRes, const Time_Step_dbl *stepRes, cons
         stepRes->overall / 1000,
         stepRes->kernel / 1000,
         stepRes->texture / 1000
+        );
+    //PBM Time
+    fprintf(out, "%f,%f,%f,",
+        stepRes->pbm.sort / 1000,
+        stepRes->pbm.reorder / 1000,
+        stepRes->pbm.texcopy / 1000
         );
     //Total
     fprintf(out, "%f,",

@@ -215,7 +215,7 @@ public:
     //Setters
     void setLocationCount(unsigned int);
     //Util
-    void buildPBM();
+    PBM_Time buildPBM();
     void swap();
     DIMENSIONS_IVEC getGridDim() const { return gridDim; }
     DIMENSIONS_VEC getEnvironmentMin() const { return environmentMin; }
