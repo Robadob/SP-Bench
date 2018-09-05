@@ -423,8 +423,8 @@ void ParamSet::logCollatedHeader(FILE *out, const CirclesParams &modelArgs)
 {
     //Row 1
     for (const auto &bin : BINARIES)
-    {//9 columns per model
-        fprintf(out, "%s,,,,,,,,,", bin.name);
+    {//12 columns per model
+        fprintf(out, "%s,,,,,,,,,,,,", bin.name);
     }
     fputs(",", out);//Agent count
     fputs(",,,,,,,,", out);//Neighbourhood stats
@@ -437,6 +437,8 @@ void ParamSet::logCollatedHeader(FILE *out, const CirclesParams &modelArgs)
         fputs("init (s)", out);
         fputs(",,,,,", out);
         fputs("step avg (s)", out);
+        fputs(",,,", out);
+        fputs("PBM (s)", out);
         fputs(",,,", out);
         fputs("overall (s)", out);
         fputs(",", out);
@@ -522,8 +524,8 @@ void ParamSet::logCollatedHeader(FILE *out, const NullParams &modelArgs)
 {
     //Row 1
     for (const auto &bin : BINARIES)
-    {//9 columns per model
-        fprintf(out, "%s,,,,,,,,,", bin.name);
+    {//12 columns per model
+        fprintf(out, "%s,,,,,,,,,,,,", bin.name);
     }
     fputs(",", out);//Agent count
     fputs(",,,,,,,,", out);//Neighbourhood stats
@@ -535,6 +537,8 @@ void ParamSet::logCollatedHeader(FILE *out, const NullParams &modelArgs)
         fputs("init (s)", out);
         fputs(",,,,,", out);
         fputs("step avg (s)", out);
+        fputs(",,,", out);
+        fputs("PBM (s)", out);
         fputs(",,,", out);
         fputs("overall (s)", out);
         fputs(",", out);
@@ -612,8 +616,8 @@ void ParamSet::logCollatedHeader(FILE *out, const DensityParams &modelArgs)
 {
     //Row 1
     for (const auto &bin : BINARIES)
-    {//9 columns per model
-        fprintf(out, "%s,,,,,,,,,", bin.name);
+    {//12 columns per model
+        fprintf(out, "%s,,,,,,,,,,,,", bin.name);
     }
     fputs(",", out);//Agent count
     fputs(",,,,,,,,", out);//Neighbourhood stats
@@ -625,6 +629,8 @@ void ParamSet::logCollatedHeader(FILE *out, const DensityParams &modelArgs)
         fputs("init (s)", out);
         fputs(",,,,,", out);
         fputs("step avg (s)", out);
+        fputs(",,,", out);
+        fputs("PBM (s)", out);
         fputs(",,,", out);
         fputs("overall (s)", out);
         fputs(",", out);
