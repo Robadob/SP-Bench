@@ -122,7 +122,9 @@ std::shared_ptr<ModelParams> parseConfig(rapidjson::GenericValue<Encoding, Alloc
 				fprintf(stderr, "Warning: Property 'agents' missing from null config, default value '%u' used.\n", a->agents);
 			//Density
 			if (valueType.HasMember("density") && valueType["density"].IsFloat())
-				a->density = valueType["density"].GetFloat();
+                a->density = valueType["density"].GetFloat();
+            else if (valueType.HasMember("density") && valueType["density"].IsInt())
+                a->density = (float)valueType["density"].GetInt();
 			else if(!_default)
 				fprintf(stderr, "Warning: Property 'density' missing from null config, default value '%g' used.\n", a->density);
 		}
@@ -141,13 +143,17 @@ std::shared_ptr<ModelParams> parseConfig(rapidjson::GenericValue<Encoding, Alloc
 			else if(!_default)
 				fprintf(stderr, "Warning: Property 'agents' missing from circles config, default value '%u' used.\n", a->agents);
 			//Density
-			if (valueType.HasMember("density") && valueType["density"].IsFloat())
-				a->density = valueType["density"].GetFloat();
+            if (valueType.HasMember("density") && valueType["density"].IsFloat())
+                a->density = valueType["density"].GetFloat();
+            else if (valueType.HasMember("density") && valueType["density"].IsInt())
+                a->density = (float)valueType["density"].GetInt();
 			else if (!_default)
 				fprintf(stderr, "Warning: Property 'density' missing from circles config, default value '%g' used.\n", a->density);
 			//ForceModifier
 			if (valueType.HasMember("forceModifier") && valueType["forceModifier"].IsFloat())
-				a->forceModifier = valueType["forceModifier"].GetFloat();
+                a->forceModifier = valueType["forceModifier"].GetFloat();
+            else if (valueType.HasMember("forceModifier") && valueType["forceModifier"].IsInt())
+                a->forceModifier = (float)valueType["forceModifier"].GetInt();
 			else if (!_default)
 				fprintf(stderr, "Warning: Property 'forceModifier' missing from circles config, default value '%g' used.\n", a->forceModifier);
 		}
