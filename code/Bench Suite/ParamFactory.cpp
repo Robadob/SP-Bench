@@ -94,7 +94,7 @@ ParamSet parseConfigSet(rapidjson::GenericValue<Encoding, Allocator> &valueType)
 	//Read end2
 	if (rtn.end1&&valueType.HasMember("end2"))
 	{
-		rtn.end2 = parseConfig(valueType["end2"], rtn.end1);
+		rtn.end2 = parseConfig(valueType["end2"], rtn.start);
 		rtn.steps2 = parseSteps(valueType["end2"]);
 	}
 	return rtn;
