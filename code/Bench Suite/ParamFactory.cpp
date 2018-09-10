@@ -52,7 +52,7 @@ std::vector<ParamSet> ParamFactory::read(const char* inputFile)
 		}
 		if (rtn.size())
 		{
-			printf("Parsed %llu/%u config sets in file '%s'\n", rtn.size(), d.Size(), inputFile);
+			printf("Parsed %lu/%u config sets in file '%s'\n", rtn.size(), d.Size(), inputFile);
 		}
 		else
 			printf("Unable to parse config sets in file '%s'.\n", inputFile);
