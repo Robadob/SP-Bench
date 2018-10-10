@@ -27,6 +27,15 @@
 #ifdef _DEBUG
 #include <glm/gtc/epsilon.hpp>
 #endif
+SpatialPartition::SpatialPartition(unsigned int binCount, unsigned int agentCount)
+#if defined(_2D)
+    : SpatialPartition(DIMENSIONS_VEC(-0.5, 0.0), DIMENSIONS_VEC(binCount - 0.5, 0.0), agentCount, 1.0f)
+#elif defined(_3D)
+    : SpatialPartition(DIMENSIONS_VEC(-0.5, 0.0, 0.0), DIMENSIONS_VEC(binCount - 0.5, 0.0, 0.0), agentCount, 1.0f)
+#endif
+{
+    
+}
 SpatialPartition::SpatialPartition(DIMENSIONS_VEC  environmentMin, DIMENSIONS_VEC environmentMax, unsigned int maxAgents, float interactionRad)
     : maxAgents(maxAgents)
     , interactionRad(interactionRad)

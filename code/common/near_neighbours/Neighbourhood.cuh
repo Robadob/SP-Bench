@@ -204,6 +204,7 @@ extern __device__ DIMENSIONS_IVEC getGridPosition(DIMENSIONS_VEC worldPos);
 class SpatialPartition
 {
 public:
+    SpatialPartition(unsigned int binCount, unsigned int maxAgents);
     SpatialPartition(DIMENSIONS_VEC  environmentMin, DIMENSIONS_VEC environmentMax, unsigned int maxAgents, float interactionRad);
     ~SpatialPartition();
     //Getters
@@ -216,7 +217,7 @@ public:
     void setLocationCount(unsigned int);
     //Util
     PBM_Time buildPBM();
-    void swap();
+    virtual void swap();
     DIMENSIONS_IVEC getGridDim() const { return gridDim; }
     DIMENSIONS_VEC getEnvironmentMin() const { return environmentMin; }
     DIMENSIONS_VEC getEnvironmentMax() const { return environmentMax; }
@@ -283,7 +284,7 @@ private:
 	const unsigned int maxAgents;
     float interactionRad;//Radius of agent interaction
     //Kernel launchers
-    void launchReorderLocationMessages();
+    virtual void launchReorderLocationMessages();
 #ifdef ATOMIC_PBM
     void launchAtomicHistogram();
 #else

@@ -45,6 +45,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Near Neighbours", "Near Nei
 		common\near_neighbours\Neighbourhood.cu = common\near_neighbours\Neighbourhood.cu
 		common\near_neighbours\Neighbourhood.cuh = common\near_neighbours\Neighbourhood.cuh
 		common\near_neighbours\NeighbourhoodConstants.cuh = common\near_neighbours\NeighbourhoodConstants.cuh
+		common\near_neighbours\NeighbourhoodExt.cu = common\near_neighbours\NeighbourhoodExt.cu
+		common\near_neighbours\NeighbourhoodExt.cuh = common\near_neighbours\NeighbourhoodExt.cuh
+		common\near_neighbours\NeighbourhoodExtKernels.cu = common\near_neighbours\NeighbourhoodExtKernels.cu
+		common\near_neighbours\NeighbourhoodExtKernels.cuh = common\near_neighbours\NeighbourhoodExtKernels.cuh
 		common\near_neighbours\NeighbourhoodKernels.cu = common\near_neighbours\NeighbourhoodKernels.cu
 		common\near_neighbours\NeighbourhoodKernels.cuh = common\near_neighbours\NeighbourhoodKernels.cuh
 	EndProjectSection
@@ -123,6 +127,14 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Mod-Modular", "Mod - Modular\Mod - Modular.vcxproj", "{A20B963C-CB09-44B0-9D96-40860343028C}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Mod-ModularStrips", "Mod - ModularStrips3D\Mod - ModularStrips3D.vcxproj", "{AC2C50D9-CE89-4763-888E-BF1B389DE6D8}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Network", "Network", "{9B22CEC8-0C9C-45B2-8C8B-E67DEA65BE6A}"
+	ProjectSection(SolutionItems) = preProject
+		common\benchmarks\network\Network.cuh = common\benchmarks\network\Network.cuh
+		common\benchmarks\network\NetworkKernels.cu = common\benchmarks\network\NetworkKernels.cu
+		common\benchmarks\network\NetworkKernels.cuh = common\benchmarks\network\NetworkKernels.cuh
+		common\benchmarks\network\NetworkModel.cuh = common\benchmarks\network\NetworkModel.cuh
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -293,5 +305,6 @@ Global
 		{7DD650D1-B115-4F73-916F-2F5EEE0F5129} = {E69A3BDD-4328-4D94-A7B4-6C86109F0A7F}
 		{F8A8D9A7-ACF8-444D-8D13-EC9526111673} = {11C5BA7E-CF8F-4350-AC48-B7206C3E5C48}
 		{96F36AC3-3A10-4BE3-83C6-140FA8A4801F} = {9494D73E-A497-4F3E-A9D3-608D6176B493}
+		{9B22CEC8-0C9C-45B2-8C8B-E67DEA65BE6A} = {9494D73E-A497-4F3E-A9D3-608D6176B493}
 	EndGlobalSection
 EndGlobal

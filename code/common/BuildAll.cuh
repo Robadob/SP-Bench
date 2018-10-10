@@ -28,12 +28,16 @@
 //Build the data-structure
 #include "near_neighbours/Neighbourhood.cu"
 #include "near_neighbours/NeighbourhoodKernels.cu"
+#include "near_neighbours/NeighbourhoodExt.cu"
+#include "near_neighbours/NeighbourhoodExtKernels.cu"
 //Build the Benchmark Models 
 #include "benchmarks/core/Core.cuh"
 //Circles model (defines CIRCLES_MODEL)
 #include "benchmarks/circles/Circles.cuh"
-//Circles model (defines NULL_MODEL, DENSITY_MODEL)
+//Null model (defines NULL_MODEL, DENSITY_MODEL)
 #include "benchmarks/null/Null.cuh"
+//Network model (defines NETWORK_MODEL)
+#include "benchmarks/network/Network.cuh"
 
 //Build the actual entry point
 #include "main.cu"

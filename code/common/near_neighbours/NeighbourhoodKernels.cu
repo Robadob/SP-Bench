@@ -1,4 +1,4 @@
-#include "NeighbourhoodKernels.cuh"
+#include "NeighbourhoodExtKernels.cuh"
 #include <cuda_runtime.h>
 //getHash already clamps.
 //#define SP_NO_CLAMP_GRID //Clamp grid coords to within grid (if it's possible for model to go out of bounds)
@@ -227,13 +227,13 @@ __global__ void assertPBMIntegrity()
     }
 
     //Assert Order
-    if (((prev>me && prev != -1) || (me>next && next != -1)) &&me!=-1)
+    if (((prev>me && prev != (unsigned int)-1) || (me>next && next != (unsigned int)-1)) && me != (unsigned int)-1)
     {
         printf("ERROR: PBM contains values which are out of order.\nid:%i, prev:%i, me:%i, next:%i, count:%i\n", index, prev, me, next, d_binCount);
         assert(0);
     }
     //Assert Range
-    if (me > d_locationMessageCount && me != -1)
+    if (me > d_locationMessageCount && me != (unsigned int)-1)
     {
         printf("ERROR: PBM contains out of range values.\nid:%i, prev:%i, me:%i, next:%i, count:%i\n", index, prev, me, next, d_binCount);
         assert(0);
