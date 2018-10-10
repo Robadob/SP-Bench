@@ -19,6 +19,8 @@ public:
     using SpatialPartition::d_getPBMCount;
     using SpatialPartition::d_getLocationMessages;
     using SpatialPartition::d_getLocationMessagesSwap;
+    T *SpatialPartition::d_getExtMessages() { return d_ext; }
+    T *SpatialPartition::d_getExtMessagesSwap() { return d_ext_swap; }
     using SpatialPartition::getLocationCount;
     //Setters
     using SpatialPartition::setLocationCount;

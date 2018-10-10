@@ -5,6 +5,10 @@
 #include "results.h"
 #include "../core/CoreModel.cuh"
 #include "NetworkKernels.cuh"
+struct VertexData
+{
+    
+};
 class NetworkModel : public CoreModel
 {
 public:
@@ -22,10 +26,11 @@ public:
     const Time_Init initPopulationClusters(const unsigned int clusterCount, const float clusterRad, const unsigned int agentsPerCluster, const unsigned long long rngSeed = 12) override;
 private:
     void launchStep();//Launches step_model kernel
-    std::shared_ptr<SpatialPartition> spatialPartition;
+    std::shared_ptr<SpatialPartitionExt<VertexData>> spatialPartition;
     //If values are constant, might aswell make them public, save writing accessor methods
 public:
     std::shared_ptr<SpatialPartition> getPartition() override { return spatialPartition; }
+    std::shared_ptr<SpatialPartitionExt<VertexData>> getPartitionExt() { return spatialPartition; }
     const unsigned int vCount;
     const unsigned int edgesPer;
     const unsigned int CAPACITY_MOD;
@@ -49,7 +54,7 @@ NetworkModel::NetworkModel(
     const unsigned int capacityModifier
     )
     : CoreModel(agents)
-    , spatialPartition(std::make_shared<SpatialPartition>(vertices, agents))
+    , spatialPartition(std::make_shared<SpatialPartitionExt<VertexData>>(vertices, agents))
     , vCount(vertices)
     , edgesPer(edgesPerVertex)
     , CAPACITY_MOD(capacityModifier)
@@ -148,10 +153,11 @@ const Time_Init NetworkModel::initPopulation(const unsigned long long rngSeed)
     cudaEventRecord(start_kernel);
 
     //Generate initial states, and store in location messages
-    LocationMessages *d_lm = getPartition()->d_getLocationMessages();
+    LocationMessages *d_lm = getPartitionExt()->d_getLocationMessages();
+    VertexData *d_ext = getPartitionExt()->d_getExtMessages();
     if (rngSeed != 0)
     {
-        init_particles << <initBlocks, initThreads >> >(d_rng, d_lm);
+        init_network << <initBlocks, initThreads >> >(d_rng, d_lm, d_ext);
     }
     else
     {
