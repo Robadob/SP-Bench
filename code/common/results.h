@@ -53,6 +53,7 @@ enum ModelEnum : unsigned int
     Null = 0,
     Circles = 1,
     Density = 2,
+    Network = 3,
 };
 struct ModelParams 
 {
@@ -148,6 +149,32 @@ struct DensityParams : ModelParams
 private:
     const char *MODEL_NAME = "Density";
     const char *MODEL_FLAG = "-density";
+};
+struct NetworkParams : ModelParams
+{
+    static NetworkParams makeEmpty()
+    {
+        NetworkParams a;
+        memset(&a, 0, sizeof(NetworkParams));
+        return a;
+    }
+    NetworkParams()
+        : agents(100000)
+        , verts(1024)
+        , edgesPerVert(3)
+        , capacityMod(3)
+    { }
+    unsigned int agents;
+    unsigned int verts;
+    unsigned int edgesPerVert;
+    float capacityMod;
+
+    const char *modelName() const override { return MODEL_NAME; };
+    const char *modelFlag() const override { return MODEL_FLAG; };
+    ModelEnum enumerator() const override { return ModelEnum::Network; };
+private:
+    const char *MODEL_NAME = "Network";
+    const char *MODEL_FLAG = "-network";
 };
 struct ArgData
 {

@@ -139,19 +139,23 @@ public:
 #if !defined(SHARED_BINSTATE)
 #if !(defined(MODULAR) || defined(MODULAR_STRIPS))
     __device__ void getFirstNeighbour(DIMENSIONS_VEC location, LocationMessage *message);
+    __device__ void getFirstMessage(unsigned int binId, LocationMessage *message);
 #endif
     __device__ bool getNextNeighbour(LocationMessage *message);
 #if defined(MODULAR) || defined(MODULAR_STRIPS)
     __device__ void firstBin(DIMENSIONS_VEC location, LocationMessage *message);
+    __device__ void selectBin(unsigned int id, LocationMessage *message);
     __device__ bool nextBin(LocationMessage *sm_message);
 #endif
 #else
 #if !(defined(MODULAR) || defined(MODULAR_STRIPS))
     __device__ LocationMessage *getFirstNeighbour(DIMENSIONS_VEC location);
+    __device__ LocationMessage *getFirstMessage(unsigned int binId);
 #endif
     __device__ LocationMessage *getNextNeighbour(LocationMessage *message);
 #if defined(MODULAR) || defined(MODULAR_STRIPS)
     __device__ LocationMessage *firstBin(DIMENSIONS_VEC location);
+    __device__ LocationMessage *selectBin(DIMENSIONS_VEC location);
     __device__ bool nextBin(LocationMessage *sm_message);
 #endif
 #endif
@@ -237,7 +241,7 @@ public:
     const GLuint *getLocationTexNames() const { return gl_tex; }
     GLuint getCountTexName() const { return gl_tex_count; }
 #endif
-private:
+protected:
 	void setBinCount();
     //Allocators
     void deviceAllocateLocationMessages(LocationMessages **d_locMessage, LocationMessages *hd_locMessage);

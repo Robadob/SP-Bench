@@ -108,6 +108,19 @@ ArgData parseArgs(int argc, char * argv[])
             data.model = mdl;
         }
 #endif
+#ifdef NETWORK_MODEL
+        else if (arg.compare("-network") == 0)
+        {
+            assert(!data.model);//Two model params passed at runtime?
+            std::shared_ptr<NetworkParams> mdl = std::make_shared<NetworkParams>();
+            mdl->agents = (unsigned int)strtoul(argv[++i], nullptr, 0);
+            mdl->verts = (unsigned int)strtoul(argv[++i], nullptr, 0);
+            mdl->edgesPerVert = (unsigned int)strtoul(argv[++i], nullptr, 0);
+            mdl->capacityMod = (float)atof(argv[++i]);
+            mdl->iterations = strtoul(argv[++i], nullptr, 0);
+            data.model = mdl;
+        }
+#endif
         else if (arg.compare("-demo") == 0)
         {
             assert(!data.model);//Two model params passed at runtime?
@@ -232,6 +245,14 @@ int main(int argc, char * argv[])
             break;
         }
 #endif
+#ifdef NETWORK_MODEL
+        case Network:
+        {
+            std::shared_ptr<NetworkParams> _model = std::dynamic_pointer_cast<NetworkParams>(args.model);
+            model = std::make_shared<NetworkModel>(_model->agents, _model->verts, _model->edgesPerVert, _model->capacityMod);
+            break;
+        }
+#endif
         default:
             assert(false);//Model not configured
     }
@@ -340,7 +361,7 @@ int main(int argc, char * argv[])
     }
 	if (!args.pipe&&!args.profile)
 	{
-		printf("\nModel complete - Average Times\n");
+        printf("\n %s Model complete - Average Times\n", args.model->modelName());
 		printf("Main kernel - %.3fs\n", average.kernel / 1000);
 		printf("Build PBM   - %.3fs\n", average.texture / 1000);
         printf("Combined    - %.3fs\n", average.overall / 1000);
@@ -386,6 +407,11 @@ int main(int argc, char * argv[])
             break;
         case Density:
             modelSize = sizeof(DensityParams);
+            break;
+#endif
+#ifdef NETWORK_MODEL
+        case Network:
+            modelSize = sizeof(NetworkParams);
             break;
 #endif
         default:

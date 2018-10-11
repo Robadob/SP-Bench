@@ -24,6 +24,35 @@ __device__ __forceinline__ DIMENSIONS_IVEC getGridPosition(DIMENSIONS_VEC worldP
 	//    return gridPos;
 #endif
 }
+__device__ __forceinline__ DIMENSIONS_IVEC getGridPosition(unsigned int hash)
+{
+#if defined(MORTON)
+    return d_mortonDecode(hash);
+#elif defined(HILBERT)
+    return d_hilbertDecode(hash, this->gridExponent);
+#elif defined(PEANO)
+    return d_peanoDecode(hash, this->gridExponent);
+#elif defined(MORTON_COMPUTE)
+    return d_mortonComputeDecode(hash);
+#else
+    if (hash >= d_binCount)
+        return DIMENSIONS_IVEC(-1);
+    else
+    {
+#ifdef _3D
+
+        int z = (hash / (d_gridDim.y * d_gridDim.x));
+        int y = (hash % (d_gridDim.y * d_gridDim.x)) / d_gridDim.x;
+        int x = (hash % (d_gridDim.y * d_gridDim.x)) % d_gridDim.x;
+        return DIMENSIONS_IVEC(x, y, z);
+#else
+        int y = hash / d_gridDim.x;
+        int x = hash % d_gridDim.x;
+        return DIMENSIONS_IVEC(x, y);
+#endif
+}
+#endif
+}
 
 __device__ __forceinline__ unsigned int getHash(DIMENSIONS_IVEC gridPos)
 {
@@ -1175,4 +1204,76 @@ __device__ LocationMessage *LocationMessages::getFirstNeighbour(DIMENSIONS_VEC l
 #endif
     loadNextMessage(sm_message);
 #endif
+}
+
+
+#if !defined(SHARED_BINSTATE)
+#if defined(MODULAR) || defined(MODULAR_STRIPS)
+__device__ void LocationMessages::selectBin(unsigned int binId, LocationMessage *sm_message)
+#else
+__device__ void LocationMessages::getFirstMessage(unsigned int binId, LocationMessage *sm_message)
+#endif
+{
+#else
+#if defined(MODULAR) || defined(MODULAR_STRIPS)
+__device__ LocationMessage *LocationMessages::selectBin(unsigned int binId)
+#else
+__device__ LocationMessage *LocationMessages::getFirstMessage(unsigned int binId)
+#endif
+{
+    extern __shared__ LocationMessage sm_messages[];
+    LocationMessage *sm_message = &(sm_messages[threadIdx.x]);
+#endif
+
+
+#ifdef _DEBUG
+    //If first thread and PBM isn't built, print warning
+    if (!d_PBM_isBuilt && (((blockIdx.x * blockDim.x) + threadIdx.x)) == 0)
+        printf("PBM has not been rebuilt after calling swap()!\n");
+#endif
+#if defined(_GL) || defined(_DEBUG)
+    //Store the locations of these in a constant
+    //Set both, so we don't have to identify which is current.
+    //Set counter to 0
+    int id = blockIdx.x * blockDim.x + threadIdx.x;
+    d_locationMessagesA->count[id] = 0;
+    d_locationMessagesB->count[id] = 0;
+#endif
+
+#if defined(MODULAR)
+    printf("Single bin access is unsupported by Modular.\n");
+#elif defined(MODULAR_STRIPS)
+    printf("Single bin access is unsupported by Hybrid.\n");
+#elif defined(STRIPS)
+    printf("Single bin access is unsupported by Strips.\n");
+#else
+    //Convert bin id, to a grid location
+    sm_message->state.location = getGridPosition(binId);
+    //Hack the relative bin index (and location) so it thinks it's last bin of Moore neighbourhood
+    sm_message->state.location -= DIMENSIONS_VEC(1);
+#ifdef BITFIELDS_V2
+    sm_message->state.relativeX(1);
+#if defined(_2D)
+    sm_message->state.relativeY(0);
+#elif defined(_3D)
+    sm_message->state.relativeY(1);
+    sm_message->state.relativeZ(0);
+#endif
+#else
+
+    sm_message->state.relativeX = 1;
+#if defined(_2D)
+    sm_message->state.relativeY = 0;
+#elif defined(_3D)
+    sm_message->state.relativeY = 1;
+    sm_message->state.relativeZ = 0;
+#endif
+#endif
+#endif
+    //sm_message->state.binIndex = 0;//Redundant setting this, 0 is min on UINT
+    sm_message->state.binIndexMax = 0;//Init binIndex greater than equal to binIndexMax to force bin change
+#if defined(SHARED_BINSTATE)
+    return
+#endif
+    loadNextMessage(sm_message);
 }

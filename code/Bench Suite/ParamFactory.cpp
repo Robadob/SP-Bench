@@ -200,6 +200,36 @@ std::shared_ptr<ModelParams> parseConfig(rapidjson::GenericValue<Encoding, Alloc
 		rtn = a;
 		break;
 	}
+    case Network:
+	{
+        auto a = std::make_shared<NetworkParams>();
+        if (auto b = std::dynamic_pointer_cast<NetworkParams>(_default))
+            a->operator=(*b);
+        {//Parse density config
+            //agents
+            if (valueType.HasMember("agents") && valueType["agents"].IsInt())
+                a->agents = (unsigned int)valueType["agents"].GetInt();
+            else if (!_default)
+                fprintf(stderr, "Warning: Property 'agents' missing from network config, default value '%u' used.\n", a->agents);
+            //vertices
+            if (valueType.HasMember("vertices") && valueType["vertices"].IsInt())
+                a->verts = (unsigned int)valueType["vertices"].GetInt();
+            else if (!_default)
+                fprintf(stderr, "Warning: Property 'vertices' missing from network config, default value '%u' used.\n", a->verts);
+            //edgesPerVert
+            if (valueType.HasMember("edgesPerVert") && valueType["edgesPerVert"].IsInt())
+                a->edgesPerVert = (unsigned int)valueType["edgesPerVert"].GetInt();
+            else if (!_default)
+                fprintf(stderr, "Warning: Property 'edgesPerVert' missing from network config, default value '%u' used.\n", a->edgesPerVert);
+            //capacityMod
+            if (valueType.HasMember("capacityMod") && valueType["capacityMod"].IsFloat())
+                a->capacityMod = valueType["capacityMod"].GetFloat();
+            else if (!_default)
+                fprintf(stderr, "Warning: Property 'capacityMod' missing from network config, default value '%g' used.\n", a->capacityMod);
+        }
+        rtn = a;
+        break;
+	}
 	default: 
 		return nullptr;
 	}

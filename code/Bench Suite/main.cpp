@@ -20,9 +20,11 @@ DensityParams reset(const DensityParams &start, const DensityParams &end);
 CirclesParams interpolateParams2D(const CirclesParams &start, const CirclesParams &end1, const CirclesParams &end2, const unsigned int step1, const unsigned int totalSteps1, const unsigned int step2, const unsigned int totalSteps2);
 NullParams interpolateParams2D(const NullParams &start, const NullParams &end1, const NullParams &end2, const unsigned int step1, const unsigned int totalSteps1, const unsigned int step2, const unsigned int totalSteps2);
 DensityParams interpolateParams2D(const DensityParams &start, const DensityParams &end1, const DensityParams &end2, const unsigned int step1, const unsigned int totalSteps1, const unsigned int step2, const unsigned int totalSteps2);
+NetworkParams interpolateParams2D(const NetworkParams &start, const NetworkParams &end1, const NetworkParams &end2, const unsigned int step1, const unsigned int totalSteps1, const unsigned int step2, const unsigned int totalSteps2);
 CirclesParams interpolateParams(const CirclesParams &start, const CirclesParams &end, const unsigned int step, const unsigned int totalSteps);
 NullParams interpolateParams(const NullParams &start, const NullParams &end, const unsigned int step, const unsigned int totalSteps);
 DensityParams interpolateParams(const DensityParams &start, const DensityParams &end, const unsigned int step, const unsigned int totalSteps);
+NetworkParams interpolateParams(const NetworkParams &start, const NetworkParams &end, const unsigned int step, const unsigned int totalSteps);
 template<class T>
 bool executeBenchmark(const char* executable, T modelArgs, T *modelparamOut, unsigned int *agentCount, Time_Init *initRes, Time_Step_dbl *stepRes, float *totalTime, NeighbourhoodStats *nsFirst, NeighbourhoodStats *nsLast);
 void logResult(FILE *out, const CirclesParams* modelArgs, const unsigned int agentCount, const Time_Init *initRes, const Time_Step_dbl *stepRes, const float totalTime, const NeighbourhoodStats *nsFirst, const NeighbourhoodStats *nsLast);
@@ -31,11 +33,14 @@ void logResult(FILE *out, const NullParams* modelArgs, const unsigned int agentC
 void logHeader(FILE *out, const NullParams &modelArgs);
 void logResult(FILE *out, const DensityParams* modelArgs, const unsigned int agentCount, const Time_Init *initRes, const Time_Step_dbl *stepRes, const float totalTime, const NeighbourhoodStats *nsFirst, const NeighbourhoodStats *nsLast);
 void logHeader(FILE *out, const DensityParams &modelArgs);
+void logResult(FILE *out, const NetworkParams* modelArgs, const unsigned int agentCount, const Time_Init *initRes, const Time_Step_dbl *stepRes, const float totalTime, const NeighbourhoodStats *nsFirst, const NeighbourhoodStats *nsLast);
+void logHeader(FILE *out, const NetworkParams &modelArgs);
 //Collated
 void log(FILE *out, const NeighbourhoodStats *nsFirst);
 void log(FILE *out, const CirclesParams *modelArgs);
 void log(FILE *out, const NullParams *modelArgs);
 void log(FILE *out, const DensityParams *modelArgs);
+void log(FILE *out, const NetworkParams *modelArgs);
 void log(FILE *out, const Time_Init *initRes, const Time_Step_dbl *stepRes, const float totalTime);
 void log(FILE *out, const unsigned int agentCount);
 
@@ -90,6 +95,17 @@ DensityParams reset(const DensityParams &start, const DensityParams &end)
     end1Reset.iterations = end.iterations - start.iterations;
     return end1Reset;
 }
+NetworkParams reset(const NetworkParams &start, const NetworkParams &end)
+{
+    NetworkParams end1Reset;
+    end1Reset.seed = end.seed - start.seed;
+    end1Reset.agents = end.agents - start.agents;
+    end1Reset.verts = end.verts - start.verts;
+    end1Reset.edgesPerVert = end.edgesPerVert - start.edgesPerVert;
+    end1Reset.capacityMod = end.capacityMod - start.capacityMod;
+    end1Reset.iterations = end.iterations - start.iterations;
+    return end1Reset;
+}
 CirclesParams interpolateParams2D(const CirclesParams &start, const CirclesParams &end1, const CirclesParams &end2, const unsigned int step1, const unsigned int totalSteps1, const unsigned int step2, const unsigned int totalSteps2)
 {
     CirclesParams end1Lerp = interpolateParams(CirclesParams::makeEmpty(), reset(start, end1), step1, totalSteps1);
@@ -132,6 +148,19 @@ DensityParams interpolateParams2D(const DensityParams &start, const DensityParam
     modelArgs.iterations = start.iterations + end1Lerp.iterations + end2Lerp.iterations;
     return modelArgs;
 }
+NetworkParams interpolateParams2D(const NetworkParams &start, const NetworkParams &end1, const NetworkParams &end2, const unsigned int step1, const unsigned int totalSteps1, const unsigned int step2, const unsigned int totalSteps2)
+{
+    NetworkParams end1Lerp = interpolateParams(NetworkParams::makeEmpty(), reset(start, end1), step1, totalSteps1);
+    NetworkParams end2Lerp = interpolateParams(NetworkParams::makeEmpty(), reset(start, end2), step2, totalSteps2);
+    NetworkParams modelArgs;
+    modelArgs.seed = start.seed + end1Lerp.seed + end2Lerp.seed;
+    modelArgs.agents = start.agents + end1Lerp.agents + end2Lerp.agents;
+    modelArgs.verts = start.verts + end1Lerp.verts + end2Lerp.verts;
+    modelArgs.edgesPerVert = start.edgesPerVert + end1Lerp.edgesPerVert + end2Lerp.edgesPerVert;
+    modelArgs.capacityMod = start.capacityMod + end1Lerp.capacityMod + end2Lerp.capacityMod;
+    modelArgs.iterations = start.iterations + end1Lerp.iterations + end2Lerp.iterations;
+    return modelArgs;
+}
 NullParams interpolateParams(const NullParams &start, const NullParams &end, const unsigned int step, const unsigned int totalSteps)
 {
     const float stepsM1 = (float)totalSteps - 1.0f;
@@ -153,6 +182,18 @@ DensityParams interpolateParams(const DensityParams &start, const DensityParams 
     modelArgs.clusterCount = start.clusterCount + (unsigned int)((step / stepsM1)*((int)end.clusterCount - (int)start.clusterCount));
     modelArgs.clusterRad = start.clusterRad + ((step / stepsM1)*(end.clusterRad - start.clusterRad));
     modelArgs.uniformDensity = start.uniformDensity + ((step / stepsM1)*(end.uniformDensity - start.uniformDensity));
+    modelArgs.iterations = start.iterations + (long long)((step / stepsM1)*((int)end.iterations - (int)start.iterations));
+    return modelArgs;
+}
+NetworkParams interpolateParams(const NetworkParams &start, const NetworkParams &end, const unsigned int step, const unsigned int totalSteps)
+{
+    const float stepsM1 = (float)totalSteps - 1.0f;
+    NetworkParams modelArgs;
+    modelArgs.seed = start.seed + (long long)((step / stepsM1)*((long long)end.seed - (long long)start.seed));
+    modelArgs.agents = start.agents + (unsigned int)((step / stepsM1)*((unsigned int)end.agents - (unsigned int)start.agents));
+    modelArgs.verts = start.verts + (unsigned int)((step / stepsM1)*((unsigned int)end.verts - (unsigned int)start.verts));
+    modelArgs.edgesPerVert = start.edgesPerVert + (unsigned int)((step / stepsM1)*((unsigned int)end.edgesPerVert - (unsigned int)start.edgesPerVert));
+    modelArgs.capacityMod = start.capacityMod + ((step / stepsM1)*(end.capacityMod - start.capacityMod));
     modelArgs.iterations = start.iterations + (long long)((step / stepsM1)*((int)end.iterations - (int)start.iterations));
     return modelArgs;
 }
@@ -592,6 +633,133 @@ void logResult(FILE *out, const DensityParams* modelArgs, const unsigned int age
     fputs("\n", out);
     fflush(out);
 }
+void logHeader(FILE *out, const NetworkParams &modelArgs)
+{
+    fputs("model", out);
+    fputs(",,,,,,", out);
+    fputs("init (s)", out);
+    fputs(",,,,,", out);
+    fputs("step avg (s)", out);
+    fputs(",,,", out);
+    fputs("overall (s)", out);
+    fputs(",", out);
+    fputs("Neighbourhood Stats", out);
+    fputs(",,,,,,,,", out);
+    fputs("\n", out);
+    //ModelArgs
+    fputs("agents per cluster", out);
+    fputs(",", out);
+    fputs("envWidth", out);
+    fputs(",", out);
+    fputs("interactionRad", out);
+    fputs(",", out);
+    fputs("clusterCount", out);
+    fputs(",", out);
+    fputs("clusterRad", out);
+    fputs(",", out);
+    fputs("uniformDensity", out);
+    fputs(",", out);
+    fputs("iterations", out);
+    fputs(",", out);
+    fputs("seed", out);
+    fputs(",", out);
+    fputs("agents-out", out);
+    fputs(",", out);
+    //Init
+    fputs("overall", out);
+    fputs(",", out);
+    fputs("initCurand", out);
+    fputs(",", out);
+    fputs("kernel", out);
+    fputs(",", out);
+    fputs("pbm", out);
+    fputs(",", out);
+    fputs("freeCurand", out);
+    fputs(",", out);
+    //Step avg
+    fputs("overall", out);
+    fputs(",", out);
+    fputs("kernel", out);
+    fputs(",", out);
+    fputs("texture", out);
+    fputs(",", out);
+    //PBM Time
+    fputs("PBMsort", out);
+    fputs(",", out);
+    fputs("PBMreorder", out);
+    fputs(",", out);
+    fputs("PBMtexcopy", out);
+    fputs(",", out);
+    //Total
+    fputs("time", out);
+    fputs(",", out);
+    //Neighbourhood stats
+    fputs("First Min", out);
+    fputs(",", out);
+    fputs("First Max", out);
+    fputs(",", out);
+    fputs("First Avg", out);
+    fputs(",", out);
+    fputs("First SD", out);
+    fputs(",", out);
+    fputs("Last Min", out);
+    fputs(",", out);
+    fputs("Last Max", out);
+    fputs(",", out);
+    fputs("Last Avg", out);
+    fputs(",", out);
+    fputs("Last SD", out);
+    fputs(",", out);
+    //ln
+    fputs("\n", out);
+}
+void logResult(FILE *out, const NetworkParams* modelArgs, const unsigned int agentCount, const Time_Init *initRes, const Time_Step_dbl *stepRes, const float totalTime, const NeighbourhoodStats *nsFirst, const NeighbourhoodStats *nsLast)
+{	//ModelArgs
+    fprintf(out, "%u,%u,%u,%f,%llu,%llu,",
+        modelArgs->agents,
+        modelArgs->verts,
+        modelArgs->edgesPerVert,
+        modelArgs->capacityMod,
+        modelArgs->iterations,
+        modelArgs->seed
+        );
+    //Agent count
+    fprintf(out, "%i,",
+        agentCount
+        );
+    //Init
+    fprintf(out, "%f,%f,%f,%f,%f,",
+        initRes->overall / 1000,
+        initRes->initCurand / 1000,
+        initRes->kernel / 1000,
+        initRes->pbm / 1000,
+        initRes->freeCurand / 1000
+        );
+    //Step avg
+    fprintf(out, "%f,%f,%f,",
+        stepRes->overall / 1000,
+        stepRes->kernel / 1000,
+        stepRes->texture / 1000
+        );
+    //PBM Time
+    fprintf(out, "%f,%f,%f,",
+        stepRes->pbm.sort / 1000,
+        stepRes->pbm.reorder / 1000,
+        stepRes->pbm.texcopy / 1000
+        );
+    //Total
+    fprintf(out, "%f,",
+        totalTime / 1000
+        );
+    //Neighbourhood stats
+    fprintf(out, "%d,%d,%f,%f,%d,%d,%f,%f,",
+        nsFirst->min, nsFirst->max, nsFirst->average, nsFirst->standardDeviation,
+        nsLast->min, nsLast->max, nsLast->average, nsLast->standardDeviation
+        );
+    //ln
+    fputs("\n", out);
+    fflush(out);
+}
 
 void log(FILE *out, const NeighbourhoodStats *ns)
 {
@@ -640,6 +808,18 @@ void log(FILE *out, const DensityParams *modelArgs)
         modelArgs->clusterCount,
         modelArgs->clusterRad,
         modelArgs->uniformDensity,
+        modelArgs->iterations,
+        modelArgs->seed
+        );
+}
+void log(FILE *out, const NetworkParams *modelArgs)
+{
+    //ModelArgs
+    fprintf(out, "%u,%u,%u,%f,%llu,%llu,",
+        modelArgs->agents,
+        modelArgs->verts,
+        modelArgs->edgesPerVert,
+        modelArgs->capacityMod,
         modelArgs->iterations,
         modelArgs->seed
         );

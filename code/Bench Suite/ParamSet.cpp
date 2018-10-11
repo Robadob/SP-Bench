@@ -91,6 +91,9 @@ void ParamSet::run() const
         case Density:
             logCollatedHeader(log_F, *std::dynamic_pointer_cast<DensityParams>(start));
             break;
+        case Network:
+            logCollatedHeader(log_F, *std::dynamic_pointer_cast<NetworkParams>(start));
+            break;
         default:
             fprintf(stderr, "Error!\n");
             return;
@@ -129,6 +132,12 @@ void ParamSet::run() const
                 success = executeBenchmark(bin.file, *std::dynamic_pointer_cast<DensityParams>(start), &n, &agentCount, &initRes, &stepRes, &totalTime, &nsFirst, &nsLast);
             }
                 break;
+            case Network:
+            {
+                NetworkParams n;
+                success = executeBenchmark(bin.file, *std::dynamic_pointer_cast<NetworkParams>(start), &n, &agentCount, &initRes, &stepRes, &totalTime, &nsFirst, &nsLast);
+            }
+                break;
             default:
                 fprintf(stderr, "Error!\n");
                 return;
@@ -158,6 +167,9 @@ void ParamSet::run() const
             break;
         case Density:
             log(log_F, std::dynamic_pointer_cast<DensityParams>(start).get());
+            break;
+        case Network:
+            log(log_F, std::dynamic_pointer_cast<NetworkParams>(start).get());
             break;
         default:
             fprintf(stderr, "Error!\n");
@@ -190,6 +202,9 @@ void ParamSet::runCollated() const
             break;
         case Density:
             logCollatedHeader(log_F, *std::dynamic_pointer_cast<DensityParams>(start));
+            break;
+        case Network:
+            logCollatedHeader(log_F, *std::dynamic_pointer_cast<NetworkParams>(start));
             break;
         default:
             fprintf(stderr, "Error!\n");
@@ -233,6 +248,12 @@ void ParamSet::runCollated() const
                     success = executeBenchmark(bin.file, *std::dynamic_pointer_cast<DensityParams>(lerpArgs), &n, &agentCount, &initRes, &stepRes, &totalTime, &nsFirst, &nsLast);
                 }
                     break;
+                case Network:
+                {
+                    NetworkParams n;
+                    success = executeBenchmark(bin.file, *std::dynamic_pointer_cast<NetworkParams>(lerpArgs), &n, &agentCount, &initRes, &stepRes, &totalTime, &nsFirst, &nsLast);
+                }
+                    break;
                 default:
                     fprintf(stderr, "Error!\n");
                     return;
@@ -263,6 +284,9 @@ void ParamSet::runCollated() const
                 break;
             case Density:
                 log(log_F, std::dynamic_pointer_cast<DensityParams>(lerpArgs).get());
+                break;
+            case Network:
+                log(log_F, std::dynamic_pointer_cast<NetworkParams>(lerpArgs).get());
                 break;
             default:
                 fprintf(stderr, "Error!\n");
@@ -296,6 +320,9 @@ void ParamSet::runCollated2D() const
             break;
         case Density:
             logCollatedHeader(log_F, *std::dynamic_pointer_cast<DensityParams>(start));
+            break;
+        case Network:
+            logCollatedHeader(log_F, *std::dynamic_pointer_cast<NetworkParams>(start));
             break;
         default:
             fprintf(stderr, "Error!\n");
@@ -342,6 +369,12 @@ void ParamSet::runCollated2D() const
                         success = executeBenchmark(bin.file, *std::dynamic_pointer_cast<DensityParams>(lerpArgs), &n, &agentCount, &initRes, &stepRes, &totalTime, &nsFirst, &nsLast);
                     }
                         break;
+                    case Network:
+                    {
+                        NetworkParams n;
+                        success = executeBenchmark(bin.file, *std::dynamic_pointer_cast<NetworkParams>(lerpArgs), &n, &agentCount, &initRes, &stepRes, &totalTime, &nsFirst, &nsLast);
+                    }
+                        break;
                     default:
                         fprintf(stderr, "Error!\n");
                         return;
@@ -372,6 +405,9 @@ void ParamSet::runCollated2D() const
                     break;
                 case Density:
                     log(log_F, std::dynamic_pointer_cast<DensityParams>(lerpArgs).get());
+                    break;
+                case Network:
+                    log(log_F, std::dynamic_pointer_cast<NetworkParams>(lerpArgs).get());
                     break;
                 default:
                     fprintf(stderr, "Error!\n");
@@ -712,6 +748,102 @@ void ParamSet::logCollatedHeader(FILE *out, const DensityParams &modelArgs)
     fputs("\n", out);
     fflush(out);
 }
+void ParamSet::logCollatedHeader(FILE *out, const NetworkParams &modelArgs)
+{
+    //Row 1
+    for (const auto &bin : BINARIES)
+    {//12 columns per model
+        fprintf(out, "%s,,,,,,,,,,,,", bin.name);
+    }
+    fputs(",", out);//Agent count
+    fputs(",,,,,,,,", out);//Neighbourhood stats
+    fputs(",,,,,,,", out);//Model Args
+    fputs("\n", out);
+    //Row 2
+    for (const auto &bin : BINARIES)
+    {//9 columns per model
+        fputs("init (s)", out);
+        fputs(",,,,,", out);
+        fputs("step avg (s)", out);
+        fputs(",,,", out);
+        fputs("PBM (s)", out);
+        fputs(",,,", out);
+        fputs("overall (s)", out);
+        fputs(",", out);
+    }
+    fputs(",", out);//Agent count
+    fputs("Neighbourhood Stats", out);
+    fputs(",,,,,,,,", out);
+    fputs("Model", out);
+    fputs(",,,,,,,", out);
+    fputs("\n", out);
+    //Row 3
+    for (const auto &bin : BINARIES)
+    {//9 columns per model
+        //Init
+        fputs("overall", out);
+        fputs(",", out);
+        fputs("initCurand", out);
+        fputs(",", out);
+        fputs("kernel", out);
+        fputs(",", out);
+        fputs("pbm", out);
+        fputs(",", out);
+        fputs("freeCurand", out);
+        fputs(",", out);
+        //Step avg
+        fputs("overall", out);
+        fputs(",", out);
+        fputs("kernel", out);
+        fputs(",", out);
+        fputs("texture", out);
+        fputs(",", out);
+        //PBM Time
+        fputs("PBMsort", out);
+        fputs(",", out);
+        fputs("PBMreorder", out);
+        fputs(",", out);
+        fputs("PBMtexcopy", out);
+        fputs(",", out);
+        //Total
+        fputs("time", out);
+        fputs(",", out);
+    }
+    fputs("Agent Count,", out);
+    //Neighbourhood stats
+    fputs("First Min", out);
+    fputs(",", out);
+    fputs("First Max", out);
+    fputs(",", out);
+    fputs("First Avg", out);
+    fputs(",", out);
+    fputs("First SD", out);
+    fputs(",", out);
+    fputs("Last Min", out);
+    fputs(",", out);
+    fputs("Last Max", out);
+    fputs(",", out);
+    fputs("Last Avg", out);
+    fputs(",", out);
+    fputs("Last SD", out);
+    fputs(",", out);
+    fflush(out);
+    //ModelArgs
+    fputs("agents", out);
+    fputs(",", out);
+    fputs("verts", out);
+    fputs(",", out);
+    fputs("edgesPerVert", out);
+    fputs(",", out);
+    fputs("capacityMod", out);
+    fputs(",", out);
+    fputs("iterations", out);
+    fputs(",", out);
+    fputs("seed", out);
+    fputs(",", out);
+    fputs("\n", out);
+    fflush(out);
+}
 
 //Exec string
 void ParamSet::execString(const char* executable, CirclesParams modelArgs, char **rtn)
@@ -826,6 +958,43 @@ void ParamSet::execString(const char* executable, DensityParams modelArgs, char 
     *rtn = (char *)malloc(sizeof(char)*(buffer.length() + 1));
     memcpy(*rtn, src, sizeof(char)*(buffer.length() + 1));
 }
+void ParamSet::execString(const char* executable, NetworkParams modelArgs, char **rtn)
+{
+    std::string buffer("\"");
+    buffer = buffer.append(BIN_DIR);
+    buffer = buffer.append(executable);
+    buffer = buffer.append("\"");
+    buffer = buffer.append(" ");
+    buffer = buffer.append("-pipe");
+    buffer = buffer.append(" ");
+    buffer = buffer.append("-device");
+    buffer = buffer.append(" ");
+    buffer = buffer.append(std::to_string(DEVICE_ID));
+    buffer = buffer.append(" ");
+    buffer = buffer.append("-network");
+    buffer = buffer.append(" ");
+    buffer = buffer.append(std::to_string(modelArgs.agents));
+    buffer = buffer.append(" ");
+    buffer = buffer.append(std::to_string(modelArgs.verts));
+    buffer = buffer.append(" ");
+    buffer = buffer.append(std::to_string(modelArgs.edgesPerVert));
+    buffer = buffer.append(" ");
+    buffer = buffer.append(std::to_string(modelArgs.capacityMod));
+    buffer = buffer.append(" ");
+    buffer = buffer.append(std::to_string(modelArgs.iterations));
+    if (modelArgs.seed != 12)
+    {
+
+        buffer = buffer.append(" ");
+        buffer = buffer.append("-seed");
+        buffer = buffer.append(" ");
+        buffer = buffer.append(std::to_string(modelArgs.seed));
+    }
+    const char *src = buffer.c_str();
+    *rtn = (char *)malloc(sizeof(char)*(buffer.length() + 1));
+    memcpy(*rtn, src, sizeof(char)*(buffer.length() + 1));
+}
+
 std::shared_ptr<ModelParams> ParamSet::interpolateParams(std::shared_ptr<ModelParams> start, std::shared_ptr<ModelParams> end, const unsigned int step, const unsigned int totalSteps)
 {
     switch (start->enumerator())
@@ -853,6 +1022,15 @@ std::shared_ptr<ModelParams> ParamSet::interpolateParams(std::shared_ptr<ModelPa
         std::shared_ptr<DensityParams> a = std::make_shared<DensityParams>();
         std::shared_ptr<const DensityParams> s = std::dynamic_pointer_cast<const DensityParams>(start);
         std::shared_ptr<const DensityParams> e = std::dynamic_pointer_cast<const DensityParams>(end);
+        a->operator=(::interpolateParams(*s, *e, step, totalSteps));
+        return a;
+    }
+        break;
+    case Network:
+    {
+        std::shared_ptr<NetworkParams> a = std::make_shared<NetworkParams>();
+        std::shared_ptr<const NetworkParams> s = std::dynamic_pointer_cast<const NetworkParams>(start);
+        std::shared_ptr<const NetworkParams> e = std::dynamic_pointer_cast<const NetworkParams>(end);
         a->operator=(::interpolateParams(*s, *e, step, totalSteps));
         return a;
     }
@@ -891,6 +1069,16 @@ std::shared_ptr<ModelParams> ParamSet::interpolateParams2D(std::shared_ptr<Model
         std::shared_ptr<const DensityParams> s = std::dynamic_pointer_cast<const DensityParams>(start);
         std::shared_ptr<const DensityParams> e1 = std::dynamic_pointer_cast<const DensityParams>(end1);
         std::shared_ptr<const DensityParams> e2 = std::dynamic_pointer_cast<const DensityParams>(end2);
+        a->operator=(::interpolateParams2D(*s, *e1, *e2, step1, totalSteps1, step2, totalSteps2));
+        return a;
+    }
+        break;
+    case Network:
+    {
+        std::shared_ptr<NetworkParams> a = std::make_shared<NetworkParams>();
+        std::shared_ptr<const NetworkParams> s = std::dynamic_pointer_cast<const NetworkParams>(start);
+        std::shared_ptr<const NetworkParams> e1 = std::dynamic_pointer_cast<const NetworkParams>(end1);
+        std::shared_ptr<const NetworkParams> e2 = std::dynamic_pointer_cast<const NetworkParams>(end2);
         a->operator=(::interpolateParams2D(*s, *e1, *e2, step1, totalSteps1, step2, totalSteps2));
         return a;
     }

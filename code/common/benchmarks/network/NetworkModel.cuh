@@ -7,7 +7,9 @@
 #include "NetworkKernels.cuh"
 struct VertexData
 {
-    
+    unsigned int agentId;
+    float edgeDistance;
+    float speed;
 };
 class NetworkModel : public CoreModel
 {
@@ -22,8 +24,9 @@ public:
     const Time_Step step() override;
     //Network benchmark requires custom init, as agents are not just spawned within a 2D/3D cube
     const Time_Init initPopulation(const unsigned long long rngSeed = 12) override;
-    const Time_Init initPopulationUniform() override;
-    const Time_Init initPopulationClusters(const unsigned int clusterCount, const float clusterRad, const unsigned int agentsPerCluster, const unsigned long long rngSeed = 12) override;
+    const Time_Init initPopulationUniform() override { return initPopulation(0); }
+    const Time_Init initPopulationClusters(const unsigned int clusterCount, const float clusterRad, const unsigned int agentsPerCluster, const unsigned long long rngSeed = 12) 
+    { fprintf(stderr, "NetworkModel does not support Cluster init, falling back to uniform init.\n"); return initPopulation(0); }
 private:
     void launchStep();//Launches step_model kernel
     std::shared_ptr<SpatialPartitionExt<VertexData>> spatialPartition;
@@ -41,6 +44,7 @@ public:
 };
 
 //Required to remove extern for RDC=false
+__device__ __constant__ unsigned int EDGE_COUNT;
 __device__ __constant__ unsigned int d_edgesPerVert;
 __device__ __constant__ unsigned int *d_vertexEdges;
 __device__ __constant__ float *d_edgeLen;
@@ -60,6 +64,8 @@ NetworkModel::NetworkModel(
     , CAPACITY_MOD(capacityModifier)
 {
     CUDA_CALL(cudaMemcpyToSymbol(d_edgesPerVert, &edgesPer, sizeof(unsigned int)));
+    unsigned int edgeMax = vertices * edgesPerVertex;
+    CUDA_CALL(cudaMemcpyToSymbol(EDGE_COUNT, &edgeMax, sizeof(unsigned int)));
 }
 
 const Time_Init NetworkModel::initPopulation(const unsigned long long rngSeed)
@@ -157,30 +163,11 @@ const Time_Init NetworkModel::initPopulation(const unsigned long long rngSeed)
     VertexData *d_ext = getPartitionExt()->d_getExtMessages();
     if (rngSeed != 0)
     {
-        init_network << <initBlocks, initThreads >> >(d_rng, d_lm, d_ext);
+        init_network <<<initBlocks, initThreads>>>(d_rng, d_lm, d_ext);
     }
     else
     {
-        //Adding +1 here will misalign uniform particles slightly, otherwise they are placed in bin centres only and can't touch other particles.
-#if DIMENSIONS==3
-        int particlesPerDim = (int)ceil(cbrt((float)agentMax));
-#elif DIMENSIONS==2
-        int particlesPerDim = (int)ceil(sqrt(agentMax));
-#else
-#error Invalid DIMENSIONS value, only 2 and 3 are suitable
-#endif
-        DIMENSIONS_VEC offset = getPartition()->getEnvironmentDimensions() / (float)(particlesPerDim + 1);
-        init_particles_uniform << <initBlocks, initThreads >> >(d_lm, particlesPerDim, offset);
-        //Not sure why this ifdef is required
-#ifdef _GL
-        int bins = glm::compMul(getPartition()->getGridDim());
-        int spareP = agentMax%bins;
-        fprintf(stderr, "Bins: %i, Agents: %i\n", bins, agentMax);
-        if (spareP>0)
-        {
-            fprintf(stderr, "Warning %.1f%% of bins have an extra agent!\n", (spareP / (float)bins) * 100);
-        }
-#endif
+        init_network_uniform <<<initBlocks, initThreads>>>(d_lm, d_ext);
     }
     CUDA_CALL(cudaDeviceSynchronize());
 
@@ -263,8 +250,10 @@ void NetworkModel::launchStep()
     int gridSize = (agentMax + blockSize - 1) / blockSize;
     LocationMessages *d_lm = spatialPartition->d_getLocationMessages();
     LocationMessages *d_lm2 = spatialPartition->d_getLocationMessagesSwap();
+    VertexData *d_ext = spatialPartition->d_getExtMessages();
+    VertexData *d_ext2 = spatialPartition->d_getExtMessagesSwap();
     //Launch kernel
-    step_circles_model << <gridSize, blockSize, requiredSM_stepNetworkModel(blockSize) >> >(d_lm, d_lm2);
+    step_network_model << <gridSize, blockSize, requiredSM_stepNetworkModel(blockSize) >> >(d_lm, d_lm2, d_ext, d_ext2);
     //Swap
     spatialPartition->swap();
     //Wait for return

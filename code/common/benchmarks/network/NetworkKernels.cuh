@@ -9,7 +9,9 @@
 
 #include "near_neighbours/Neighbourhood.cuh"//Remove with templating if possible
 
-__global__ void step_network_model(LocationMessages *locationMessagesIn, LocationMessages *locationMessagesOut);
 struct VertexData;
+
+__global__ void step_network_model(LocationMessages *locationMessagesIn, LocationMessages *locationMessagesOut, const VertexData *vIn, VertexData *vOut);
 __global__ void init_network(curandState *state, LocationMessages *locationMessages, VertexData *v);
+__global__ void init_network_uniform(LocationMessages *locationMessages, VertexData *v);
 #endif //__NetworkKernels_cuh__
