@@ -29,9 +29,9 @@
 #endif
 SpatialPartition::SpatialPartition(unsigned int binCount, unsigned int agentCount)
 #if defined(_2D)
-    : SpatialPartition(DIMENSIONS_VEC(-0.5, 0.0), DIMENSIONS_VEC(binCount - 0.5, 0.0), agentCount, 1.0f)
+    : SpatialPartition(DIMENSIONS_VEC(-0.5, -0.5), DIMENSIONS_VEC(binCount - 0.5, 0.5), agentCount, 1.0f)
 #elif defined(_3D)
-    : SpatialPartition(DIMENSIONS_VEC(-0.5, 0.0, 0.0), DIMENSIONS_VEC(binCount - 0.5, 0.0, 0.0), agentCount, 1.0f)
+    : SpatialPartition(DIMENSIONS_VEC(-0.5, -0.5, -0.5), DIMENSIONS_VEC(binCount - 0.5, 0.5, 0.5), agentCount, 1.0f)
 #endif
 {
     
@@ -50,6 +50,10 @@ SpatialPartition::SpatialPartition(DIMENSIONS_VEC  environmentMin, DIMENSIONS_VE
     , PBM_isBuilt(0)
 #endif
 {
+    d_keys = nullptr;
+    d_vals = nullptr;
+    d_PBM_count = nullptr;
+    d_locationMessages = nullptr;
     assert(interactionRad > 0);
 #ifdef _DEBUG
 //#if defined(_2D)

@@ -98,6 +98,7 @@ __global__ void atomicHistogram(unsigned int* bin_index, unsigned int* bin_sub_i
 #endif
 
     unsigned int hash = getHash(gridPos);
+    assert(hash < d_binCount);
     bin_index[index] = hash;
     unsigned int bin_idx = atomicInc((unsigned int*)&pbm_counts[hash], 0xFFFFFFFF);
     bin_sub_index[index] = bin_idx;

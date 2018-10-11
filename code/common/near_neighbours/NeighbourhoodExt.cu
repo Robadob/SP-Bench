@@ -4,7 +4,8 @@ template<class T>
 SpatialPartitionExt<T>::SpatialPartitionExt<T>(unsigned int binCount, unsigned int agentCount)
     : SpatialPartition(binCount, agentCount)
 {
-    
+    deviceAllocateExt(&d_ext);
+    deviceAllocateExt(&d_ext_swap);
 }
 template<class T>
 SpatialPartitionExt<T>::SpatialPartitionExt<T>(DIMENSIONS_VEC  environmentMin, DIMENSIONS_VEC environmentMax, unsigned int maxAgents, float interactionRad)

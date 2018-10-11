@@ -109,16 +109,18 @@ const Time_Init NetworkModel::initPopulation(const unsigned long long rngSeed)
                 for (unsigned int j = 0; j < edgesPer;++j)
                 {//Iterate edges per vertex
                     const unsigned int edgeOffset = (i*edgesPer) + j;
-                    hd_vertexEdges[edgeOffset] = (i + j*(int)(vCount / (edgesPer + 1.7))) % vCount; //Basic formula to spread edges in some kind of pattern
-                    assert(hd_vertexEdges[edgeOffset] != i); //Vertex shoouldn't link to itself
-                    assert(hd_vertexEdges[edgeOffset] < vCount); //Links to a valid vertex
-                    hd_edgeLen[edgeOffset] = 1.0f + normal(gen); //Lengths vary from 1-2
-                    hd_edgeCapacity[edgeOffset] = edgeCapacity;
+                    h_vertexEdges[edgeOffset] = (i + j*(int)(vCount / (edgesPer + 1.7))) % vCount; //Basic formula to spread edges in some kind of pattern
+                    if (h_vertexEdges[edgeOffset] == i) //Vertex shoouldn't link to itself
+                        h_vertexEdges[edgeOffset]++;
+                    if (h_vertexEdges[edgeOffset] >= vCount) //Links to a valid vertex
+                        h_vertexEdges[edgeOffset] = 0;
+                    h_edgeLen[edgeOffset] = 1.0f + normal(gen); //Lengths vary from 1-2
+                    h_edgeCapacity[edgeOffset] = edgeCapacity;
                 }
 #if DIMENSIONS==3
-                hd_vertexLocs[i] = glm::vec3(normal(gen2), normal(gen2), normal(gen2));
+                h_vertexLocs[i] = glm::vec3(normal(gen2), normal(gen2), normal(gen2));
 #elif DIMENSIONS==2
-                hd_vertexLocs[i] = glm::vec2(normal(gen2), normal(gen2));
+                h_vertexLocs[i] = glm::vec2(normal(gen2), normal(gen2));
 #else
 #error Invalid DIMENSIONS value, only 2 and 3 are suitable
 #endif
