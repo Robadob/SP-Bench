@@ -43,14 +43,17 @@ step_network_model(LocationMessages *locationMessagesIn, LocationMessages *locat
 #else
         LocationMessage *lm = locationMessagesIn->getFirstNeighbour(myLoc);
 #endif
-        while (lm)
+        if (lm)
         {
-            ct++;
+            do
+            {
+                ct++;
 #if defined(SHARED_BINSTATE)
-            lm = locationMessagesIn->getNextNeighbour(lm);//Returns a pointer to shared memory or 0
+                lm = locationMessagesIn->getNextNeighbour(lm);//Returns a pointer to shared memory or 0
+            } while (lm)
 #else
-            locationMessagesIn->getNextNeighbour(lm);
-#endif
+            } while (locationMessagesIn->getNextNeighbour(lm));
+#endif  
         }
         //Edge has space, switch
         if (ct<myNewEdgeCapacity)

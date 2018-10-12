@@ -1253,21 +1253,21 @@ __device__ LocationMessage *LocationMessages::getFirstMessage(unsigned int binId
     //Hack the relative bin index (and location) so it thinks it's last bin of Moore neighbourhood
     sm_message->state.location -= DIMENSIONS_VEC(1);
 #ifdef BITFIELDS_V2
-    sm_message->state.relativeX(1);
+    sm_message->state.relativeX(0);
 #if defined(_2D)
-    sm_message->state.relativeY(0);
+    sm_message->state.relativeY(1);
 #elif defined(_3D)
     sm_message->state.relativeY(1);
-    sm_message->state.relativeZ(0);
+    sm_message->state.relativeZ(1);
 #endif
 #else
 
-    sm_message->state.relativeX = 1;
+    sm_message->state.relativeX = 0;
 #if defined(_2D)
-    sm_message->state.relativeY = 0;
+    sm_message->state.relativeY = 1;
 #elif defined(_3D)
     sm_message->state.relativeY = 1;
-    sm_message->state.relativeZ = 0;
+    sm_message->state.relativeZ = 1;
 #endif
 #endif
 #endif
