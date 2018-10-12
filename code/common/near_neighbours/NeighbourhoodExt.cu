@@ -23,7 +23,7 @@ SpatialPartitionExt<T>::~SpatialPartitionExt<T>()
 template<class T>
 void SpatialPartitionExt<T>::deviceAllocateExt(T **d_data)
 {
-    CUDA_CALL(cudaMalloc(d_data, sizeof(T)));
+    CUDA_CALL(cudaMalloc(d_data, sizeof(T)*maxAgents));
 }
 template<class T>
 void SpatialPartitionExt<T>::deviceDeallocateExt(T *d_data)
@@ -34,6 +34,7 @@ void SpatialPartitionExt<T>::deviceDeallocateExt(T *d_data)
 template<class T>
 void SpatialPartitionExt<T>::launchReorderLocationMessages()
 {
+    CUDA_CHECK();
     int blockSize;   // The launch configurator returned block size 
     CUDA_CALL(cudaOccupancyMaxActiveBlocksPerMultiprocessor(&blockSize, reorderLocationMessagesExt<T>, 32, 0));//Randomly 32
     // Round up according to array size

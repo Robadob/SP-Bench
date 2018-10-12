@@ -804,6 +804,10 @@ void SpatialPartition::setBinCount()
     this->binCountMax = (unsigned int)pow(l3, DIMENSIONS);
 #else
     this->binCountMax = (unsigned int)pow(this->binCount, DIMENSIONS);
+    if (gridDim.y==1)
+    {
+        this->binCountMax = this->binCount;
+    }
 #endif
     this->binCount = (unsigned int)pow(this->binCount, DIMENSIONS);
     this->binCountBits = (unsigned long)ceil(log(this->binCountMax) / log(2));
