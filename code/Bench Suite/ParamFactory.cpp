@@ -205,7 +205,7 @@ std::shared_ptr<ModelParams> parseConfig(rapidjson::GenericValue<Encoding, Alloc
         auto a = std::make_shared<NetworkParams>();
         if (auto b = std::dynamic_pointer_cast<NetworkParams>(_default))
             a->operator=(*b);
-        {//Parse density config
+        {//Parse network config
             //agents
             if (valueType.HasMember("agents") && valueType["agents"].IsInt())
                 a->agents = (unsigned int)valueType["agents"].GetInt();
@@ -222,10 +222,10 @@ std::shared_ptr<ModelParams> parseConfig(rapidjson::GenericValue<Encoding, Alloc
             else if (!_default)
                 fprintf(stderr, "Warning: Property 'edgesPerVert' missing from network config, default value '%u' used.\n", a->edgesPerVert);
             //capacityMod
-            if (valueType.HasMember("capacityMod") && valueType["capacityMod"].IsFloat())
-                a->capacityMod = valueType["capacityMod"].GetFloat();
+            if (valueType.HasMember("capacityMod") && valueType["capacityMod"].IsInt())
+                a->capacityMod = valueType["capacityMod"].GetInt();
             else if (!_default)
-                fprintf(stderr, "Warning: Property 'capacityMod' missing from network config, default value '%g' used.\n", a->capacityMod);
+                fprintf(stderr, "Warning: Property 'capacityMod' missing from network config, default value '%u' used.\n", a->capacityMod);
         }
         rtn = a;
         break;

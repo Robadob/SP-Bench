@@ -1,13 +1,13 @@
 #ifndef __BuildAll_cuh__
 #define __BuildAll_cuh__
 
-//#define _2D
-#define _3D
+#define _2D
+//#define _3D
 
 /**
  * Config
  */
-#define ATOMIC_PBM //Improves construction perf over large strips of empty bins
+//#define ATOMIC_PBM //Improves construction perf over large strips of empty bins
 //#define GLOBAL_MESSAGES
 //#define LDG_MESSAGES
 

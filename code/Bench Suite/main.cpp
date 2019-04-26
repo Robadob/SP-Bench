@@ -44,19 +44,21 @@ void log(FILE *out, const NetworkParams *modelArgs);
 void log(FILE *out, const Time_Init *initRes, const Time_Step_dbl *stepRes, const float totalTime);
 void log(FILE *out, const unsigned int agentCount);
 
+template<class T>
+T mix(T a, T b, float arg)
+{
+    return static_cast<T>((a * (1 - arg)) + (b * arg));
+}
 CirclesParams interpolateParams(const CirclesParams &start, const CirclesParams &end, const unsigned int step, const unsigned int totalSteps)
 {
     const float stepsM1 = (float)totalSteps - 1.0f;
     CirclesParams modelArgs;
+    modelArgs.seed = mix(start.seed, end.seed, step / (float)totalSteps);
+    modelArgs.agents = mix(start.agents, end.agents, step / (float)totalSteps);
+    modelArgs.density = mix(start.density, end.density, step / (float)totalSteps);
+    modelArgs.forceModifier = mix(start.forceModifier, end.forceModifier, step / (float)totalSteps);
+    modelArgs.iterations = mix(start.iterations, end.iterations, step / (float)totalSteps);
     modelArgs.seed = start.seed + (long long)((step / stepsM1)*((long long)end.seed - (long long)start.seed));
-    //modelArgs.width = start.width + (int)((step / stepsM1)*((int)end.width - (int)start.width));
-    modelArgs.agents = start.agents + (int)((step / stepsM1)*((int)end.agents - (int)start.agents));
-    modelArgs.density = start.density + ((step / stepsM1)*(end.density - start.density));
-    //modelArgs.interactionRad = start.interactionRad + ((step / stepsM1)*(end.interactionRad - start.interactionRad));
-    //modelArgs.attractionForce = start.attractionForce + ((step / stepsM1)*(end.attractionForce - start.attractionForce));
-    //modelArgs.repulsionForce = start.repulsionForce + ((step / stepsM1)*(end.repulsionForce - start.repulsionForce));
-    modelArgs.forceModifier = start.forceModifier + ((step / stepsM1)*(end.forceModifier - start.forceModifier));
-    modelArgs.iterations = start.iterations + (long long)((step / stepsM1)*((int)end.iterations - (int)start.iterations));
     return modelArgs;
 }
 CirclesParams reset(const CirclesParams &start, const CirclesParams &end)
@@ -100,8 +102,14 @@ NetworkParams reset(const NetworkParams &start, const NetworkParams &end)
     NetworkParams end1Reset;
     end1Reset.seed = end.seed - start.seed;
     end1Reset.agents = end.agents - start.agents;
-    end1Reset.verts = end.verts - start.verts;
-    end1Reset.edgesPerVert = end.edgesPerVert - start.edgesPerVert;
+    if (end.verts == 0)
+        end1Reset.verts = start.verts;
+    else
+        end1Reset.verts = end.verts - start.verts;
+    if (end.edgesPerVert == 0)
+        end1Reset.edgesPerVert = start.edgesPerVert;
+    else
+        end1Reset.edgesPerVert = end.edgesPerVert - start.edgesPerVert;
     end1Reset.capacityMod = end.capacityMod - start.capacityMod;
     end1Reset.iterations = end.iterations - start.iterations;
     return end1Reset;
@@ -165,36 +173,40 @@ NullParams interpolateParams(const NullParams &start, const NullParams &end, con
 {
     const float stepsM1 = (float)totalSteps - 1.0f;
     NullParams modelArgs;
-    modelArgs.seed = start.seed + (long long)((step / stepsM1)*((long long)end.seed - (long long)start.seed));
-    modelArgs.agents = start.agents + (unsigned int)((step / stepsM1)*((unsigned int)end.agents - (unsigned int)start.agents));
-    modelArgs.density = start.density + ((step / stepsM1)*(end.density - start.density));
-    modelArgs.iterations = start.iterations + (long long)((step / stepsM1)*((int)end.iterations - (int)start.iterations));
+    modelArgs.seed = mix(start.seed, end.seed, step / (float)totalSteps);
+    modelArgs.agents = mix(start.agents, end.agents, step / (float)totalSteps);
+    modelArgs.density = mix(start.density, end.density, step / (float)totalSteps);
+    modelArgs.iterations = mix(start.iterations, end.iterations, step / (float)totalSteps);
     return modelArgs;
 }
 DensityParams interpolateParams(const DensityParams &start, const DensityParams &end, const unsigned int step, const unsigned int totalSteps)
 {
     const float stepsM1 = (float)totalSteps - 1.0f;
     DensityParams modelArgs;
-    modelArgs.seed = start.seed + (long long)((step / stepsM1)*((long long)end.seed - (long long)start.seed));
-    modelArgs.agentsPerCluster = start.agentsPerCluster + (unsigned int)((step / stepsM1)*((unsigned int)end.agentsPerCluster - (unsigned int)start.agentsPerCluster));
-    modelArgs.envWidth = start.envWidth + ((step / stepsM1)*(end.envWidth - start.envWidth));
-    modelArgs.interactionRad = start.interactionRad + ((step / stepsM1)*(end.interactionRad - start.interactionRad));
-    modelArgs.clusterCount = start.clusterCount + (unsigned int)((step / stepsM1)*((int)end.clusterCount - (int)start.clusterCount));
-    modelArgs.clusterRad = start.clusterRad + ((step / stepsM1)*(end.clusterRad - start.clusterRad));
-    modelArgs.uniformDensity = start.uniformDensity + ((step / stepsM1)*(end.uniformDensity - start.uniformDensity));
-    modelArgs.iterations = start.iterations + (long long)((step / stepsM1)*((int)end.iterations - (int)start.iterations));
+    modelArgs.seed = mix(start.seed, end.seed, step / (float)totalSteps);
+    modelArgs.agentsPerCluster = mix(start.agentsPerCluster, end.agentsPerCluster, step / (float)totalSteps);
+    modelArgs.envWidth = mix(start.envWidth, end.envWidth, step / (float)totalSteps);
+    modelArgs.interactionRad = mix(start.interactionRad, end.interactionRad, step / (float)totalSteps);
+    modelArgs.clusterCount = mix(start.clusterCount, end.clusterCount, step / (float)totalSteps);
+    modelArgs.clusterRad = mix(start.clusterRad, end.clusterRad, step / (float)totalSteps);
+    modelArgs.uniformDensity = mix(start.uniformDensity, end.uniformDensity, step / (float)totalSteps);
+    modelArgs.iterations = mix(start.iterations, end.iterations, step / (float)totalSteps);
     return modelArgs;
 }
 NetworkParams interpolateParams(const NetworkParams &start, const NetworkParams &end, const unsigned int step, const unsigned int totalSteps)
 {
-    const float stepsM1 = (float)totalSteps - 1.0f;
     NetworkParams modelArgs;
-    modelArgs.seed = start.seed + (long long)((step / stepsM1)*((long long)end.seed - (long long)start.seed));
-    modelArgs.agents = start.agents + (unsigned int)((step / stepsM1)*((unsigned int)end.agents - (unsigned int)start.agents));
-    modelArgs.verts = start.verts + (unsigned int)((step / stepsM1)*((unsigned int)end.verts - (unsigned int)start.verts));
-    modelArgs.edgesPerVert = start.edgesPerVert + (unsigned int)((step / stepsM1)*((unsigned int)end.edgesPerVert - (unsigned int)start.edgesPerVert));
-    modelArgs.capacityMod = start.capacityMod + ((step / stepsM1)*(end.capacityMod - start.capacityMod));
-    modelArgs.iterations = start.iterations + (long long)((step / stepsM1)*((int)end.iterations - (int)start.iterations));
+    modelArgs.seed = mix(start.seed, end.seed, step / (float)totalSteps);
+    modelArgs.agents = mix(start.agents, end.agents, step / (float)totalSteps);
+    modelArgs.verts = mix(start.verts, end.verts, step / (float)totalSteps);
+    modelArgs.edgesPerVert = mix(start.edgesPerVert, end.edgesPerVert, step / (float)totalSteps);
+    modelArgs.capacityMod = mix(start.capacityMod, end.capacityMod, step / (float)totalSteps);
+    modelArgs.iterations = mix(start.iterations, end.iterations, step / (float)totalSteps);
+    //Special case where we seek to maintain constant edge count
+    if (end.edgesPerVert == 0)
+        modelArgs.edgesPerVert = (start.verts + start.edgesPerVert) / (modelArgs.verts == 0 ? 1 : modelArgs.verts);
+    if (end.verts == 0)
+        modelArgs.verts = (start.verts + start.edgesPerVert) / (modelArgs.edgesPerVert == 0 ? 1 : modelArgs.edgesPerVert);
     return modelArgs;
 }
 

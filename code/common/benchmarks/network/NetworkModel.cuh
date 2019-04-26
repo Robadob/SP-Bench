@@ -58,7 +58,7 @@ NetworkModel::NetworkModel(
     const unsigned int capacityModifier
     )
     : CoreModel(agents)
-    , spatialPartition(std::make_shared<SpatialPartitionExt<VertexData>>(vertices, agents))
+    , spatialPartition(std::make_shared<SpatialPartitionExt<VertexData>>(vertices * edgesPerVertex, agents))
     , vCount(vertices)
     , edgesPer(edgesPerVertex)
     , CAPACITY_MOD(capacityModifier)

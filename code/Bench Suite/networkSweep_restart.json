@@ -1,0 +1,50 @@
+[
+{
+  "name" : "Fig10,11-v2",
+  "comment" : "Fig 10: Construction Time/Step time (76->86%) of ACS, 1024 vertices. Fig 11: CUB/ACS (implied construction time).",
+  "start" : 
+    {
+      "enumerator":3,
+      "agents":10000,
+      "vertices":1024,
+      "edgesPerVert":1,
+      "capacityMod":20,
+      "iterations":100,
+      "seed":12
+    },
+  "end1" : 
+    {
+      "agents":1500000,
+      "steps": 16
+    },
+  "end2" : 
+    {
+      "edgesPerVert":20,
+      "steps": 20
+    }
+},
+{
+  "name" : "Fig 12-v2",
+  "comment" : "Fig 12: CUB/ACS (implied construction time) (100-235%), 16384 vertices",
+  "start" : 
+    {
+      "enumerator":3,
+      "agents":10000,
+      "vertices":16384,
+      "edgesPerVert":1,
+      "capacityMod":20,
+      "iterations":100,
+      "seed":12
+    },
+  "end1" : 
+    {
+      "agents":1500000,
+      "steps": 16
+    },
+  "end2" : 
+    {
+      "edgesPerVert":20,
+      "steps": 20
+    }
+}
+]

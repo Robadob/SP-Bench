@@ -167,7 +167,7 @@ struct NetworkParams : ModelParams
     unsigned int agents;
     unsigned int verts;
     unsigned int edgesPerVert;
-    float capacityMod;
+    unsigned int capacityMod;
 
     const char *modelName() const override { return MODEL_NAME; };
     const char *modelFlag() const override { return MODEL_FLAG; };
